@@ -1,0 +1,176 @@
+arXiv:math/0507089v2 [math.ST] 8 Aug 2006
+
+The Annals of Statistics
+2006, Vol. 34, No. 3, 1577–1579
+DOI: 10.1214/009053606000000399
+Main article DOI: 10.1214/009053604000001138
+c Institute of Mathematical Statistics, 2006
+
+ADDENDUM TO THE DISCUSSION OF
+“BREAKDOWN AND GROUPS”1
+By P. Laurie Davies and Ursula Gather
+University of Duisburg–Essen and Technical University Eindhoven,
+and University of Dortmund
+In his discussion of Davies and Gather [Ann. Statist. 33 (2005)
+977–1035] Tyler pointed out that the theory developed there could
+not be applied to the case of directional data. He related the breakdown of directional functionals to the problem of definability. In this
+addendum we provide a concept of breakdown defined in terms of definability and not in terms of bias. If a group of finite order k acts on
+the sample space we show that the breakdown point can be bounded
+above by (k − 1)/k. In the case of directional data there is a group
+of order k = 2 giving an upper bound of 1/2.
+
+1. Introduction. It has been argued that breakdown occurs in directional data (see [4]) when contamination causes the direction to change by
+180◦ (see, e.g., [2, 3]). More formally this definition of breakdown point of a
+directional functional T at a distribution P may be written as
+ε∗ (T, P, d)
+(1)
+= inf{ε > 0 : |T (P ) − T (Q)| = π for some Q with d(P, Q) < ε}.
+Similarly in the case of linear spaces breakdown can be said to occur when
+the linear space derived from the contaminated data is orthogonal to that
+derived from the uncontaminated data. As noted by Tyler in the discussion this definition of breakdown cannot be formulated within the theory
+of Davies and Gather [1], which requires unbounded metrics deriving from
+certain banned or forbidden parameter values such as 0 and ∞ in the scale
+case. In this context breakdown is said to occur when the realized parameter
+values tend to or take on a banned value. For directional data there will, in
+Received September 2004; revised September 2005.
+Supported in part by Sonderforschungsbereich 475, University of Dortmund.
+AMS 2000 subject classifications. Primary 62G35; secondary 62H11.
+Key words and phrases. Breakdown, equivariance, directional data.
+1
+
+This is an electronic reprint of the original article published by the
+Institute of Mathematical Statistics in The Annals of Statistics,
+2006, Vol. 34, No. 3, 1577–1579. This reprint differs from the original in
+pagination and typographic detail.
+1
+
+2
+
+P. L. DAVIES AND U. GATHER
+
+general, be no banned direction so there can be no concept of breakdown
+based on banned values. Nevertheless if the data is such that small changes
+can result in a change of direction of 180◦ the directional functional is highly
+nonstable. As pointed out by Tyler in the discussion this behavior is related
+to the problem of definability of the functional. Tyler writes “This implies
+that breakdown occurs when a ‘well-defined’ vector becomes ‘undefined’ ”.
+We take up this idea and use it to define what we call the “definability
+breakdown point”.
+2. Breakdown and invariant distributions.
+2.1. Definition of breakdown. From Theorem 3 of [3] and Theorem 4.1
+of [2] it follows that the breakdown point (1) of the circular mean at a
+distribution P is at most 1/2 and can be arbitrarily small. He and Simpson [2] write “the breakdown point must go to 0 as the data become more
+dispersed over the sphere” and “it is possible to have a breakdown point of
+near 1/2 if the data are concentrated.” We give a definition of breakdown
+point which makes no use of bias but helps to understand why, for rotation
+equivariant functionals, a high breakdown point can be attained at concentrated distributions but only low ones are possible at disperse distributions.
+Furthermore it explains why 1/2 is the largest possible breakdown point for
+such functionals.
+We use the notation of Davies and Gather [1]. A functional T : PT → Θ,
+PT ⊂ P is called equivariant if the following hold:
+(a) PT is closed under all g ∈ G,
+(b) T (P g ) = hg (T (P )) for all P ∈ PT and g ∈ G,
+(c) T is well defined on PT .
+This leads to the following definition of the definability breakdown point:
+(2)
+
+ε∗ (T, P, d) = inf{ε > 0 : d(P, Q) < ε for some Q ∈
+/ PT },
+
+with of course ε∗ (T, P, d) = 0 if P ∈
+/ PT .
+2.2. Invariant measures. We call a measure P invariant if P g = P for
+some g with hg 6= hι . We denote the set of all such distributions by Pinv . If
+T is equivariant and P ∈ Pinv we have T (P ) = T (P g ) = hg (T (P )), which is
+not possible as hg 6= hι . This implies
+(3)
+
+Pinv ⊂ P \ PT
+
+for every equivariant functional T and hence
+(4)
+
+ε∗ (T, P, d) ≤ inf{ε > 0 : d(P, Q) < ε for some Q ∈ Pinv }.
+
+ADDENDUM TO BREAKDOWN AND GROUPS
+
+3
+
+In the case of directional data the uniform distribution U belongs to
+P \ PT for any equivariant functional T and hence we have the upper bound
+(5)
+
+ε∗ (T, P, d) ≤ d(P, U ).
+
+This implies that the breakdown point is low at very disperse distributions,
+that is, those close to the uniform distribution.
+2.3. Finite sub-groups. Suppose G contains a finite sub-group Gk of order
+k ≥ 2 so that gk = ι for all g ∈ Gk . For any distribution P we set
+(6)
+
+Pk =
+
+X j
+1 k−1
+Pg .
+k j=0
+
+Then Pkg = Pk so that Pk ∈ Pinv and hence
+ε∗ (T, P, d) ≤ d(P, Pk ).
+If the metric d satisfies (2.1) and (2.2) of [1] we have
+d(P, Pk ) ≤
+
+k−1
+,
+k
+
+where
+P̃k =
+
+X j
+1 k−1
+Pg .
+k − 1 j=1
+
+Examples of sample spaces and groups G with subgroups of order k = 2 are
+the unit circle and the unit sphere in any dimension. In all cases the maximum definability breakdown point of any direction functional at a measure
+P is at most 1/2 and may be much smaller as implied by (5).
+2.4. Total variation and finite sample breakdown points. Although the
+above results can be extended to finite sample breakdown points this may
+not always make sense. In particular if P is an empirical measure then the
+breakdown point measured using the total variation metric d = dtv may be
+reduced from 1/2 to 1/n by the smallest of alterations in the values of the
+data. The same applies to the finite sample breakdown points. This is the
+only example we know where the use of a metric which allows for minor
+alterations in the values of the data points leads to a completely different
+breakdown point.
+Acknowledgment. We wish to acknowledge the remarks of an anonymous
+referee whose comments lead to a considerable increase in clarity.
+
+4
+
+P. L. DAVIES AND U. GATHER
+
+REFERENCES
+[1] Davies, P. L. and Gather, U. (2005). Breakdown and groups (with discussion). Ann.
+Statist. 33 977–1035. MR2195626
+[2] He, X. and Simpson, D. G. (1992). Robust direction estimation. Ann. Statist. 20
+351–369. MR1150348
+[3] Ko, D. and Guttorp, P. M. (1988). Robustness of estimators for directional data.
+Ann. Statist. 16 609–618. MR0947564
+[4] Mardia, K. V. (1972). Statistics of Directional Data. Academic Press, London.
+MR0336854
+Fachbereich 06—Mathematik
+und Informatik
+Universität Duisburg–Essen
+45117 Essen
+Germany
+E-mail: laurie.davies@uni-duisburg-essen.de
+
+Fachbereich Statistik
+Universität Dortmund
+44221 Dortmund
+Germany
+E-mail: gather@statistik.uni-dortmund.de
+
+

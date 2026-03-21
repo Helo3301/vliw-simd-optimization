@@ -1,0 +1,2028 @@
+arXiv:2405.11986v1 [cs.DS] 20 May 2024
+
+Scheduling Jobs with Work-Ineﬀicient Parallel Solutions
+William Kuszmaul∗
+
+Alek Westover
+
+Harvard University
+Cambridge, MA, USA
+william.kuszmaul@gmail.com
+
+Massachusetts Institute of Technology
+Cambridge, MA, USA
+alekw@mit.edu
+
+ABSTRACT
+
+1 INTRODUCTION
+
+This paper introduces the serial-parallel decision problem. Consider
+an online scheduler that receives a series of tasks, where each task
+has both a parallel and a serial implementation. The parallel implementation has the advantage that it can make progress concurrently on multiple processors, but the disadvantage that it is (potentially) work-ineﬃcient. As tasks arrive, the scheduler must decide
+for each task which implementation to use.
+We begin by studying total awake time. We give a simple decideon-arrival scheduler that achieves a competitive ratio of 3 for total awake time—this scheduler makes serial/parallel decisions immediately when jobs arrive. Our second result is an parallel-workoblivious scheduler that achieves a competitive ratio of 6 for total
+awake time—this scheduler makes all of its decisions based only
+on the size of each serial job and without needing to know anything about the parallel implementations. Finally, we prove a lower
+bound showing that, if a scheduler wishes to achieve a competitive
+ratio of 𝑂 (1), it can have at most one of the two aforementioned
+properties (decide-on-arrival or parallel-work-oblivious). We also
+prove lower bounds of the form 1 + Ω(1) on the optimal competitive ratio for any scheduler.
+Next, we turn our attention to optimizing mean response time.
+Here, we show that it is possible to achieve an 𝑂 (1) competitive
+ratio with 𝑂 (1) speed augmentation. This is the most technically
+involved of our results. We also prove that, in this setting, it is not
+possible for a parallel-work-oblivious scheduler to do well.
+In addition to these results, we present tight bounds on the optimal competitive ratio if we allow for arrival dependencies between
+tasks (e.g., tasks are components of a single parallel program), and
+we give an in-depth discussion of the remaining open questions.
+
+There are many tasks 𝜏 for which the best parallel algorithms are
+work ineﬃcient. This can leave engineers with a surprisingly subtle choice: either implement a serial version 𝜏 ⊚ of the task, which is
+work eﬃcient but has no parallelism, or implement a parallel version 𝜏 q of the task, which is work ineﬃcient but has ample parallelism. The serial version 𝜏 ⊚ of the task takes some amount of time
+𝜎 to execute on a single processor; the parallel version 𝜏 q takes
+time 𝜋 ≥ 𝜎 to execute on a single processor, but can be scaled to
+run on any number 𝑘 ≤ 𝑝 processors with a 𝑘-fold speedup. Which
+version of the task should the engineer implement?
+If the task is running in isolation on a 𝑝-processor system, and
+assuming that 𝜋/𝑝 ≤ 𝜎, then the answer is trivial: use the parallel implementation 𝜏 q . But what if the system is shared with many
+other tasks that are arriving/completing over time? Intuitively, the
+engineer should use 𝜏 q if the system can aﬀord to allocate at least
+𝜋/𝜎 processors to the task, and should use 𝜏 ⊚ otherwise. But this
+choice is complicated by two factors, since the number of processors that the system can aﬀord to allocate to 𝜏 may both (1) change
+over time as 𝜏 executes and (2) depend on whether other tasks 𝜏 ′
+were executed using their serial or parallel implementations. The
+second factor, in particular, creates complicated dependencies—the
+right choice for one task depends on what choices have been and
+will be made for others.
+In this paper, we propose an alternative perspective: What if the
+engineer implements both a serial and parallel version of each task,
+and then leaves it to the scheduler to decide which version to use?
+Formally, we deﬁne the serial-parallel decision problem as
+follows: a set T = {𝜏1, . . . , 𝜏𝑛 } of tasks arrive over time. Each task
+𝜏𝑖 ∈ T arrives at some start time 𝑡𝑖 , and comes with two implementations: a serial implementation 𝜏𝑖⊚ with work 𝜎𝑖 and a parallel
+implementation 𝜏𝑖q with work 𝜋𝑖 > 𝜎𝑖 . In order for the scheduler
+to begin executing a task 𝜏𝑖 , it must choose (irrevocably) between
+which of the two implementations to use. If the serial job 𝜏𝑖⊚ is chosen, then the job can execute on up to one processor at a time (the
+processor can change), and 𝜏𝑖 completes once 𝜎𝑖 work has been
+performed on 𝜏𝑖⊚ . If the parallel job 𝜏𝑖q is chosen, then the job can
+execute on up to 𝑝 processors over time (now both the set of processors and the number of processors can change), and 𝜏𝑖 completes
+once the total work performed on 𝜏𝑖q (by all processors) reaches 𝜋𝑖 .
+Two natural objectives for the scheduler are to minimize the
+mean response time (MRT), which is the average amount of time
+between when a task arrives and when it completes; and the total
+awake time, which is the total amount of time during which there
+is at least one job executing. We emphasize that, in both cases, our
+task is fundamentally to solve an online decision problem. If the
+scheduler was told for each task 𝜏𝑖 whether to use 𝜏𝑖⊚ or 𝜏𝑖q , then
+the problem would become straightforward. But actually making
+these decisions is potentially diﬃcult.
+
+CCS CONCEPTS
+• Theory of computation → Parallel algorithms.
+
+KEYWORDS
+Scheduling, Parallel, Work-Ineﬃcient, Competitive-Analysis
+
+∗ William
+
+Kuszmaul is funded by the Rabin Postdoctoral Fellowship in Theoretical
+Computer Science at Harvard University. Large parts of this research were completed
+while William was a PhD student at MIT, where he was funded by a Fannie and John
+Hertz Fellowship and an NSF GRFP Fellowship. William Kuszmaul was also partially
+sponsored by the United States Air Force Research Laboratory and the United States
+Air Force Artiﬁcial Intelligence Accelerator and was accomplished under Cooperative
+Agreement Number FA8750-19-2-1000. The views and conclusions contained in this
+document are those of the authors and should not be interpreted as representing the
+oﬃcial policies, either expressed or implied, of the United States Air Force or the U.S.
+Government. The U.S. Government is authorized to reproduce and distribute reprints
+for Government purposes notwithstanding any copyright notation herein.
+1
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+William Kuszmaul and Alek Westover
+
+Results
+
+The upper bound holds for any set of dependencies, and the lower
+bound holds even when the dependencies form a tree (this means
+that the lower bound applies, for example, even to fork-join parallel programs [3]).
+
+In addition to formalizing the Serial-Parallel Scheduling Problem,
+we give upper and lower bounds for how well online schedulers
+can perform on both awake time and average completion time.
+
+Open questions. Finally, in Section 10, we conclude with a discussion of open questions.
+
+Optimizing awake time. Our ﬁrst result is a very simple scheduler that optimizes awake time with a competitive ratio of 3. This
+is a decide-on-arrival scheduler, meaning that it makes its serial/parallel decisions immediately when a job arrives. We also give
+lower bounds preventing a competitive ratio of 1 + 𝜀: we show
+that any deterministic scheduler must incur competitive ratio at
+least 𝜙 − 𝑜 (1) ≈ 1.62; and that any deterministic decide-on-arrival
+scheduler must incur competitive ratio at least 2 − 𝑜 (1); and that
+even√randomized schedulers must incur competitive ratios at least
+(3 + 3)/4 − 𝑜 (1) ≈ 1.18.
+Our second result studies what we call parallel-work-oblivious
+schedulers, which are schedulers that get to know the serial work
+of each job but not the parallel work. We show that, even in this setting, it is possible to construct a 6-competitive scheduler for awake
+time. On the other hand, we show that there is a fundamental tension between decide-on-arrival and parallel-work-oblivious schedulers: any scheduler that achieves both properties has competitive
+√
+ratio at least Ω( 𝑝).
+
+2 RELATED WORK
+There is a vast literature on multiprocessor scheduling problems.
+For an excellent (but now somewhat dated) survey, see [4]. Past
+work has often categorized sets of jobs 𝐽 = {𝑗1 , . . . , 𝑗𝑛 } as being
+composed of jobs 𝑗𝑖 which are either rigid, moldable, or malleable.
+Both rigid and moldable jobs have the property that once a job 𝑗𝑖
+begins on some number 𝑝 𝑗𝑖 of processors, it must continue on that
+same set of 𝑝 𝑗𝑖 processors without interruption until completion.
+Rigid and moldable jobs diﬀer in that for rigid jobs the number 𝑝 𝑗𝑖
+of processors which task 𝑗𝑖 is to be run on is pre-speciﬁed, whereas
+for moldable jobs 𝑝 𝑗𝑖 may be chosen by the scheduler. Finally, if
+the number (and set) of processors on which a job is executed is
+permitted to vary over time, then the job is said to be malleable.
+In the contexts of moldable and malleable jobs, the jobs often come
+with speedup curves determining how quickly the job can make
+progress on a given number of processors. If the speedup curve is
+proportional to the number of processors on which the job runs (as
+is the case for the parallel jobs associated with the tasks described
+in this paper) then the job is said to be perfectly scalable.
+Much of the work in this area focuses on optimizing awake time,
+which as discussed earlier, is the total amount of time during which
+any jobs are present. Here, there has been a great deal of work on
+both oﬄine schedulers [12, 14–17] and online schedulers [1, 5, 9–
+11, 18, 19].
+For moldable jobs with arbitrary speedup curves, Ye, Chen, and
+Zhang [18] show an online competitive ratio of 𝑂 (1) for awake
+time. Of special interest to this paper would be the speedup curve
+where job 𝑗𝑖 takes time 𝜎𝑖 to complete on 1 processor and time 𝜋𝑖 /𝑘
+to complete on 𝑘 > 1 processors. In this case, the scheduler’s commitment to a ﬁxed number of processors would also implicitly represent a commitment to running the job in serial or parallel. One
+diﬀerence between this and the problem studied here is that the
+scheduler (and the OPT to which it is compared) are non-preemptive:
+they are required to execute the tasks on a ﬁxed set of processors
+(without interruption). Nonetheless, it is not too diﬃcult to show
+that Ye, Chen, and Zhang’s algorithm actually does yield an 𝑂 (1)
+competitive awake-time algorithm for our problem—we emphasize, however, that this algorithm is neither decide-on-arrival nor
+parallel-work-oblivious, and would achieve a quite large constant
+competitive ratio. Interestingly, in the context of mean response
+time (MRT), we show in Section 9 that preemption is necessary:
+in the context of our serial-parallel decision problem, any online
+scheduler that rigidly assigns jobs to ﬁxed numbers of processors
+will necessarily incur a worst-case competitive ratio of 𝜔 (1) for
+MRT (even with 𝑂 (1) resource augmentation).
+There is of course also a great deal of interest MRT, i.e., the average amount of time between when tasks arrive and when they
+are completed. Besides work on oﬄine approximation algorithms
+
+Optimizing mean response time. Next, we turn our attention to
+mean response time (MRT). We construct an online scheduler that
+achieves a competitive ratio of 𝑂 (1) for MRT using 𝑂 (1) speed
+augmentation. This is our most technical result, and is achieved
+through three technical components. First, in Section 6.1, we prove
+two technical lemmas for comparing the optimal schedule for a set
+of serial jobs to the optimal schedule for perfectly scalable versions
+of the same jobs. Then, in Section 6.2 we build on this to construct
+a scheduler that is 𝑂 (1) competitive if it is permitted to sometimes
+cancel parallel tasks and restart them as serial ones. This cancellation ‘superpower’ would seem to make the decision problem signiﬁcantly easier (as decisions are no longer irrevocable). However,
+in Section 6.3, we show how to take our 𝑂 (1)-competitive scheduler (with cancellation) and transform it into a 𝑂 (1)-competitive
+scheduler (without cancellation).
+Our MRT scheduler is neither a decide-on-arrival scheduler nor
+an parallel-work-oblivious scheduler. We prove that, if a scheduler is decide-on-arrival and uses 𝑂 (1) speed augmentation, then
+it must incur competitive ratio Ω(𝑝 1/4 ).
+Extending to Tasks with Dependencies. In Section 7, we extend
+our model to support arrival dependencies between tasks: Each
+task 𝜏𝑖 has a set 𝐷𝑖 ⊆ [𝑛] of other tasks that must complete before
+𝜏𝑖 can arrive. Dependencies must be acyclic, but besides that, they
+can be arbitrary.
+In this setting, it is helpful to think of the tasks as representing components of a single parallel program. Each component has
+both a serial and parallel implementation, that the runtime scheduler can choose between. The goal is to minimize the completion
+time of the entire program—this corresponds to the awake time
+objective function.
+In Section 7, we show that the optimal online competitive ra√
+tio for this problem (even for randomized schedulers) is Θ( 𝑝).
+2
+
+Scheduling Jobs with Work-Ineﬀicient Parallel Solutions
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+it has been allocated 𝜋𝑖 total time on processors—i.e., the integral
+over time of the number of processors allocated to 𝜏𝑖q reaches 𝜋𝑖 .
+We refer to a set of tasks T = {𝜏1, 𝜏2, . . . , 𝜏𝑛 } specifying an instance of the Serial-Parallel Scheduling Problem as a task arrival
+𝑗
+process or TAP. We use [𝑛] to denote {1, 2, . . . , 𝑛}, and T𝑖 to de
+note 𝜏𝑖 , . . . , 𝜏 𝑗
+
+[15, 16], most of the major successes in this area have been for malleable jobs [6–8]. The seminal result in this area is due to Edmonds
+[7], who considered malleable jobs with arbitrary sub-linear nondecreasing speedup curves, and showed that the so-called EQUI
+scheduler, which divides the processors evenly among all of the
+jobs present (using time sharing if there are more than 𝑝 jobs),
+achieves a competitive ratio of 𝑂 (1) with 2 + 𝜀 speed augmentation (subsequent work only requires speed augmentation 1 + 𝜀
+with diﬀerent schedulers [6, 8]). A remarkable feature of the EQUI
+scheduler is that it is oblivious to the precise speedup curve of each
+job. In Section 9, we show that such a scheduler is not possible in
+our setting—any oblivious online scheduler for MRT (or, even any
+parallel-work-oblivious scheduler) must incur a worst-case competitive ratio of 𝜔 (1).
+The tasks studied in this paper do not ﬁt neatly into the
+rigid/moldable/malleable framework. They represent instead a direction that until now seems to have been unexplored: deciding for
+each task between the two extremes of (1) a fast algorithm with no
+parallelism and (2) a slower algorithm with ample parallelism and
+perfect scalability. Interestingly, several parts of the analysis end
+up making use of EQUI as an analytical tool. Thus, for completeness, we restate Theorem 1.1 of [8] (with parameters 𝛽 = 1 and
+𝜀 = 1) below:
+
+Objective. We say that a task is alive if it has arrived but not yet
+been completed. We consider two objective functions:
+
+• minimize mean response time (MRT): the average amount
+of time that tasks are alive. If task 𝜏𝑖 ﬁnishes at time 𝑓𝑖 , then
+Í
+the MRT is 𝑛1 (𝑓𝑖 − 𝑡𝑖 ). It is equivalent, but generally more
+convenient, to work with a scaled version of MRT called
+total response time (TRT)—the sum of the amounts of time
+that tasks are alive. We denote the TRT of a scheduler ALG
+T .
+on a TAP T by TRTALG
+• minimize awake time (T): the total amount of time that
+there are alive tasks. If there are tasks alive on intervals
+Í
+[𝑎 1, 𝑏 1 ] ⊔ [𝑎 2 , 𝑏 2 ] ⊔ · · · , then the awake time is (𝑏𝑖 − 𝑎𝑖 ).
+We denote the awake time of a scheduler ALG on TAP T by
+T .
+TALG
+We measure a scheduler’s performance by comparison to the
+optimal oﬀ-line scheduler OPT, who can see the sequence of tasks
+in advance. The competitive ratio of a scheduler ALG on TAP T is
+T /TRT T for TRT.
+the ratio of its performance to OPT’s, e.g. TRTALG
+OPT
+More generally, we will say ALG is 𝒌 competitive if the competitive
+ratio of ALG is bounded by 𝑘 on all TAPs. Sometimes we will also
+say ALG is 𝑘 competitive with another scheduler ALG′ , meaning that
+the MRT (or awake time) of ALG is never more than a factor of 𝑘
+larger than the MRT (or awake time, respectively) of ALG′ .
+Finally, when comparing two schedulers ALG1 and ALG2 in the
+context of MRT we will often assume 𝒄 speed augmentation for
+some 𝑐 ∈ 𝑂 (1). This means that ALG1 gets to use processors that
+are 𝑐 times faster than those used by ALG2 . Let 𝑐 · T denote the
+TAP T but with every job’s work multiplied by 𝑐; similarly deﬁne
+𝑐 · 𝐽 for a set of jobs 𝐽 as the jobs from 𝐽 with work multiplied
+by 𝑐. Then, the statement ALG1 with 𝑐 speed augmentation is 𝑂 (1)
+competitive with ALG2 on TAP T (or jobs 𝐽 ) can be written as
+
+Theorem 2.1 (Theorem 1.1 of [8]). EQUI with 3 speed augmentation is 𝑂 (1) competitive with OPT for MRT on any set 𝐽 of malleable
+jobs with arbitrary (nondecreasing sublinear) speedup curves.
+
+3
+
+PRELIMINARIES
+
+Problem Speciﬁcation. In this section we introduce our terminology and notation for describing the problem. A task is some computation that must be performed. Tasks can be performed using a
+serial or parallel job implementing the task. In the Serial-Parallel
+Scheduling Problem a scheduler receives tasks T = {𝜏1, 𝜏2, . . . , 𝜏𝑛 }
+over time, with 𝑛 unknown beforehand in the on-line case. Task
+𝜏𝑖 has an associated serial job 𝜏𝑖⊚ with work 𝜎𝑖 and an associated
+parallel job 𝜏𝑖q with work 𝜋𝑖 . Finally, task 𝜏𝑖 arrives at time 𝑡𝑖 with
+𝑡 1 ≤ 𝑡 2 ≤ · · · ≤ 𝑡𝑛 . Thus one should think of 𝜏𝑖 as being determined
+by a triple (𝜎𝑖 , 𝜋𝑖 , 𝑡𝑖 ).
+The scheduler must decide whether to perform each task 𝜏𝑖 using the serial or parallel implementation. By default the scheduler
+need not decide which implementation to run for a task exactly
+when the task arrives, sometimes it may be beneﬁcial to wait before starting a task. We also consider the alternative model where
+the scheduler must decide on arrival which implementation to use.
+For convenience, we treat time steps as being small enough that
+time is essentially continuous. At each time step, the scheduler allocates its 𝑝 processors to the unﬁnished jobs present. In a given
+time step multiple processors can be allocated to a parallel job, but
+only a single processor can be allocated to each serial job (and, of
+course, some jobs may be allocated 0 processors). Sometimes it is
+convenient to treat a job as being assigned to a fractional number
+of processors; this can be accomplished by time-sharing the processor over multiple steps. A serial job 𝜏𝑖⊚ ﬁnishes once it has been
+allocated 𝜎𝑖 time (not necessarily contiguously) on a processor (not
+necessarily the same one over time). A parallel job 𝜏𝑖q ﬁnishes once
+
+T
+T
+TRTALG
+≤ 𝑂 (TRT𝑐·
+ALG2 ).
+1
+
+Our goal is to create a scheduler that is 𝑂 (1) competitive with
+OPT, potentially with use of 𝑂 (1) speed augmentation in the case
+of MRT.
+Technical Details. We emphasize that our focus is on schedulers
+that are allowed to preempt running tasks, i.e. pause running tasks
+and continue later on a potentially diﬀerent set of processors. For
+MRT, in particular, preemption is provably necessary—we show in
+Section 9 that a non-preemptive scheduler cannot be 𝑂 (1)-competitive
+for MRT. It is sometimes theoretically helpful to consider schedulers that are allowed to cancel running tasks, i.e. stop a running
+task, erasing all progress made on the task, and restart the task
+using a diﬀerent implementation (e.g., a parallel task can be cancelled and restarted as a serial task). Our ﬁnal schedulers will not
+require cancelling. However, in designing/analyzing our scheduler,
+it will be helpful to be able to imagine what would have happened
+if cancelling were possible. We say “ALG, with use of cancelling”
+3
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+William Kuszmaul and Alek Westover
+
+To analyze BAL it suﬃces to analyze TAPs where BAL always has
+at least one uncompleted task present at any time from the start of
+time until the completion of the ﬁnal task. Thus, the awake time
+of BAL is the same as its completion time. OPT’s awake time may
+be less than OPT’s completion time; we call the intervals of time
+when OPT has already completed all arrived tasks gaps. We call
+the maximal intervals of time when OPT has uncompleted tasks
+which have already arrived OPT-awake-intervals.
+Our main technical lemma is the following:
+
+to denote that a scheduler ALG has been augmented with the ability
+to cancel.
+We consider only TAPs where the cost ratio 𝜋𝑖 /𝜎𝑖 satisﬁes 𝜋𝑖 /𝜎𝑖 ∈
+[1, 𝑝] for all tasks 𝜏𝑖 . If 𝜋𝑖 /𝜎𝑖 < 1 then the scheduler clearly should
+never run 𝜏𝑖 in serial so we can replace the serial implementation
+with the parallel implementation to get cost ratio 1. Similarly, if
+𝜋𝑖 /𝜎𝑖 > 𝑝 then the scheduler should never run 𝜏𝑖 in parallel and
+we can replace the parallel implementation with the serial implementation to get cost ratio 𝑝.
+Throughout the paper we will assume 𝑝 ≥ Ω(1) is at least a sufﬁciently large constant. We are more interested in the asymptotic
+behavior of our schedulers as a function of 𝑝 than the behavior on
+small values of 𝑝.
+
+4
+
+Lemma 4.3. Fix some OPT-awake-interval 𝐼 . Let T (𝐼 ) denote the
+set of tasks that arrive during 𝐼 and let T ′ denote the tasks that
+arrive before 𝐼 . Assume that immediately before the start of 𝐼 BAL
+has 𝐵 work present (and is of course balanced). Let CALG for ALG ∈
+{BAL, OPT} denote the time from the start of 𝐼 until when ALG would
+complete on the TAP T (𝐼 ) ∪ T ′ . Then
+
+A 3-COMPETITIVE AWAKE-TIME
+SCHEDULER THAT MAKES DECISIONS ON
+ARRIVAL
+
+CBAL ≤ 𝐵/𝑝 + 3 COPT .
+Proof. Let T (𝐼, 𝑖) denote the ﬁrst 𝑖 tasks in T (𝐼 ). Let K𝑖OPT
+denote the work that OPT incurs on T (𝐼, 𝑖). Let C𝑖ALG for ALG ∈
+{BAL, OPT} denote completion time of ALG on the TAP T ′ ∪ T (𝐼, 𝑖)
+minus the start time of the OPT-awake-interval 𝐼 . We will prove
+the lemma by induction on 𝑖, i.e., how many of the tasks in 𝑇 (𝐼 ) to
+consider. One complication with the proof is that OPT’s schedule
+on T (𝐼, 𝑖) can be very far from optimal; for instance, OPT might
+schedule a very large task 𝜏 ∈ T (𝐼, 𝑖) in serial if it knows that
+future tasks in T (𝐼 ) cause 𝜏 to not bottleneck completion time.
+Nonetheless with an appropriately constructed invariant we can
+control the evolution of the work proﬁles of BAL and OPT as we
+increase 𝑖.
+In particular, we will inductively show the following claim: For
+each 𝑖 ∈ {0, 1, . . . , |T (𝐼 )|} we have the invariant:
+
+The scheduler we describe in this section belongs to a simple class
+of schedulers called decide-on-arrival schedulers. Whenever a
+decide-on-arrival scheduler receives a task it must immediately
+make an irrevocable decision about whether to run the serial or
+parallel job associated with the task. Our scheduler will run its
+chosen serial jobs via most-work-ﬁrst, i.e., run up to 𝑝 of the serial jobs with the most remaining work at each time step and run a
+parallel job on any remaining processors. Clearly this is an optimal
+method for scheduling any given set of jobs. Thus, in the decideon-arrival model the Serial-Parallel Scheduling Problem is really
+not a scheduling problem but rather a decision problem: once the
+scheduler chooses which job to run for each task it is clear how
+to schedule the jobs. We deﬁne OPT to also be a decide-on-arrival
+scheduler. This is without loss of generality: OPT does not beneﬁt
+from delaying its decisions because OPT has all the information in
+advance. Thinking of OPT as a decide-on-arrival scheduler will simplify the terminology. We now deﬁne specialized notation that is
+helpful in describing the decisions of decide-on-arrival schedulers:
+
+C𝑖BAL ≤ 𝐵/𝑝 + 2 C𝑖OPT + K𝑖OPT /𝑝.
+
+When 𝑖 = 0 we have
+= 𝐵/𝑝 and the invariant is satisﬁed.
+Now we assume the invariant is true for some 𝑖 > 0 and consider
+how the addition of the the (𝑖 + 1)-th task 𝜏 ′ impacts the invariant.
+We use 𝜎 ′ , 𝜋 ′ to denote the serial and parallel works of 𝜏 ′ . If BAL
+chooses an implementation of 𝜏 ′ requiring 𝐾 ∈ {𝜎 ′ , 𝜋 ′ } work and
+OPT chooses an implementation of 𝜏 ′ requiring at least 𝐾 work then
+
+Deﬁnition 4.1. A scheduler ALG is saturated on time step 𝑡 if
+ALG has no idle processors at time 𝑡. We say that ALG is balanced
+after the arrival of 𝑛 0 tasks if ALG would be saturated immediately
+before completing these 𝑛 0 tasks, assuming no further tasks arrive.
+In other words, being balanced means that ALG’s current set of jobs
+could be distributed so that, assuming no additional tasks arrive,
+all processors would be in use at each time step until ALG has completed all the currently present jobs. If ALG is not balanced we say
+that ALG is jagged.
+We say that ALG incurs work 𝑊 on a task 𝜏 if it takes a job
+requiring 𝑊 work to complete. We say that ALG incurs work 𝑊
+on a TAP T if ALG does 𝑊 total work to handle the tasks in T .
+
+𝑖
+𝑖+1
+𝑖
+C𝑖+1
+BAL − CBAL = 𝐾/𝑝 ≤ KOPT /𝑝 − KOPT /𝑝
+and so the invariant for 𝑖 implies the invariant for 𝑖 + 1.
+The only remaining case is if OPT runs 𝜏 ′ in serial while BAL runs
+′
+𝜏 in parallel. However, in this case 𝜏 ′ must have relatively large
+serial work. In particular, if we let 𝑡 0′ denote the time at the begin′ denote arrival time of 𝜏 ′ then 𝜎 ′ > C𝑖
+′
+′
+ning of 𝐼 and 𝑡𝑖+1
+BAL +𝑡 0 −𝑡𝑖+1
+′
+or else BAL would have chosen to run 𝜏 in serial. Thus we have
+𝑖
+′
+𝑖
+′
+′
+′
+′
+′
+′
+′
+C𝑖+1
+BAL = CBAL +𝜋 /𝑝 ≤ CBAL +𝜎 ≤ 𝑡𝑖+1 − 𝑡 0 + 2𝜎 ≤ 2(𝑡𝑖+1 − 𝑡 0 + 𝜎 ).
+(2)
+On the other hand, OPT ran 𝜏 ′ in serial and does not have any gaps
+′ because these times occur during the same OPTbetween 𝑡 0′ , 𝑡𝑖+1
+awake-interval 𝐼 . Thus
+
+We now present our simple 3-competitive scheduler.
+Theorem 4.2. There is a 3-competitive decide-on-arrival scheduler for awake time.
+Proof. We propose the scheduler BAL which is always balanced.
+Whenever a task 𝜏 arrives
+• If taking 𝜏 ⊚ would cause BAL to become jagged BAL takes 𝜏 q .
+• Otherwise BAL takes 𝜏 ⊚ .
+
+(1)
+
+C0BAL
+
+′
+′
+′
+C𝑖+1
+OPT ≥ 𝑡𝑖+1 − 𝑡 0 + 𝜎 .
+
+Combined with Equation (2) this gives
+4
+
+𝑖+1
+C𝑖+1
+BAL ≤ 2 COPT ,
+
+Scheduling Jobs with Work-Ineﬀicient Parallel Solutions
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+We call our scheduler UNK. Whenever there are idle processors,
+UNK takes any not-yet-started (but already arrived) task 𝜏𝑖 and:
+• If 𝜏𝑖 arrived more than 𝜎𝑖 time ago UNK runs 𝜏𝑖⊚ .
+• Otherwise UNK runs 𝜏𝑖q .
+At each time step UNK allocates a processor to each of the at-most𝑝 running serial jobs. There will be at most one parallel task running at a time. If there is a running parallel job UNK allocates any
+processors not being used to run serial jobs to this single running
+parallel job. At any time some tasks may have arrived but not yet
+been started; that is, UNK is not a decide-on-arrival scheduler.
+Now we analyze UNK using two lemmas. As in Section 4 we say
+UNK is saturated on a time step if all 𝑝 processors are in use, and
+unsaturated otherwise. Also, as in the previous section, it suﬃces
+to analyze TAPs where UNK always has at least one uncompleted
+task present at any time from the start of time until the completion
+of the ﬁnal task. We will make this assumption wlog for the rest
+of the section, meaning that the awake time of UNK is equal to the
+completion time.
+
+and so the invariant holds in this case as well. This completes the
+proof of the inductive claim.
+To conclude the lemma we use 𝑖 = |T (𝐼 )| in the inductive claim,
+which gives:
+| T (𝐼 ) |
+
+CBAL ≤ 𝐵/𝑝 + 2 COPT + KOPT
+| T ( I) |
+KOPT /𝑝
+
+Using the fact
+proof of the lemma.
+
+/𝑝.
+
+(3)
+
+≤ COPT in Equation (3) completes the
+
+
+To ﬁnish our analysis of BAL we inductively show that BAL is
+3-competitive on any preﬁx of the OPT-awake-intervals. As a basecase we can take the ﬁrst OPT-awake-interval. Applying Lemma 4.3
+with 𝐵 = 0 shows that BAL is 3-competitive on the ﬁrst OPT-awakeinterval. The inductive step is:
+Corollary 4.4. Let T (𝑖 ) denote the set of tasks that arrive during the ﬁrst 𝑖 OPT-awake-intervals. Assume that BAL is 3-competitive
+with OPT on T (𝑖 ) . Then BAL is 3-competitive with OPT on T (𝑖+1) .
+Proof. Let 𝐼 denote the (𝑖 + 1)-th OPT-awake-interval and let
+T (𝐼 ) denote the set of tasks that arrive during 𝐼 . Let 𝑊 be the
+work performed by BAL before 𝐼 and let 𝐵 denote the work that BAL
+has remaining immediately before the start of 𝐼 . By assumption we
+have
+T (𝑖)
+(𝐵 + 𝑊 )/𝑝 ≤ 3 TOPT
+.
+(4)
+
+Lemma 5.2. UNK is unsaturated at most 1/2 of the time.
+Proof. Let𝑊1 ,𝑊2, . . . denote the maximal intervals of time when
+UNK is saturated; we call these saturated intervals. Similarly we
+refer to maximal intervals where UNK is unsaturated as unsaturated intervals. Observe that, whenever we are in an unsaturated
+interval, every task that has arrived so far either must have already
+completed or must be currently running in serial. That is, during
+an unsaturated interval there are never parallel jobs running and
+there are never jobs sitting around without being started.
+For each saturated interval 𝑊𝑖 let 𝑊𝑖′ denote an interval of the
+same length as 𝑊𝑖 but shifted to start exactly at the end of interval
+Ð
+𝑊𝑖 . We claim that 𝑖 𝑊𝑖′ covers all unsaturated intervals.
+Fix some unsaturated interval [𝑎, 𝑏]. Let 𝜏 𝑗 be the serial task
+with the most remaining work present at time 𝑎. Let 𝑊𝑖 be the saturated interval when 𝜏 𝑗 was started. We will show that [𝑎, 𝑏] ⊆ 𝑊𝑖′ .
+Let 𝑡 denote the time when 𝜏 𝑗 is started. Observe that UNK must be
+saturated for all of [𝑡 𝑗 , 𝑡] or else 𝜏 𝑗 would have been started in parallel. Thus, [𝑡 𝑗 , 𝑡] ⊆ 𝑊𝑖 . Further, observe that 𝑡 − 𝑡 𝑗 ≥ 𝜎 𝑗 , because
+UNK must wait 𝜎 𝑗 time before starting 𝜏 𝑗 in serial. In particular this
+means that |𝑊𝑖 | ≥ 𝜎 𝑗 .
+Next, we claim that at all times in [𝑡, 𝑏], UNK allocates a processor
+to 𝜏 𝑗 . Indeed, suppose that at some time step in [𝑡, 𝑏] 𝜏 𝑗 was not
+allocated a processor. This would mean that there are 𝑝 other serial
+tasks with at least as much remaining work as 𝜏 𝑗 . But in this case
+UNK would remain saturated until 𝜏 𝑗 is completed, contradicting
+the fact that UNK is not saturated during times [𝑎, 𝑏]. Thus, 𝑏 ≤
+𝑡 + 𝜎 𝑗 , and so [𝑎, 𝑏] ⊆ [𝑡, 𝑡 + 𝜎 𝑗 ]. Finally, recall that |𝑊𝑖 | ≥ 𝜎𝑖 so
+[𝑎, 𝑏] ⊆ [𝑡, 𝑡 + |𝑊𝑖 |] and consequently [𝑎, 𝑏] ⊆ 𝑊𝑖′ .
+Ð
+Í
+Of course 𝑖 𝑊𝑖′ ≤ 𝑖 |𝑊𝑖 |. Thus UNK is unsaturated at most
+1/2 of the time.
+
+
+Let CALG for ALG ∈ {BAL, OPT} denote the completion time of ALG
+on the tasks T (𝑖+1) measured from the start of 𝐼 ; i.e., if ALG completes T (𝑖+1) at time 𝑡 ALG and 𝐼 starts at time 𝑡𝐼 then CALG = 𝑡 ALG −𝑡𝐼 .
+By Lemma 4.3 we have
+CBAL ≤ 𝐵/𝑝 + 3 COPT .
+
+(5)
+
+Combining Equation (4), Equation (5) gives
+(𝑖+1)
+
+T
+TBAL
+
+= 𝑊 /𝑝 + CBAL
+≤ 𝑊 /𝑝 + 3 COPT +𝐵/𝑝
+(𝑖)
+
+T (𝐼 )
+
+T
+≤ 3(TOPT
++ TOPT )
+
+= 3 TT
+
+(𝑖+1)
+
+.
+
+
+Using Corollary 4.4 on all the OPT-awake-intervals shows that
+BAL is 3-competitive on T .
+
+
+5
+
+A 6-COMPETITIVE AWAKE-TIME
+SCHEDULER THAT IS PARALLEL-WORK
+OBLIVIOUS
+
+Now we turn our attention to designing a parallel-work-oblivious
+scheduler, which is a scheduler that is not allowed to see the parallel works of each task. We show that it is still possible to construct
+an 𝑂 (1)-competitive scheduler for awake time in this model; this
+contrasts with MRT where Proposition 9.1 asserts that knowledge
+of the parallel works is necessary to achieve a good competitive
+ratio for MRT. In particular, we show:
+
+Lemma 5.3. The amount of time that UNK is saturated is at most
+3 TOPT .
+
+Theorem 5.1. There is a deterministic parallel-work-oblivious 6competitive scheduler for awake time.
+5
+
+Proof. For each task 𝜏, let 𝐴𝜏 be the interval of time between
+Ð
+when 𝜏 arrives and when OPT completes 𝜏. Let 𝐴 = 𝜏 ∈ T 𝐴𝜏 be
+the set of times when OPT has uncompleted tasks, and let 𝐵 denote
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+William Kuszmaul and Alek Westover
+
+6.1 Two Technical Lemmas
+
+the set of times when OPT has no uncompleted tasks present. We
+divide tasks 𝜏 into four categories 1 :
+(1)
+(2)
+(3)
+(4)
+
+In our analyses, it will be helpful to compare two settings: one in
+which a set of jobs 𝐽 must be executed with every job in serial, and
+the other in which the same set of jobs 𝐽 must be executed but
+where every job is perfectly scalable (i.e., 𝜋𝑖 = 𝜎𝑖 ).
+
+UNK runs 𝜏 ⊚ .
+UNK runs 𝜏 q starting at some time after the end of 𝐴𝜏 .
+UNK runs 𝜏 q entirely within time steps in 𝐴.
+UNK starts 𝜏 q during 𝐴𝜏 , but part of 𝜏’s execution time by
+UNK occurs during 𝐵.
+
+Lemma 6.1. Let 𝐽⊚ be a set of serial jobs with arbitrary arrival
+times. Let 𝐽q be jobs of the same work as jobs in 𝐽⊚ but that are perfectly scalable. Then
+
+We now analyze the performance of UNK on each category of
+task.
+
+Õ
+©
+ª
+𝐽⊚
+𝑂 (1) ·𝐽
+TRTOPT
+≤ 𝑂 ­TRTOPT q +
+work( 𝑗𝑖 ) ® .
+𝑗𝑖 ∈ 𝐽⊚
+«
+¬
+Proof. We prove the lemma by constructing a scheduler SSS
+that achieves mean response time at most
+
+Claim 1. UNK’s total work on tasks of category (1) and (2) is at
+most 𝑝 TOPT .
+Proof. For each task 𝜏𝑖 of category (1) OPT must have incurred
+at least 𝜎𝑖 work; this is true of all tasks. For each task 𝜏𝑖 of category
+(2) 𝜏𝑖 has not yet been available for 𝜎𝑖 time steps when UNK starts
+𝜏𝑖 in parallel. Thus, for OPT to have already ﬁnished 𝜏𝑖 by the time
+that UNK starts 𝜏𝑖 OPT must have also run 𝜏𝑖 in parallel. Thus, OPT
+incurs work 𝜋𝑖 for task 𝜏𝑖 . Therefore, OPT incurs at least as much
+work as UNK on all tasks of categories (1) and (2). The amount of
+work that OPT performs is at most 𝑝 TOPT , which then bounds UNK’s
+work on tasks of category (1) and (2).
+
+
+Õ
+©
+ª
+q
+𝑂 ­TRT12𝐽
+work( 𝑗𝑖 ) ® .
+OPT +
+𝑗𝑖 ∈12𝐽⊚
+«
+¬
+The Silly-Serious scheduler SSS operates in 2 modes: silly mode,
+where there are less than 𝑝 unﬁnished jobs alive, and serious mode,
+where there are at least 𝑝 unﬁnished jobs alive. Deﬁne serious intervals and silly intervals to be maximal contiguous sets of time
+where SSS is in the respective modes. When discussing SSS, we
+will assume that it has access to 2𝑝 processors (rather than just 𝑝).
+This can be simulated using a factor-of-2 speed augmentation and
+time sharing.
+During silly mode SSS schedules each job on a single processor.
+As new jobs arrive, once the total number of jobs present reaches
+𝑝, SSS enters serious mode. As a boundary condition, we consider
+any jobs that arrive in that moment to have arrived during the
+serious interval. We refer to the jobs that arrive during the serious
+interval as scary (for this serious interval).
+During a given serious interval, SSS uses 2𝑝 total processors: it
+puts the at-most-𝑝 non-scary jobs from the prior silly interval onto
+𝑝 processors, and it schedules the scary jobs via EQUI on the other
+𝑝 processors.
+We remark that there may be fewer than 𝑝 scary jobs, in which
+case EQUI may want to allocate multiple processors to a single job.
+In this case SSS does not actually schedule the (serial) job on multiple processors but simply runs it on its own processor. Because
+the jobs that SSS is running are serial only, we can think of them
+as having ﬂat speedup curves, i.e. they require the same amount of
+time to run regardless of how many processors they are run on. So,
+when EQUI tries to run a job on multiple processors, the progress
+is the same as if we were to run it on a single processor. Thus we
+can think of SSS as faithfully simulating EQUI on the scary jobs.
+We bound the TRT incurred by SSS with 6 speed augmentation
+by partitioning the TRT into three parts and bounding each part.
+We can bound the total TRT incurred by SSS during silly interÍ
+vals by 𝑗𝑖 ∈ 𝐽⊚ work( 𝑗𝑖 ), because every job has a dedicated processor at all times during a silly interval. Thus we will focus the rest
+of the proof on serious intervals.
+Now we ﬁx a serious interval 𝐼 = [𝑡𝑎 , 𝑡𝑏 ] to analyze. Let 𝑋 ⊚ be
+the scary jobs for 𝐼 , but with each job’s work truncated to be the
+amount of work that the job completes during 𝐼 . Similarly, let 𝑌⊚ be
+the non-scary jobs that run during 𝐼 , but with each of their works
+also reduced to be the work completed by that job during 𝐼 . We
+
+Claim 2. UNK’s work on tasks of category (3) is at most 𝑝 TOPT .
+Proof. Tasks of category (3) all run during time steps in 𝐴, so
+the work spent on such tasks is at most 𝑝 · |𝐴| = 𝑝 TOPT .
+
+Claim 3. UNK’s work on tasks of category (4) is at most 𝑝 TOPT .
+Proof. Let 𝑊1OPT ,𝑊2OPT , . . . denote the (maximal) intervals of
+time when OPT has uncompleted tasks. For each 𝑊𝑖OPT there is at
+most one task 𝜏𝑘𝑖 that UNK starts in parallel during 𝑊𝑖OPT whose
+execution time overlaps with 𝐵: this is because UNK only runs a
+single parallel task at a time. Let 𝐾 denote the set of category (4)
+tasks. For each category (4) task 𝜏𝑘𝑖 ∈ 𝐾, the corresponding 𝑊𝑖OPT
+must have size at least 𝜋𝑘𝑖 /𝑝 because OPT completes task 𝜏𝑘𝑖 during
+𝑊𝑖OPT . Thus,
+Õ
+Õ
+𝜋𝑘𝑖 /𝑝.
+(6)
+|𝑊𝑖OPT | ≥
+TOPT =
+𝑖
+
+𝜏𝑘𝑖 ∈𝐾
+
+The right hand side of Equation (6) is UNK’s work on the category
+(4) tasks, giving the desired bound.
+
+Combining the previous three claims, the total work completed
+by UNK during saturated steps is at most 3𝑝 TOPT . At each saturated
+step 𝑝 units of work are performed. Thus, the total number of saturated time steps is at most 3 TOPT .
+
+Combined, the previous lemmas prove Theorem 5.1.
+
+6
+
+MINIMIZING MRT
+
+In this section we present our main result: a scheduler that, with
+𝑂 (1) speed augmentation, is 𝑂 (1) competitive for MRT (or equivalently TRT).
+1 The
+
+categories are not mutually exclusive. If a task 𝜏 falls in multiple categories we
+over-charge UNK for 𝜏 ’s work.
+6
+
+Scheduling Jobs with Work-Ineﬀicient Parallel Solutions
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+Thus the total response time spent in serious intervals is at most
+q
+2 TRT12𝐽
+OPT , which completes the proof.
+
+
+claim the following chain of inequalities holds for the jobs in the
+serious interval 𝐼 :
+𝑋 ∪𝑌⊚
+
+⊚
+TRTSSS
+
+2(𝑋 ∪𝑌⊚ )
+
+(7)
+
+≤ TRTEQUI⊚
+
+2(𝑋 ∪𝑌 )
+= TRTEQUIq q
+6(𝑋 ∪𝑌 )
+≤ TRTOPT q q
+Õ
+q
+work( 𝑗𝑖 ).
+≤ TRT12𝑋
+OPT +
+𝑗𝑖 ∈12𝑌q
+
+It will also be helpful to consider the setting in which we are
+comparing a set of perfectly scalable jobs to a set of serial jobs that
+arrive slightly later.
+
+(8)
+(9)
+
+Lemma 6.2. Let 𝐽 = { 𝑗1, . . . , 𝑗𝑛 } be a set of perfectly scalable jobs,
+where job 𝑗𝑖 has work 2𝑤𝑖 and arrival time 𝑡𝑖 . Let 𝐾 = {𝑘 1, . . . , 𝑘𝑛 }
+be a set of serial jobs where job 𝑘𝑖 has work at most 𝑤𝑖 and arrival
+time 𝑡𝑖 + 𝑤𝑖 . Then,
+!
+Õ
+𝑂 (1) ·𝐽
+𝐾
+𝑤𝑖 .
+TRTOPT ≤ 𝑂 TRTOPT +
+
+(10)
+
+𝑋 ∪𝑌
+
+⊚
+⊚
+represents the TRT for SSS
+Note that the ﬁrst expression TRTSSS
+during serious interval 𝐼 .
+Inequality (7): SSS’s treatment of 𝑋 ⊚ ∪𝑌⊚ on 2𝑝 processors (which
+it is granted via factor-of-2 speed augmentation) is at least as good
+as running EQUI on 𝑋 ⊚ ∪ 𝑌⊚ with 𝑝 processors, because SSS runs
+EQUI on 𝑋 ⊚ and then separately allocates one processor to each
+job in 𝑌⊚ .
+Inequality (8): We denote by 𝑋 q, 𝑌q perfectly scalable versions of
+the jobs in 𝑋 ⊚, 𝑌⊚ . Since there are at least 𝑝 jobs at all times during a serious interval, EQUI’s treatment of 2(𝑋 ⊚ ∪ 𝑌⊚ ) and EQUI’s
+treatment of 2(𝑋 q ∪ 𝑌q ) are actually the same: it equally partitions
+the processors amongst the available jobs, potentially using time
+sharing; crucially EQUI never assigns more than 1 processor to any
+job because there are a suﬃciently large number of jobs.
+Inequality (9): By Theorem 2.1 EQUI on 2(𝑋 q ∪ 𝑌q ) is 𝑂 (1) competitive with OPT on 6(𝑋 q ∪ 𝑌q ).
+Inequality (10): OPT on 6(𝑋 q ∪ 𝑌q ) using 𝑝 processors is at least
+as good as OPT on 12(𝑋 q ∪ 𝑌q ) using 2𝑝 processors. This, in turn, is
+at least good as the TRT incurred by OPT on 12𝑋 q using 𝑝 processors plus the TRT incurred by OPT on 12𝑌q using 𝑝 processors, i.e.,
+Í
+6𝑌q
+12𝑌q
+q
+TRT6𝑋
+𝑗𝑖 ∈12𝑌q work( 𝑗𝑖 ), we
+OPT + TRTOPT . Finally, since TRTOPT ≤
+get (10) as desired.
+Total TRT incurred by serious intervals: We can now bound the
+total TRT incurred by serious intervals as follows. Let 𝐼 1, 𝐼 2, . . . be
+(1)
+(2)
+(1) (2)
+the serious intervals, and deﬁne 𝑋 q , 𝑋 q , . . . and 𝑌q , 𝑌q , . . .
+(𝑘 )
+(𝑘 )
+so that 𝑋 q is 𝑋 q for interval 𝐼𝑘 and 𝑌q is 𝑌q for interval 𝐼𝑘 . The
+(𝑘 )
+(𝑘 )
+jobs in each 𝑋 q and each 𝑌q represent portions of jobs from 𝐽q .
+Note that, although a given job from 𝐽q could appear in multiple
+(𝑘 )
+(𝑘 )
+𝑌q ’s, each job appears in at most one 𝑋 q since each job can be
+scary in at most one serious interval.
+By the inequalities above, we have that the total response time
+spent in serious intervals is at most
+
+Õ©
+(𝑘 )
+­TRT12𝑋q +
+­
+OPT
+𝑘
+
+«
+
+Õ
+
+(𝑘 )
+
+𝑗𝑖 ∈12𝑌q
+
+𝑖
+
+Proof. Deﬁne 𝐽 ′ to be the set of jobs 𝐽 , but where each job is
+serial rather than perfectly scalable. Then
+′
+
+𝐽
+TRT𝐾
+OPT ≤ TRTOPT ,
+
+since when scheduling a serial job with 2𝑤𝑖 work, we would rather
+the job have 𝑤𝑖 less work than have the same job show up at time
+𝑤𝑖 earlier. Finally, by Lemma 6.1,
+!
+Õ
+12·𝐽
+𝐽′
+≤ 𝑂 TRTOPT
++
+TRTOPT
+𝑤𝑖 .
+𝑖
+
+This completes the proof.
+
+6.2 A Cancelling Scheduler
+In this subsection we deﬁne and analyze a scheduler CANC to prove
+Theorem 6.3. Note that CANC uses cancelling, i.e. can kill tasks and
+restart them with a diﬀerent implementation; in Theorem 6.6 we
+remove the need for cancelling.
+Theorem 6.3. There is an online scheduler which, using 𝑂 (1)
+speed augmentation and cancelling, is 𝑂 (1) competitive for MRT.
+We now describe the operation of CANC on TAP T . CANC starts by
+deﬁning a set of “relaxed jobs” 𝐽 ′ which incorporate the serial and
+parallel jobs from T into their speed-up curves; CANC will simulate
+running jobs 𝐽 ′ as a subroutine to determine how to schedule T .
+In particular, for each task 𝜏𝑖 ∈ T we form a relaxed job 𝑗𝑖′ ∈ 𝐽 ′
+with total work 2𝜎𝑖 and the following speedup curve:
+• 𝑗𝑖′ receives no speedup on 𝑥 < 𝜋𝑖 /𝜎𝑖 processors.
+• 𝑗𝑖′ receives speedup 𝑥 · 𝜎𝑖 /𝜋𝑖 on 𝑥 ≥ 𝜋𝑖 /𝜎𝑖 processors.
+When describing CANC we will assume that it has access to 2𝑝
+processors; this can be simulated using a factor-of-2 speed augmentation. CANC schedules T as follows:
+• CANC maintains a pool of 𝑝 processors for running parallel
+jobs and a pool of 𝑝 processors for running serial jobs.
+• Initially tasks are placed in the parallel pool and will be run
+with their parallel implementation.
+• CANC manages the parallel pool by simulating EQUI on the
+relaxed jobs 𝑗𝑖′ and then actually running 𝜏𝑖q during the simulated execution slots for 𝑗𝑖′ .
+• Whenever a task 𝜏𝑖 been in the parallel pool for time at least
+𝜎𝑖 , CANC cancels task 𝜏𝑖 (which was running as job 𝜏𝑖q ) and
+restarts 𝜏𝑖 as job 𝜏𝑖⊚ in the serial pool.
+
+ª
+work( 𝑗𝑖 ) ®® .
+
+(𝑘 )
+one 𝑋 q ,
+
+Since each job in 𝐽q appears in at most
+Õ
+12𝑋 (𝑘 )
+q
+TRTOPT q ≤ TRT12𝐽
+OPT .
+
+¬
+
+we have that
+
+𝑘
+
+(𝑘 )
+
+Moreover, since the jobs in the 𝑌q ’s each represent disjoint portions of the jobs in 𝐽q , we have that
+Õ Õ
+Õ
+12𝐽
+work( 𝑗𝑖 ) ≤ TRTOPTq .
+work( 𝑗𝑖 ) ≤
+𝑘 𝑗𝑖 ∈12𝑌 (𝑘 )
+q
+
+
+
+𝑗𝑖 ∈12𝐽q
+
+7
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+William Kuszmaul and Alek Westover
+
+By Theorem 2.1, this is at most
+
+• CANC manages the serial pool with the EQUI strategy.
+
+First we must establish that CANC is a valid schedule, i.e. each
+task 𝜏𝑖 is completed by CANC. This is a concern because CANC computes a schedule for the relaxed jobs, and assumes that the actual
+tasks are completed by running during the time slots of their corresponding relaxed job.
+
+′
+
+By Lemma 6.2,
+
+Õ
+ª
+©
+3𝐽⊚2
+𝑂 (1) ·𝐽 1
+work( 𝑗) ®® .
+TRTOPT
+≤ 𝑂 ­­TRTOPT q +
+𝑗 ∈ 𝐽⊚2
+¬
+«
+
+Proposition 6.4. CANC completes all tasks.
+
+𝑂 (1) ·𝐽q1
+
+Since TRTOPT
+
+Proof. Tasks placed in the serial pool are clearly completed. We
+proceed to argue that tasks never placed in the serial pool are ﬁnished in the parallel pool. Consider some job 𝑗𝑖′ that ﬁnishes in the
+parallel pool, i.e. ﬁnishes in time less than 𝜎𝑖 ; this corresponds to
+a task 𝜏𝑖 that is never placed in the serial pool because its corresponding relaxed job ﬁnishes in the parallel pool. We say that 𝑗𝑖′
+executes in “parallel mode” when executing on at least 𝜋𝑖 /𝜎𝑖 processors, and in “serial mode” otherwise.
+For each 𝑥 ∈ [𝑝], deﬁne 𝑓𝑥 to be the amount of time that 𝑗𝑖′
+spends executing on (exactly) 𝑥 processors. Then the progress completed by job 𝑗𝑖′ is
+Õ
+Õ
+𝑓𝑥 +
+𝑓𝑥 · 𝑥 · 𝜎𝑖 /𝜋𝑖 .
+𝑥 <𝜋𝑖 /𝜎𝑖
+
+𝜏𝑖 ∈ T ′
+
+which by Theorem 2.1 implies that
+
+
+Õ
+𝑂 (1) ·𝐽 ′
+𝜎𝑖 ≤ 𝑂 TRTOPT
+.
+Thus
+
+𝑥 >𝜋𝑖 /𝜎𝑖
+
+𝑥 >𝜋𝑖 /𝜎𝑖
+
+𝑓𝑥 · 𝑥 ≥ 𝜋𝑖 .
+
+𝜏𝑖 ∈ T ′
+
+
+
+𝑂 (1) ·𝐽 ′
+T
+TRTCANC
+≤ 𝑂 TRTOPT
+,
+
+which by Proposition 6.5 completes the proof.
+
+This implies that 𝜏𝑖q , which also spends 𝑓𝑥 time on 𝑥 processors for
+each 𝑥 ∈ [𝑝], successfully completes.
+
+
+
+
+6.3 A Non-Cancelling Scheduler
+Now we show how to convert CANC from Theorem 6.3 to a noncancelling scheduler. This is the most technically diﬃcult section
+of the paper.
+
+The reason that we refer to relaxed jobs as “relaxed” is because
+there is a sense in which they are strictly easier to schedule than
+T . We formalize this in the following lemma.
+
+Theorem 6.6. There is an online scheduler that, with 𝑂 (1) speed
+augmentation and without use of cancelling, is 𝑂 (1) competitive
+for MRT.
+
+Proposition 6.5.
+
+Up to a factor of 2 in speed augmentation, we can assume without loss of generality that every 𝜎𝑖 and 𝜋𝑖 is a power of two—to simplify our exposition, we shall make this wlog assumption throughout the rest of the section.
+We say that a task 𝜏𝑘 is of type (2𝒋 , 2 𝒊 ) if log 𝜎𝑘 = 𝑖 and log 𝜋𝑘 =
+𝑖 + 𝑗. In other words, the job has parallelism 2 𝑗 and serial work 2𝑖 .
+We also partition the jobs into parallelism classes, where the 2𝒋
+parallelism class consists of tasks satisfying 𝜋𝑘 /𝜎𝑘 = 2 𝑗 .
+Our ﬁrst lemma shows that we can modify the scheduler CANC
+from Theorem 6.3 to obtain a “just as good” scheduler which only
+runs one task of each type in parallel at a time.
+
+′
+
+𝐽
+TRTOPT
+≤ TRT2T
+OPT .
+
+Proof. A schedule for completing 2T can be used to to perform
+𝐽 ′ by running 𝑗𝑖′ in the time slot for 2𝜏𝑖 .
+
+We now bound the cost of CANC, thereby proving Theorem 6.3.
+Proof of Theorem 6.3. Let 𝐽⊚1 denote the serial jobs that end
+up in the serial pool. Let 𝐽q2 denote the jobs in 𝐽⊚1 but modiﬁed to
+be perfectly scalable. And let 𝐽⊚2 denote the jobs in 𝐽⊚1 but with the
+arrival time of each job 𝑗𝑖′ arrival time delayed by 𝜎𝑖 (i.e., delayed to
+be the time at which 𝑗𝑖′ is placed in the serial pool by CANC). CANC’s
+TRT is bounded by:
+′
+
+, it follows that
+
+Õ ª
+©
+𝑂 (1) ·𝐽 ′
+T
+TRTCANC
+≤ 𝑂 ­TRTOPT
+𝜎𝑖 ® .
++
+𝜏𝑖 ∈ T ′ ¬
+«
+Notice, however, that by design, TRTCANC only runs a task 𝜏𝑖 in
+serial mode if, when we run EQUI on 𝐽 ′ , the job 𝑗𝑖′ incurs at least
+𝜎𝑖 response time. Thus
+Õ
+𝐽′
+𝜎𝑖 ≤ TRTEQUI
+,
+
+𝑥 >𝜋𝑖 /𝜎𝑖
+
+Õ
+
+𝑂 (1) ·𝐽 ′
+
+≤ TRTOPT
+
+Õ
+ª
+©
+𝑂 (1) ·𝐽 ′
+T
+work( 𝑗) ®® .
+TRTCANC
+≤ 𝑂 ­­TRTOPT
++
+𝑗 ∈ 𝐽⊚2
+¬
+«
+′
+In other words, deﬁning T to be the set of tasks in T that CANC
+runs in serial mode, we have
+
+Job 𝑗𝑖′ completes once it has made 2𝜎𝑖 progress. At least half of
+the progress on 𝑗𝑖′ must have been made in parallel mode, because
+there is insuﬃcient time to achieve 𝜎𝑖 progress in serial mode. But
+this implies that
+Õ
+𝑓𝑥 · 𝑥 · 𝜎𝑖 /𝜋𝑖 ≥ 𝜎𝑖
+and thus that
+
+3𝐽 2
+
+⊚
+TRT3𝐽
+OPT + TRTOPT .
+
+Lemma 6.7. There exists an online scheduler 𝐵 that, with cancelling and 𝑂 (1) speed augmentation is 𝑂 (1) competitive for MRT.
+Furthermore, 𝐵 guarantees that at most one task of each type is run
+via its parallel implementation at any time. Moreover, for any task
+
+𝐽2
+
+𝐽
+T
+⊚
+TRTCANC
+≤ TRTEQUI
+.
++ TRTEQUI
+8
+
+Scheduling Jobs with Work-Ineﬀicient Parallel Solutions
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+mode (although the class may already be in emergency mode due
+to other tasks in the class already being in ballistic mode). When
+a parallelism class is in emergency mode, all of the parallel work
+that 𝐵 performs is allocated by 𝐶 to the smallest ballistic task in the
+parallelism class (we will see later that there are no ties here, but
+as we have not proven that yet, assume ties are broken arbitrarily).
+Note that non-ballistic tasks lose work in 𝐶 compared to 𝐵 when
+their parallelism class is in emergency mode (i.e., when a nonballistic task 𝜏’s parallelism class is in emergency mode, it is possible that 𝐶 does work on 𝜏 while 𝐵 does not). If a non-ballistic task
+𝜏𝑖 loses 𝑞 total parallel work to some ballistic task 𝜏𝑘 , then we say
+that 𝜏𝑘 stole 𝑞 work from 𝜏𝑖 . We emphasize that this stolen work
+is not queued up to be done later by 𝜏𝑖 , it is just lost. Thus it is possible for a task 𝜏 to ﬁnish running in parallel in 𝐵 without ﬁnishing
+in 𝐶. If this happens, and 𝜏 is already vested in 𝐶, then the task
+𝜏 also enters ballistic mode; otherwise, if 𝜏 is not yet vested in 𝐶,
+then the task 𝜏 enters what we call semi-ballistic mode. Thus, a
+task 𝜏 enters ballistic mode if it is already vested and is then either
+cancelled or completed by 𝐵; and a task 𝜏 enters semi-ballistic mode
+if 𝐵 completes it in parallel, but if, at that point in time, 𝐶 has not
+even vested it.
+The tasks in semi-ballistic mode are executed as serial jobs on
+𝑝 processors using EQUI. Finally, the remaining 2𝑝 processors are
+allocated by 𝐶 as follows: 𝐶 allocates 𝑝/2𝑖 processors to each parallelism class 2𝑖 . Whenever the parallelism class is in emergency
+mode, those processors are allocated as extra processors to the
+smallest ballistic task in the class. This completes the description
+of 𝐶.
+Now let us turn to the analysis of 𝐶. Let T0 denote the set of
+tasks that enter ballistic mode and T1 denote the set of tasks that
+enter semi-ballistic mode.
+
+𝜏𝑖 that 𝐵 completes in parallel, 𝐵 is guaranteed to complete that task
+within time 𝜎𝑖 of the task arriving.
+Proof. Recall that CANC runs EQUI on tasks in the parallel pool
+until their serial time has elapsed. If a task 𝜏𝑘 is in the parallel pool
+for longer than 𝜎𝑘 , CANC cancels 𝜏𝑘 and restarts it in the serial pool
+via 𝜏𝑘⊚ .
+Our task is to construct 𝐵 so that
+T
+TRT𝐵T ≤ TRTCANC
+.
+
+(11)
+
+𝐵 runs CANC on the parallel pool, except it concentrates all of
+CANC’s work on each task type into a single task of that type. That
+is, if CANC allocates 𝑘 processors to tasks of type (2 𝑗 , 2𝑖 ) in the parallel pool on a certain time step, then 𝐵 will allocate 𝑘 processors
+to the current running task of type (2 𝑗 , 2𝑖 ) (if 𝐵 has a task of this
+type). The scheduler 𝐵 also copies CANC’s cancellation behavior as
+follows: when CANC cancels a task of type (2 𝑗 , 2𝑖 ), 𝐵 attempts to
+cancel a task of the same type that is not currently running, and
+then restart that task in the serial pool; if there is only one task
+of the type (2 𝑗 , 2𝑖 ) running in 𝐵, then 𝐵 cancels the running task
+and restarts it in the serial pool; and ﬁnally, if there are no tasks of
+this type in 𝐵, then 𝐵 does nothing and places a fake task of type
+(2 𝑗 , 2𝑖 ) in the serial pool. This behavior ensures that the serial pool
+for 𝐵 receives tasks of exactly the same types (and at exactly the
+same times) as the serial pool for CANC.
+The point of this construction is that, at any given moment the
+number of tasks of each type that 𝐵 has either completed or evicted
+from the parallel pool is trivially guaranteed to be at least as large
+as that of CANC. The serial pools of CANC and 𝐵 are identical (with
+the fake tasks included). Hence the number of tasks alive for 𝐵 at
+any given moment is at most as large as in CANC. So 𝐵 achieves
+MRT at least as good as CANC on T .
+
+
+Lemma 6.8. Each task 𝜏𝑖 ∈ T0 spends at most 2𝜎𝑖 time in ballistic
+mode.
+
+Now we present a non-cancelling scheduler 𝐶 that, with 𝑂 (1)
+speed augmentation, is 𝑂 (1) competitive with 𝐵 for TRT.
+Up to a factor of 4 speed augmentation, we can assume that 𝐶
+has 4𝑝 processors. We will make this assumption (without loss of
+generality) throughout the rest of the proof and keep the speed
+augmentation implicit. Thus, for the rest of the proof, we assume
+both that for every task 𝜏 ∈ T , 𝜎𝑖 and 𝜋𝑖 are powers of two, and
+that 𝐶 is given 4𝑝 processors.
+To clarify our exposition, when discussing 𝐵, we will make a
+distinction parallel work (i.e., work on parallel jobs) and serial
+work (i.e., work on serial jobs) performed by 𝐵. Note that the parallel work on a job in a time interval [𝑎, 𝑏] is deﬁned as the integral
+over [𝑎, 𝑏] of the number of processors allocated to the job at each
+point in time.
+As we run the scheduler 𝐶, we will also simulate 𝐵 running 3T
+with 𝑝 processors. The scheduler 𝐶 will attempt to use 𝑝 of its processors to copy 𝐵’s behavior. Of course, as 𝐵 is a cancelling scheduler, 𝐶 will not be able to precisely copy 𝐵. The challenge will be to
+somehow achieve an MRT competitive with 𝐵’s MRT, but without
+cancelling.
+Call a task in 𝐶 vested if it has actually started executing in
+parallel in 𝐶. 𝐶 can copy 𝐵’s behavior except for when 𝐵 cancels a
+vested task (to be restarted in serial). Whenever 𝐵 cancels a vested
+task 𝜏, the task 𝜏 enters ballistic mode. Whenever a task 𝜏 enters
+ballistic mode, we say that its parallelism class enters emergency
+
+Proof. Whenever 𝜏𝑖 in parallelism class 2 𝑗 is actually executing
+in ballistic mode (i.e., it is the smallest ballistic task from its parallelism class), it is given at least 𝑝/2 𝑗 processors. Thus it spends
+at most 𝜋𝑖 /(𝑝/2 𝑗 ) = 𝜎𝑖 time executing in ballistic mode. Additionally, 𝜏𝑖 may spend time in ballistic mode waiting on other (smaller)
+ballistic tasks to complete.
+Once a parallelism class enters emergency mode, it stops vesting
+new tasks. Let 𝑡 be the time at which 𝜏𝑖 entered ballistic mode, and
+let 𝑡 ′ be the most recent time 𝑡 ′ ≤ 𝑡 at which the 2 𝑗 parallelism
+class entered emergency mode. Any tasks in parallelism class 2 𝑗
+that are ballistic at the same time as 𝜏𝑖 must have been running
+in 𝐵 at time 𝑡 ′ . There can be at most one such task (including 𝜏𝑖 )
+of each parallel power-of-two serial size 𝜎 ′ ≤ 𝜎𝑖 . Since each task
+in ballistic mode of some size 𝜎 ′ spends at most 𝜎 ′ time actually
+executing in ballistic mode, the total time that 𝜏𝑖 spends waiting
+on smaller ballistic tasks to ﬁnish is at most
+∞
+Õ
+𝑟 =1
+
+This complete the proof.
+9
+
+𝜎𝑖 /2𝑟 ≤ 𝜎𝑖 .
+
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+William Kuszmaul and Alek Westover
+
+𝑂 (1) · T
+
+Since the sum of the serial lengths of the easy tasks is 𝑂 (TRTOPT
+
+Lemma 6.9. The total response time incurred by the tasks T1 while
+in semi-ballistic mode in 𝐶 is at most
+
+𝑂 (1) · T
+).
+is 𝑂 (TRTOPT
+
+the number of tokens paid to easy tasks upfront
+On the other hand, the number of tokens paid by ballistic and semiballistic tasks to the scheduler is
+Õ
+𝜎𝑖 .
+
+Õ ª
+©
+𝑂 (1) · T
+𝑂 ­TRTOPT
++
+𝜎𝑖 ® .
+𝜏𝑖 ∈ T0 ¬
+«
+
+𝜏𝑖 ∈ T0 ∪T1
+
+Proof. For each job 𝜏𝑖 ∈ T1 , deﬁne 𝑥𝑖 to be a serial job of size 3𝜎𝑖
+whose arrival time is the time at which 𝜏𝑖 goes semi-ballistic in 𝐶;
+and deﬁne 𝑦𝑖 to be a perfectly scalable job of size 18𝜎𝑖 whose arrival
+time is simply 𝑡𝑖 . Let 𝑋 = {𝑥𝑖 | 𝜏𝑖 ∈ T1 } and let 𝑌 = {𝑦𝑖 | 𝜏𝑖 ∈ T1 }.
+The total response time incurred by the tasks T1 while in semiballistic mode in 𝐶 is at most TRT𝑋
+EQUI . By Theorem 2.1, this is at
+3𝑋
+most TRTOPT . By Lemma 6.2, this is at most
+Õ ª
+©
+𝑂 ­TRT18𝑌
+𝜎𝑖 ® .
+OPT +
+𝜏𝑖 ∈ T0 ¬
+«
+
+𝑂 (1) · T
+
+Since TRT18𝑌
+OPT ≤ TRTOPT
+
+Thus, to complete the proof, it suﬃces to show that no task has a
+negative number of tokens when it completes.
+For each task 𝜏𝑖 that goes ballistic or semi-ballistic in some parallelism class 2 𝑗 , the total number of tokens that it ever spends is
+at most 𝜎𝑖 (paid to the scheduler) plus 𝜋𝑖 /2 𝑗 = 𝜎𝑖 (paid to other
+tasks that 𝜏𝑖 stole work from while being ballistic). Thus it suﬃces
+to show that every task 𝜏𝑖 that goes ballistic or semi-ballistic earns
+at least 2𝜎𝑖 tokens during its lifetime.
+If the task 𝜏𝑖 is easy, then it trivially receives 2𝜎𝑖 tokens upfront.
+Otherwise, if a non-easy task 𝜏𝑖 in some parallelism class 2 𝑗 goes
+ballistic or semi-ballistic, then it must have had at least 2𝜋𝑖 parallel work stolen from it by ballistic tasks in its parallelism class
+(because 𝐵 completed 3𝜋𝑖 parallel work on the task, but 𝐶 completed less than 𝜋𝑖 ). This means that the task was paid at least
+2𝜋𝑖 /2 𝑗 = 2𝜎𝑖 tokens, which completes the proof.
+
+
+, the lemma follows.
+
+
+The only way that a task can be present in 𝐶 but not in 𝐵 is if
+the task is either in ballistic or semi-ballistic mode. It follows by
+Lemmas 6.7, 6.8, and 6.9 that
+Õ
+©
+ª
+𝑂 (1) · T
++
+≤ 𝑂 ­TRTOPT
+𝜎𝑖 ® .
+𝜏𝑖 ∈ T0 ∪T1 ¬
+«
+Thus, to complete the analysis of 𝐶, it suﬃces to bound
+Õ
+𝜎𝑖 .
+TRT𝐶T
+
+Combining Lemma 6.10 with (12), we have completed the proof
+of Theorem 6.6.
+
+(12)
+
+7 GENERALIZATION: TAPS WITH
+DEPENDENCIES
+We now consider a generalization of the serial-parallel decision
+problem in which tasks can have dependencies—a given task 𝜏𝑖 will
+not arrive until all of the other tasks on which it depends are complete. For this section, we focus exclusively on optimizing awake
+time—note that, if the tasks correspond to components of a parallel program, the awake time corresponds to the completion time
+of the parallel program.
+A DTAP D (TAP with dependencies) is a set of tasks 𝜏𝑖 speciﬁed by 𝜎𝑖 , 𝜋𝑖 , 𝑡𝑖 along with an associated set 𝐷𝑖 ⊂ [𝑛] (potentially empty) of tasks that must be completed before task 𝜏𝑖 can
+be started. That is, task 𝜏𝑖 becomes available only when the time 𝑡
+satisﬁes 𝑡 > 𝑡𝑖 and furthermore all tasks 𝜏 𝑗 ∈ 𝐷𝑖 have already been
+completed. Of course, the dependency structure must form a DAG,
+or else it is impossible to run all tasks. We are interested in an online scheduler, which in this case means that the scheduler does
+not know anything about task 𝜏𝑖 until the task becomes available
+to run.
+√
+The following propositions establish a tight bound of Θ( 𝑝) on
+the optimal competitive ratio achievable by an online scheduler.
+The lower bound holds even for the case where the DTAP dependencies are required to form a tree.
+
+𝜏𝑖 ∈ T0 ∪T1
+
+This is achieved through a charging argument in the following
+lemma.
+Lemma 6.10.
+
+Õ
+
+𝜏𝑖 ∈ T0 ∪T1
+
+𝜎𝑖 ≤ 𝑂 (TRT3T
+OPT ).
+
+Proof. If a task 𝜏 enters ballistic or semi-ballistic mode because
+𝐵 placed 𝜏 into serial mode (i.e., 𝜏 was either canceled by 𝐵 or was
+never even run in parallel mode by 𝐵), then call 𝜏 easy. By the
+analysis of CANC the sum of the serial lengths of the easy tasks is
+𝑂 (1) · T
+).
+𝑂 (TRTOPT
+Call the other tasks that enter ballistic or semi-ballistic mode
+hard. The hard tasks are the ones that went ballistic or semi-ballistic
+only because of other ballistic jobs stealing their parallel processing times—this causes the task to complete in the parallel pool for
+𝐵 without completing for 𝐶.
+Each easy task 𝜏𝑖 is paid 2𝜎𝑖 tokens upfront. Whenever any task
+𝜏𝑖 in 𝐶 has its parallel work (that 𝐵 wishes to perform on it) stolen
+by a ballistic task 𝜏𝑘 , the ballistic task 𝜏𝑘 pays tokens to the task
+𝜏𝑖 proportionally to the work that is stolen: if both tasks are in the
+2 𝑗 parallelism class, and task 𝜏𝑘 stole 𝑞 parallel processing time
+from task 𝜏𝑖 (here we are deﬁning parallel processing time to be
+the integral over time of the number of processors that 𝜏𝑘 stole
+from 𝜏𝑖 ), then 𝜏𝑘 pays 𝜏𝑖 a total of 𝑞/2 𝑗 tokens. Finally, whenever a
+task 𝜏𝑖 enters either ballistic or semi-ballistic mode, the task pays
+𝜎𝑖 tokens to the scheduling algorithm.
+
+Proposition 7.1. For any (potentially randomized) online scheduler ALG, there exists a DTAP where ALG’s awake-time competitive
+√
+ratio is Ω( 𝑝) with high probability in 𝑝.
+Proof. For convenience, we will discuss the DTAP as being randomly chosen from a set of DTAPs. Of course, if all schedulers ALG
+√
+have competitive ratio Ω( 𝑝) with high probability for randomly
+10
+
+),
+
+Scheduling Jobs with Work-Ineﬀicient Parallel Solutions
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+Let 𝑆 be the amount of time that TURTLE on D ′ is saturated (i.e.,
+has at least 𝑝 tasks) and 𝑈 be the amount of time that TURTLE is
+D ′ be the time that it would take to perform D ′
+unsaturated. Let T∞
+by running each task in serial on its own processor (i.e., imagining
+that we had inﬁnitely many processors). Observe that
+√ D′
+D′
+𝑈 ≤ T∞
+≤ 𝑝 TOPT
+
+chosen DTAPs from a class, then there exists some DTAP in the
+class for which a given ALG is very likely to perform
+√ poorly on.
+We consider a class of DTAPs which consist of 𝑝 levels. Each
+√ 
+level of these DTAPs consists of
+𝑝 tasks with serial work 1
+√ 
+√
+and parallel work 𝑝. Of the 𝑝 tasks on each level exactly one
+√ 
+𝑝 more tasks which form the
+randomly chosen task spawns
+next level. In particular, this single task is the sole dependency for
+all tasks on the next level. All the tasks in the DTAP have 𝑡𝑖 = 0, so
+each task arrives immediately once all the tasks it depends on are
+completed.
+OPT, knowing the dependencies, could ﬁrst run all the spawning
+tasks via their parallel implementations to unlock all tasks after
+√ √
+time 𝑝 𝑝/𝑝 ≤ 1. Next, OPT can schedule the remaining ⌊𝑝⌋ 2 −
+√ 
+𝑝 serial tasks via their serial implementations. Doing so OPT
+achieves awake time of at most 2.
+However, a scheduler ALG that is unaware of the dependencies
+will likely require much longer on this DTAP. If ALG is not willing
+to run more than 1/2 of the tasks in a level via parallel implementations then there is at least a 1/2 chance that it requires time 1 to
+pass the level due to running the spawning task in serial. However,
+if the ALG is willing to run at least 1/2 of the tasks in parallel then
+in expectation it requires at least 1/4 time to uncover the spawning task. Either way, with constant probability ALG spends Ω(1)
+time on each level. Thus, with high probability in 𝑝 the scheduler
+√
+requires Ω( 𝑝) total time to complete the DTAP.
+
+
+where the second inequality is due to the fact that tasks in D ′
+are not-very-parallel; in particular, if we ran each task in serial
+√
+on its own 𝑝-speed-augmented processor then the tasks would
+certainly complete no later than OPT. We also have
+Õ
+D′
+𝜎𝑖 /𝑝 ≤ TOPT
+𝑆≤
+𝑖 ∈ [𝑛 ]
+
+because because total work is a lower bound on OPT’s awake time.
+Combining our bounds on 𝑈 , 𝑆 we have we have
+√
+D′
+D′
+TTURTLE
+≤ 𝑂 ( 𝑝) · TOPT
+.
+
+
+8 AWAKE-TIME LOWER BOUNDS
+In this section we present several lower bounds for awake time.
+Proposition 8.1. No deterministic online scheduler can have competitive ratio smaller than 𝜙 − 1/𝑝.2
+Proof. Fix a deterministic scheduler ALG. Consider a TAP with
+𝜎1 = 𝜙, 𝜋1 = 𝑝. If ALG schedules 𝜏1 in serial ALG fails to be better
+than 𝜙 competitive in the case that no more tasks arrive. If ALG
+waits at least 1/𝜙 time before scheduling 𝜏1 then ALG also fails to
+be better than 𝜙 competitive if no more tasks ever arrive. If instead
+ALG schedules 𝜏1 in parallel at some time 𝑡 0 < 1/𝜙 and then 𝑝 − 1
+un-parallelizable tasks arrive right after 𝑡 0 with 𝜎𝑖 = 𝜙 − 𝑡 0 , then
+OPT achieves awake time 𝜙 due to having chosen to run every task
+in serial while ALG’s awake time is at least
+𝑝 + (𝑝 − 1)(𝜙 − 𝑡 0 )
+𝑝 + 𝑝 (𝜙 − 𝑡 0 )
+𝑡0 +
+≥ 𝑡0 +
+− 𝜙/𝑝
+𝑝
+𝑝
+= 1 + 𝜙 − 𝜙/𝑝
+
+Proposition 7.2. There exists an online DTAP scheduler that is
+√
+𝑂 ( 𝑝) competitive for awake-time.
+Proof. Fix a DTAP D with 𝑛 tasks. It suﬃces to consider a
+DTAP where our scheduler always has at least one available uncompleted task, i.e., the case where its awake time and completion
+time are the same.
+√
+We say that a task 𝜏𝑖 is fairly-parallel if 𝜋𝑖 /𝑝 < 𝜎𝑖 / 𝑝, and
+not-very-parallel otherwise. The TURTLE scheduler runs fairlyparallel tasks in parallel and not-very-parallel tasks in serial. TURTLE
+schedules the available tasks as follows:
+• Whenever there is an available fairly-parallel task allocate
+all processors to a fairly-parallel task.
+• If all available tasks are not-very-parallel, and there are 𝑘
+such tasks, then allocate a processor to each of the min(𝑝, 𝑘)
+present jobs with the largest remaining serial works.
+
+= 𝜙 2 − 𝜙/𝑝.
+
+So ALG’s competitive ratio is at least 𝜙 − 1/𝑝.
+
+Now we consider the decide-on-arrival model. We can prove
+a stronger lower bound in the decide-on-arrival model than the
+Proposition 8.1, and we conjecture that this separation is real.
+
+Now we analyze the performance of the TURTLE scheduler. First
+we consider the time that TURTLE spends running fairly-parallel
+tasks. Let Dq ⊆ D be the fairly-parallel tasks. The time that TURTLE
+spends running tasks in Dq is
+Õ
+Õ
+√
+√ D
+√ Õ
+𝜋𝑖 /𝑝 ≤
+𝜎𝑖 / 𝑝 ≤ 𝑝
+𝜎𝑖 /𝑝 ≤ 𝑝 TOPT
+.
+𝑖 |𝜏𝑖 ∈ Dq
+
+𝑖 |𝜏𝑖 ∈ Dq
+
+
+
+Proposition 8.2. No deterministic
+scheduler has
+
+ decide-on-arrival
+log 𝑝
+competitive ratio better than 2 − Ω 𝑝 .
+Proof. Fix a deterministic scheduler ALG. Let 𝑘 = ⌊log 𝑝⌋. Con𝑝
+sider the TAP T1 where 𝜎𝑖 = 2𝑖 , 𝜋𝑖 = 2𝑖 −1𝑝 for 𝑖 ∈ [𝑘]. In T1𝑘
+tasks run twice as fast as their serial run time if they are fully parallelized. Furthermore task 𝜏𝑖 is twice as large as task 𝜏𝑖 −1 . The
+arrival times for tasks in this TAP are separated by inﬁnitesimal
+𝑝
+amounts of time. The ﬁnal 𝑝 − 𝑘 tasks of T1 are un-parallelizable
+tasks with 𝜎𝑖 = 2𝑘 which all arrive instantly after 𝜏𝑘 .
+
+𝑖 ∈ [𝑛 ]
+
+√
+D
+D it remains to bound
+Thus, in order to prove TTURTLE
+≤ 𝑂 ( 𝑝) TOPT
+the time that TURTLE spends executing not-very-parallel tasks. Let
+D ′ be a new DTAP where we set the size of all fairly-parallel tasks
+to 0. Observe that the time that TURTLE spends executing not-veryparallel tasks is the same in both D, D ′ because in D we always
+preempt not-very-parallel tasks if fairly-parallel tasks are available
+D′
+and run fairly-parallel tasks. Thus, it suﬃces to analyze TTURTLE
+.
+
+2𝜙
+
+11
+
+≈ 1.618 denotes the golden ratio, i.e. the positive root of 𝑥 + 1 = 𝑥 2 .
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+William Kuszmaul and Alek Westover
+
+𝑝
+
+𝑗
+
+will reduce the space of possible strategies that ALG can employ by
+showing that certain strategies are dominant over other strategies.
+Combined with some case analysis this will allow us to show that
+there must be some TAP on which ALG performs poorly.
+Without loss of generality ALG instantly starts (at least) one of
+the tasks. If ALG starts a serial job at time 0 then ALG has competitive
+ratio at least Ω(𝑝) on the TAP where 𝜏1, 𝜏2 are perfectly scalable.
+Thus, it suﬃces to consider the case where ALG starts by running
+one of the tasks in parallel; call this instantly started task 𝜏1 .
+Without loss of generality ALG runs 𝜏1 on all processors at each
+time step until it starts 𝜏2 . If 𝜏1 completes before ALG starts 𝜏2 then
+without loss of generality ALG instantly starts 𝜏2 in parallel.
+Now we can describe ALG as follows: at each time 𝑡 ∈ [0, 1] until
+𝜏1 ﬁnishes ALG can decide whether to start 𝜏2 at time 𝑡 and which
+implementation of 𝜏2 to use when starting it. Let 𝑥 ALG ∈ [0, 1] be
+the earliest time when ALG is willing to start 𝜏2 even if 𝜏1 is not yet
+completed by this time. If ALG chooses to schedule 𝜏2 in parallel
+at time 𝑥 ALG then there is a TAP on which ALG has competitive
+ratio at least 2: namely, the TAP where 𝜏1, 𝜏2 are both completely
+un-parallelizable. Thus, it suﬃces to consider the case where ALG
+would choose to run 𝜏2 in serial at time 𝑥 ALG assuming that 𝜏1 has
+not yet ﬁnished by time 𝑥 ALG .
+By now we have substantially simpliﬁed the description of ALG.
+In particular, we have shown that ALG is completely parameterized
+by a single value 𝑥 ALG ∈ [0, 1]. Given 𝑥 ALG , we have reduced to the
+case where ALG’s strategy is
+(1) Run 𝜏1q from the start.
+(2) If 𝜏1 ﬁnishes before time 𝑥 ALG start 𝜏2q immediately once 𝜏1
+ﬁnishes.
+(3) Otherwise, start 𝜏2⊚ at time 𝑥 ALG .
+To conclude we consider two cases on the value of 𝑥. If 𝑥 ALG <
+1 − 1/𝑝 then ALG performs poorly on a TAP where 𝜋1 /𝑝 = 𝑥 + 1/𝑝
+and 𝜋2 /𝑝 = 1/𝑝. Indeed, for this TAP OPT has awake time 𝑥 +
+2/𝑝 whereas ALG has awake-time at least 𝑥 + 1. Thus that ALG’s
+competitive ratio here is at least
+𝑥 +1
+≥ 2 − Ω(1/𝑝)
+1 + 2/𝑝
+
+First we consider the truncation of T1 to T1 for some 𝑗 ≤ 𝑘.
+𝑗
+OPT will complete T1 by running tasks 𝜏1, 𝜏2, . . . , 𝜏 𝑗 −1 in serial and
+𝑗
+task 𝜏 𝑗 in parallel. Then, OPT’s awake time on T1 is
+
+1 
+2 + 4 + · · · + 2 𝑗 −1 + 2 𝑗 −1 𝑝 ≤ (1 + 2/𝑝)2 𝑗 −1 .
+(13)
+𝑝
+Now assume that ALG runs 𝜏 𝑗 in serial. Then 𝜏 𝑗 ’s awake time is at
+least 2 𝑗 , which by Equation (13) means that ALG has competitive
+𝑗
+ratio at least 2 − Ω(1/𝑝) on T1 . That is, for ALG to have any chance
+of achieving competitive ratio better than 2 − Ω(1/𝑝), ALG must
+schedule the ﬁrst 𝑘 tasks in parallel.
+𝑝
+Now we consider the performance of ALG on T1 assuming that
+ALG schedules the ﬁrst 𝑘 tasks in parallel. Here ALG will have awake
+time at least
+
+1 
+1𝑝 + 2𝑝 + · · · + 2𝑘 −1 𝑝 + (𝑝 − 𝑘) · 2𝑘 ≥ 2𝑘 (2 − 𝑘/𝑝) − 1. (14)
+𝑝
+On the other hand, OPT will run all 𝑝 tasks in serial and complete
+in time 2𝑘 . Thus, ALG’s awake time is at least (2 − Ω(𝑘/𝑝))-times
+𝑝
+larger than OPT’s on T1 . Plugging in our choice 𝑘 = Θ(log 𝑝) gives
+the desired bound on ALG’s competitive ratio.
+
+Although the lower bound of Proposition 8.1 does not obviously
+translate to randomized schedulers we can still show a 1 + Ω(1)
+lower bound for such schedulers as follows.
+Proposition 8.3. Let RAND be a randomized scheduler.
+√ There exists a TAP on which RAND has competitive ratio at least 3+4 3 −Θ(1/𝑝)
+with probability arbitrarily close to 1.
+√
+Proof. In T𝐴 a single task with 𝜎1 = 3 + 1, 𝜋1 = 2𝑝 arrives
+at time 0. TAP T𝐵 starts the same as T𝐴 , but in T𝐵 𝑝 − 1 additional maximally
+un-parallelizable tasks arrive at time 1 with se√
+rial work 3. A simple calculation shows that no deterministic
+al√
+
+gorithm can achieve competitive ratio better than 1+2 3 − Θ(1/𝑝)
+on both T𝐴 and T𝐵 . Furthermore RAND cannot have better than a
+1/2 chance of performing well on both T𝐴 and T𝐵 . Thus, RAND’s
+expected
+competitive ratio on at least one of these TAPs is at least
+√
+1+ 1+2
+2
+
+3
+
+√
+
+− Θ(1/𝑝) = 3+4 3 − Θ(1/𝑝).
+Let 𝑠 1, 𝑠 2, . . . , 𝑠𝑛 be a random string of 𝐴’s and 𝐵’s. Now we form
+a TAP T by placing T𝑠𝑖 at time 10𝑖. On T RAND handles each choice
+between T𝐴 , T𝐵 correctly with probability at most 1/2. Thus, for
+any 𝜀 > 0 if we make the sequence suﬃciently long (i.e., take 𝑛
+large enough) then RAND has arbitrarily low probability of handling
+more than a (1/2 +𝜀)-fraction of the T𝐴 , T𝐵 choices
+correctly. Thus,
+√
+
+If instead 𝑥 ALG ≥ 1 − 1/𝑝 then ALG performs poorly on the TAP
+where 𝜏1, 𝜏2 are both completely un-parallelizable. In this case OPT
+achieves awake time 1 by running the tasks in serial from the start
+whereas ALG has awake time at least 2 − 1/𝑝.
+Thus, regardless of 𝑥 ALG , ALG has competitive ratio at least 2 −
+Ω(1/𝑝) on some TAP.
+
+
+RAND has competitive ratio at least at least 3+4 3 − Θ(1/𝑝) with
+probability arbitrarily close to 1.
+
+
+Finally, we show that if we simultaneously restrict to the decideon-arrival model and the parallel-work-oblivious model then the
+scheduler cannot perform well.
+
+Now we consider parallel-work-oblivious schedulers. We show
+that, even if all tasks arrive at a single time, there is a lower bound
+of 2 − 𝑜 (1) on the optimal competitive ratio.
+
+Proposition 8.5. Any deterministic scheduler ALG that is both
+decide-on-arrival and parallel-work-oblivious must have competitive
+√
+ratio Ω( 𝑝).
+
+Proposition 8.4. There is no deterministic parallel-work-oblivious
+scheduler that achieves competitive ratio better than 2 − Ω(1/𝑝) for
+awake time, even in the single-arrival-time setting.
+
+Proof. Consider the following two TAPs:
+√ 
+(a)
+𝑝 identical scalable tasks arrive at the start.
+√ 
+(b) 𝑝 identical un-scalable tasks arrive at the start.
+To ALG these two TAPs look identical. However, if ALG decides to
+√
+run any task in serial then it’s competitive ratio on (a) is Ω( 𝑝).
+
+Proof. Fix a deterministic parallel-work-oblivious scheduler ALG.
+Consider a TAP with two tasks 𝜏1, 𝜏2 both of serial size 1. Technically there are many diﬀerent ways that ALG can handle 𝜏1, 𝜏2 . We
+12
+
+Scheduling Jobs with Work-Ineﬀicient Parallel Solutions
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+Consider a sequence of tasks T that causes ALG to choose to
+have 𝑝 0 processors in use at some point in time 𝑡. Without loss of
+generality, we may assume that all 𝑝 0 processors that are in use at
+time 𝑡 each have at least 1 remaining work. Let ℎ be the TRT that
+OPT would incur on T . Now, suppose that at time 𝑡, we have ⌈𝑅 · ℎ⌉
+additional tasks arrive, each with 0 work.
+The TRT of OPT on this TAP is 0 + ℎ, whereas the TRT of ALG on
+this TAP is at least ℎ + 1 · 𝑅 · ℎ, since all ⌈𝑅 · ℎ⌉ of the new tasks
+will have to wait for time at least 1 before ALG begins them. Hence
+ALG’s competitive ratio on this TAP is at least 𝑅.
+
+
+Otherwise, if ALG decides to run all tasks in parallel then its com√
+petitive ratio on (b) is Ω( 𝑝). Note that this simple decomposition
+into two cases is made possible by the assumption that ALG is a
+decide-on-arrival scheduler.
+
+
+9
+
+MRT LOWER BOUNDS
+
+In this section we prove two lower bounds on schedulers for MRT.
+These bounds show that any 𝑂 (1) competitive scheduler must (1)
+make decisions at least partially based on the values of {𝜋𝑖 }; and
+(2) must be willing to vary the number of processors assigned to
+a given job over time. Thus these properties cannot be relaxed in
+the schedulers presented in the previous sections.
+We remark that our ﬁrst lower bound applies not just to schedulers that achieve worst-case competitive ratios, but also to schedulers that use randomization in order to achieve a bounded expected competitive ratio.
+
+10 OPEN QUESTIONS
+We conclude by discussing open questions and conjectures.
+Questions about awake time. We conjecture that Proposition 8.1
+should be tight.
+
+Proposition 9.1. Fix an online scheduler ALG that is oblivious
+to the parallel works of tasks, and ﬁx some 𝑐 ∈ Θ(1). There exists
+a TAP on which the expected competitive ratio of ALG with 𝑐 speed
+1
+augmentation is at least Ω(𝑝 4 ) for MRT.
+√
+Proof. Consider a TAP with 𝑝+𝑝 1/4 tasks, all with serial work
+√
+1. Suppose that 𝑝 of the tasks have parallel work 1, and that (a
+random subset of) 𝑝 1/4 of the tasks have parallel work 𝑝. Call these
+the cheap and expensive tasks, respectively. All of the tasks arrive
+at time 0.
+If the cheap tasks are run in parallel, and then the expensive
+√
+tasks are run in serial, then the TRT will be 𝑂 ( 𝑝 · √1𝑝 + 𝑝 1/4 · 1) =
+
+Conjecture 10.1. There exists a deterministic𝜙-competitive scheduler for awake time.
+More concretely, let us propose a scheduler GoldenAlg that we
+suspect is 𝜙 competitive. For simplicity of exposition we assume
+that OPT’s awake time is its completion time on the TAP in question, i.e., OPT does not have “gaps” of time when there are no available uncompleted jobs. It is straightforward to adapt GoldenAlg
+to handle TAPs with OPT gaps because GoldenAlg will simulate
+OPT and in particular will know when these gaps are. With this
+knowledge an appropriately modiﬁed version of GoldenAlg would
+be 𝜙 competitive on arbitrary TAPs assuming that the version of
+GoldenAlg described below is 𝜙 competitive on TAPs without gaps.
+Let OPT𝑛 be an optimal oﬄine schedule for the ﬁrst 𝑛 tasks T1𝑛 .
+Note that OPT𝑛 , OPT𝑛+1 may make very diﬀerent decisions, which
+is part of the challenge for an online scheduler. The GoldenAlg
+scheduler makes decisions by comparing to OPT𝑛 .
+GoldenAlg maintains a serial pool of tasks that it has decided
+to run in serial, and a parallel pool of tasks that it has tentatively
+decided to run in parallel. GoldenAlg manages the serial pool by
+running the jobs with the most remaining work ﬁrst at each time
+step. Crucially, GoldenAlg only runs a single task from the parallel
+pool at a time, so all but one of the tasks in the parallel pool have
+not actually been started. Thus, if GoldenAlg desires, it can freely
+move one of these not-yet-started tasks to the serial pool. Tasks
+default to the parallel pool but GoldenAlg greedily moves tasks to
+the serial pool as soon as it is sure that this will not instantly cause
+the awake time to be too large. Formally, if the awake time incurred
+so far is 𝑡, if 𝑛 tasks have arrived so far, and if 𝜏𝑖 is some not-yetstarted task in the parallel pool, then GoldenAlg uses the following
+logic: If 𝜎𝑖 +𝑡 < 𝜙 · T𝑛OPT𝑛 , move 𝜏𝑖 to the serial pool. Finally, if there
+is no parallel job running but there are tasks present in the parallel
+pool GoldenAlg schedules the earliest arrived task (if any) from
+the parallel pool in parallel. At each time step this parallel job is
+allocated any processors not allocated to serial jobs.
+GoldenAlg is clearly 𝜙-competitive on any TAP that results in
+GoldenAlg being jagged. However, TAPs that result in GoldenAlg
+being balanced are more diﬃcult. An inductive argument seems
+challenging because we can re-arrange our work. A more direct
+combinatorial argument seems more promising but has eluded us.
+
+𝑝 1/4 .
+Now suppose for contradiction that ALG also achieves 𝑂 (𝑝 1/4 )
+TRT using 𝑂 (1) speed augmentation. Let 𝛿 be the expected fraction of the tasks that ALG runs in serial. The expected number of
+√
+cheap jobs that are executed in serial is 𝛿 𝑝. Thus, in order for
+ALG to be 𝑂 (1)-competitive (even with 𝑂 (1) speed augmentation),
+we would need 𝛿 ≤ 𝑂 (𝑝 −1/4 ). But this means that the expected
+number of expensive jobs that are executed in parallel is at least
+(1 − 𝛿)𝑝 1/4 ≥ Ω(𝑝 1/4 ). If 𝑘 expensive jobs are executed in parallel, their TRT will be at least Ω(𝑘 2 ). By Jensen’s inequality, the
+expected TRT of expensive jobs executed in parallel is therefore at
+√
+least Ω((𝑝 1/4 ) 2 ) = Ω( 𝑝). This contradicts the assumption that
+ALG achieves TRT 𝑂 (𝑝 1/4 ).
+
+Proposition 9.2. Consider an online scheduler ALG that is nonpreemptive (i.e., the number of processors that it assigns to each task
+is ﬁxed for the full duration of time that the task executes). Fix some
+𝑐 ∈ Θ(1), and any 𝑅 ∈ N. There exists a TAP T on which the worstcase competitive ratio of ALG with 𝑐 speed augmentation is Ω(𝑅) for
+MRT. That is, ALG with performs arbitrarily worse than OPT.
+Proof. As we are interested in the worst-case competitive ratio of ALG, we may assume without loss of generality that ALG is
+deterministic.
+Let 𝑝 0 be the maximum number of processors that ALG ever simultaneously gives work over all input TAPs. We claim that there
+is some input TAP on which ALG does arbitrarily poorly compared
+to OPT in terms of mean response time.
+13
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+William Kuszmaul and Alek Westover
+
+Questions about oﬀline scheduling algorithms. We conclude
+with two open problems about oﬄine scheduling algorithms.
+The ﬁrst question concerns the scheduling of DTAPS (i.e., TAPS
+with job-arrival dependencies) to optimize awake time. Our results
+in Section 7 establish that the optimal online competitive ratio is
+√
+Θ( 𝑝) for this problem. However, in some settings, even an oﬄine
+scheduler could be useful, for example, if a compiler understands
+the parallel structure of the program that it is compiling and needs
+to decide for each component of the program whether to compile
+a serial version or a parallel version.
+
+We also pose open questions regarding the optimal competitive
+ratios for diﬀerent types of awake-time schedulers. We begin by
+considering decide-on-arrival schedulers:
+Question 1. Does there exist a deterministic decide-on-arrival 2competitive scheduler for awake time?
+Such a scheduler would imply that Proposition 8.2 is tight. More
+broadly, as noted in Section 8, we conjecture that there should be
+a separation between arbitrary deterministic schedulers and deterministic decide-on-arrival schedulers.
+Next, we consider parallel-work-oblivious schedulers:
+
+Question 5. Is there a polynomial-time oﬄine algorithm that
+produces an 𝑂 (1)-competitive DTAP schedule?
+
+Question 2. What is the optimal awake-time competitive ratio
+achievable by a deterministic parallel-work-oblivious scheduler?
+
+Our ﬁnal question concerns the oﬄine scheduling of TAPS. We
+know from Section 8 that any online awake-time scheduler must
+incur a competitive ratio of 1 + Ω(1). But what is the best competitive ratio achievable by a polynomial-time oﬄine scheduler?
+
+We suspect that, for Question 2, the optimal competitive ratio
+is 4 − 𝑜 (1).
+Finally, we consider randomized schedulers:
+
+Conjecture 10.4. Constructing an optimal (oﬄine) schedule for
+awake time is NP-hard.
+
+Conjecture 10.2. Is the optimal awake-time competitive ratio
+achievable by a randomized scheduler better than the optimal competitive ratio achievable by a deterministic scheduler?
+
+REFERENCES
+
+Note, in particular, that if our lower bounds are tight, then a separation should exist: the optimal competitive ratio for deterministic schedulers would be 𝜙 ≈ 1.62, and√the optimal competitive ratio
+for randomized ones would be (3 + 3)/4 ≈ 1.18.
+Questions about mean response time. In the context of optimizing MRT, there are even more basic questions that remain open.
+We conjecture that speed augmentation is necessary to achieve
+a competitive ratio of 𝑂 (1):
+Conjecture 10.3. 1 + Ω(1) speed augmentation is necessary in
+an 𝑂 (1)-competitive scheduler.
+Although we have shown that (deterministic) parallel-work-oblivious
+schedulers perform poorly on MRT, it remains open whether decideon-arrival schedulers can do well.
+Question 3. Can a decide-on-arrival scheduler, with 𝑂 (1) speed
+augmentation, achieve 𝑂 (1) competitive ratio?
+Finally, if algorithms for this problem are to be made practical,
+then one important direction to focus on is simplicity. This motivates the following question:
+Question 4. Is there a simpler scheduler that is still 𝑂 (1) competitive for MRT with 𝑂 (1) speed?
+An anonymous reviewer suggested one possible direction that
+would could try, which is to (1) virtually simulate running both
+jobs at once, and then (2) actually run whichever ﬁnishes ﬁrst (with
+speed augmentation). The challenge that arises from this approach
+is that, by the time we ﬁnally decide which job to run, we may be
+signiﬁcantly past the task’s original arrival time. Thus, to make this
+approach work, one would likely need a much stronger version of
+Lemma 6.2, allowing one to analyze settings in which every job has
+its arrival time delayed based on its simulated completion time. It
+is conceivable that, in order to prove such a lemma, we could take
+technical inspiration from work on other scheduling problems (see,
+e.g., Theorem 3.1 of [2] or Theorem 5 of [13]).
+14
+
+[1] Brenda S Baker and Jerald S Schwarz. 1983. Shelf algorithms for twodimensional packing problems. SIAM J. Comput. 12, 3 (1983), 508–525.
+[2] Nikhil Bansal, Ravishankar Krishnaswamy, and Viswanath Nagarajan. 2010. Better scalable algorithms for broadcast scheduling. In Automata, Languages and
+Programming: 37th International Colloquium, ICALP 2010, Bordeaux, France, July
+6-10, 2010, Proceedings, Part I 37. Springer, 324–335.
+[3] Robert D Blumofe, Christopher F Joerg, Bradley C Kuszmaul, Charles E Leiserson, Keith H Randall, and Yuli Zhou. 1995. Cilk: An eﬃcient multithreaded
+runtime system. ACM SigPlan Notices 30, 8 (1995), 207–216.
+[4] P. Dutot, G. Mounié, and D. Trystram. 2004.
+Scheduling
+Parallel
+Tasks
+Approximation
+Algorithms.
+https://www.semanticscholar.org/paper/Scheduling-Parallel-Tasks-Approximation-Algorithms-D
+[5] Richard A. Dutton and Weizhen Mao. 2007. Online scheduling of malleable parallel jobs. In Proceedings of the 19th IASTED International Conference on Parallel
+and Distributed Computing and Systems (PDCS ’07). ACTA Press, USA, 136–141.
+[6] Roozbeh Ebrahimi, Samuel McCauley, and Benjamin Moseley. 2018. Scheduling
+Parallel Jobs Online with Convex and Concave Parallelizability. Theory Comput
+Syst 62, 2 (Feb. 2018), 304–318. https://doi.org/10.1007/s00224-016-9722-0
+[7] Jeﬀ Edmonds. 2000. Scheduling in the dark. Theoretical Computer Science 235, 1
+(March 2000), 109–141. https://doi.org/10.1016/S0304-3975(99)00186-3
+[8] Jeﬀ Edmonds and Kirk Pruhs. 2009. Scalably Scheduling Processes with Arbitrary
+Speedup Curves. Vol. 8. https://doi.org/10.1145/1496770.1496845 Journal Abbreviation: ACM Transactions on Algorithms Pages: 692 Publication Title: ACM
+Transactions on Algorithms.
+[9] R. L. Graham. 1969. Bounds on Multiprocessing Timing Anomalies. SIAM
+J. Appl. Math. 17, 2 (1969), 416–429.
+https://doi.org/10.1137/0117039
+arXiv:https://doi.org/10.1137/0117039
+[10] Shouwei Guo and Liying Kang. 2010. Online scheduling of malleable parallel
+jobs with setup times on two identical machines. European Journal of Operational
+Research 206, 3 (Nov. 2010), 555–561. https://doi.org/10.1016/j.ejor.2010.03.005
+[11] Johann L Hurink and Jacob Jan Paulus. 2008. Online algorithm for parallel job
+scheduling and strip packing. In Approximation and Online Algorithms: 5th International Workshop, WAOA 2007, Eilat, Israel, October 11-12, 2007. Revised Papers
+5. Springer, 67–74.
+[12] Walter Ludwig and Prasoon Tiwari. 1994. Scheduling malleable and nonmalleable parallel tasks. In Proceedings of the ﬁfth annual ACM-SIAM symposium on
+Discrete algorithms. 167–176.
+[13] Benjamin Moseley, Anirban Dasgupta, Ravi Kumar, and Tamás Sarlós. 2011. On
+scheduling in map-reduce and ﬂow-shops. In Proceedings of the twenty-third annual ACM symposium on Parallelism in algorithms and architectures. 289–298.
+[14] Gregory Mounie, Christophe Rapine, and Dennis Trystram. 1999. Eﬃcient
+approximation algorithms for scheduling malleable tasks. In Proceedings of
+the eleventh annual ACM symposium on Parallel algorithms and architectures
+(SPAA ’99). Association for Computing Machinery, New York, NY, USA, 23–32.
+https://doi.org/10.1145/305619.305622
+[15] John Turek, Walter Ludwig, Joel L. Wolf, Lisa Fleischer, Prasoon Tiwari, Jason Glasgow, Uwe Schwiegelshohn, and Philip S. Yu. 1994. Scheduling parallelizable tasks to minimize average response time. In Proceedings of the
+sixth annual ACM symposium on Parallel algorithms and architectures (SPAA
+
+Scheduling Jobs with Work-Ineﬀicient Parallel Solutions
+
+SPAA ’24, June 17–21, 2024, Nantes, France
+
+Parallel algorithms and architectures. 323–332.
+[18] Deshi Ye, Danny Z. Chen, and Guochuan Zhang. 2018.
+Online scheduling of moldable parallel tasks. Journal of Scheduling 21, 6 (2018), 647–654.
+https://ideas.repec.org//a/spr/jsched/v21y2018i6d10.1007_s10951-018-0556-2.html
+Publisher: Springer.
+[19] Deshi Ye, Xin Han, and Guochuan Zhang. 2009. A note on online strip packing.
+Journal of Combinatorial Optimization 17, 4 (2009), 417–423.
+
+’94). Association for Computing Machinery, New York, NY, USA, 200–209.
+https://doi.org/10.1145/181014.181331
+[16] John Turek, Uwe Schwiegelshohn, Joel L Wolf, and Philip S Yu. 1994. Scheduling parallel tasks to minimize average response time. In Proceedings of the ﬁfth
+annual ACM-SIAM symposium on Discrete algorithms. 112–121.
+[17] John Turek, Joel L Wolf, and Philip S Yu. 1992. Approximate algorithms scheduling parallelizable tasks. In Proceedings of the fourth annual ACM symposium on
+
+15
+
+

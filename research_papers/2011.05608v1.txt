@@ -1,0 +1,1539 @@
+Efficient global register allocation
+Ian Rogers
+Google
+Mountain View, California, USA
+irogers@google.com
+
+In a compiler, an essential component is the register allocator. Two
+main algorithms have dominated implementations, graph coloring
+and linear scan, differing in how live values are modeled. Graph
+coloring uses an edge in an ‘interference graph’ to show that two
+values cannot reside in the same register. Linear scan numbers all
+values, creates intervals between definition and uses, and then intervals that do not overlap may be allocated to the same register. For
+both algorithms the liveness models are computed at considerable
+runtime and memory cost. Furthermore, these algorithms do little
+to improve code quality, where the target architecture and register
+coalescing are important concerns.
+We describe a new register allocation algorithm with lightweight
+implementation characteristics. The algorithm introduces a ‘futureactive’ set for values that will reside in a register later in the allocation. Registers are allocated and freed in the manner of linear scan,
+although other ordering heuristics could improve code quality or
+lower runtime cost. An advantageous property of the approach is
+an ability to make these trade-offs. A key result is the ‘future-active’
+set can remove any liveness model for over 90% of instructions and
+80% of methods. The major contribution is the allocation algorithm
+that, for example, solves an inability of the similarly motivated
+Treescan register allocator [15] to look ahead of the instruction
+being allocated - allowing an unconstrained allocation order, and an
+ability to better handle fixed registers and loop carried values. The
+approach also is not reliant on properties of SSA form, similar to the
+original linear scan work. An analysis is presented in a production
+compiler for Java code compiled through SSA form to Android dex
+files.
+
+1
+
+interval itself is a collection of pairs of beginning and end integers.
+As an interval may be needed for every instruction, in Static Single
+Assignment (SSA) form, the interval’s memory requirement is often
+similar to that of the instruction representation. Phrased another
+way, modeling intervals can more than double the compiler’s memory usage. Graph coloring similarly impacts memory and in his
+seminal paper Chaitin concludes with “a fair amount of virtual
+storage is needed to hold the program IL and interference graph,”
+[11].
+As a runtime cost, interval construction is often a significant
+portion of register allocation time. Poletto and Sarkar’s early linear
+scan work shows “allocation setup”, described as, “the construction
+of live intervals,” as being the largest portion of time spent for the
+register allocation of “dynamic code kernels” (Fig. 3 in [28]). The
+overhead of interval construction is used to motivate a fast interval
+construction that unfortunately lowered code quality.
+Fig. 1 shows a repeat of Poletto and Sarkar’s analysis but for
+LLVM [22] compiling itself at compilation level ‘-O2’. The box plots
+show the minimum, 1 percentile, median, 99 percentile and maximum compile time percentage of each phase compiling a file from
+LLVM, where the register allocator is LLVM’s greedy allocator [26].
+Unlike Poletto and Sarkar’s early work [28], interval construction is
+not the slowest of the 3 phases. However, removing the phase would
+save 0.2% of compile time or 20% of one of the major portions of
+register allocation time. Just as when Poletto and Sarkar introduced
+linear scan, interval construction costs have been attempted to be
+avoided in a number of register allocators. We will review these
+allocators in section 6.
+After memory and runtime complexity, the final cost we sought
+to eliminate was the implementation complexity. Better memory
+
+INTRODUCTION
+
+The problem at the heart of register allocation is how to allocate
+instructions (producing values) to registers so that a register is not
+in use, holding the result of two ‘live’ instructions, at the same time.
+An approach to modeling this problem is with an interference graph,
+where instructions are vertices and edges exist between vertices
+live at the same time. This model allows register allocation to be
+solved through graph coloring [11], where each color is a distinct
+register. An alternate approach is to serialize and incrementally
+number instructions, intervals are then formed from the definition
+to the last use of an instruction. If two intervals have an empty
+intersection then they may be allocated to the same register [27, 28].
+Linear scan register allocation has been refined to allow for
+liveness holes, and to vary the order the intervals are processed
+[26, 30, 33]. Interval based register allocators are popular due to
+their performance and for being easy to tweak using heuristics.
+Modeling intervals comes with clear memory costs. Typically
+an interval is associated with one or more instructions, and the
+
+Percent of Compile Time
+
+arXiv:2011.05608v1 [cs.PL] 11 Nov 2020
+
+ABSTRACT
+
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Live Analysis
+
+Live Intervals
+
+Greedy Allocator
+
+Figure 1: Contribution to LLVM compile time of register allocator phases. Compilation times were measured using on
+LLVM 7.0 using its time reporting option. Each file was compiled 30 times on an Intel Xeon E5-2690 at 2.9GHz with 64GB
+of RAM.
+
+Ian Rogers
+
+and runtime performance were a concern, not because lower code
+quality was acceptable but the opposite, we wanted to focus the
+implementation effort on best mapping to the target architecture.
+In common with LLVM’s greedy allocator [26], existing compilers
+for the target architecture have a register assignment phase (also
+known as a rewrite phase) to modify impossible register allocations to ones that fit the machine’s constraints [4, 31]. We wished
+to eliminate this rewriting, as even in simple cases a third of instructions in the final code could be introduced by it. However, by
+allocating directly into the target registers we may need to restart
+the register allocator, for example, if register usage had become
+fragmented and no allowable register was available. The presented
+approach analyzes the register allocation at the point no allocation
+is available, selects the best candidate instruction that can have its
+live range split, inserts moves and then restarts the register allocation1 . The introduced move instructions become candidates for
+the existing register coalescing algorithms. Performing a similar
+analysis and transformation with intervals is a challenge. Firstly,
+intervals and not instructions are allocated and so determining
+cost requires going through an abstraction and determining what
+intervals and instructions are being modeled as live at the failure
+point. Secondly, the liveness model needs updating following the
+transformation, something that may be handled by additional state
+or by just recomputing the model. It could be that existing register
+coalescing performed is impacted by live range splitting, something
+the presented approach handles elegantly by not having state but
+that requires existing approaches to either ignore, recompute or
+model via additional complex state.
+Reduced complexity and an ability to spot optimizations are key
+advantages to the presented algorithm. We will discuss the target
+machine challenges that motivated them in section 2 as well as
+the compiler framework. These advantages would also be apparent
+were the register allocation algorithm used for other architectures.
+Section 3 describes the major contribution of the paper, a register allocator algorithm that performs on-the-fly construction of
+‘future-active’ sets and the ‘live-at-the-same-time’ operations that
+allow these to function as intervals. For an intuition as to why
+this improves performance, the ‘future-active’ sets are only used
+when registers are not allocated to the active-set and need to be
+accessed later during the register allocation. The code generation
+behavior is identical to a regular interval based linear scan register
+allocator, and the runtime performance differs only in how liveness
+is modeled. Solutions to numerous production challenges, such as
+exception handling, are described.
+Section 4 analyzes the runtime performance in the production
+setting of compiling the entirety of the Android operating system’s
+Java code. Inspecting per-method or per-register-allocation metrics
+is preferred to a shoot-out of one register allocation algorithm
+against another. This is because over 80% of methods are compiled
+with no use of the ‘future-active’ sets, for which a traditional linear
+scan algorithm may have spent 20% of its time computing intervals
+(from Fig. 1). That is the shoot-out would just highlight the runtime
+win of not having a liveness modeling phase. As such, it is more
+informative to analyze what occurs for the new algorithm in the
+20% of methods that need the ‘future-active’ sets and to see if they
+1 Described
+
+in detail in section 3.3.
+
+do or do not motivate the use of intervals compared to the new
+approach. Similarly, comparisons are not made against algorithms
+such as graph coloring as this would not address implementation
+complexity and such comparisons are already readily available in
+existing literature [25, 28, 30].
+The final sections of the paper consider improvements that can
+further reduce cost and/or that can increase code quality. A comparison of the most related work is performed and finally conclusions
+are drawn.
+
+2
+
+BACKGROUND
+
+In the compiler we model a register allocator as taking an instruction and mapping it to a target machine register. We present the
+target machine in section 2.1 and the compiler in section 2.2.
+
+2.1
+
+Dex files
+
+Regularly a Java program is compiled into a class file [23], where
+each class file holds the code and data for a single class. Bytecode
+in class files is stack oriented, while indices into a constant pool
+can provide literal values or describe symbolic references to fields,
+methods and other classes.
+Android introduced the notion of dex files, that hold more than
+one class, and are executed by the Dalvik or ART runtimes [4, 10].
+Various tables in the dex file take the place of the constant pool
+and classes may share table entries to reduce size. Tables may be
+indexed by dex instructions or from other tables. For the string
+table the index may be 32-bit but in general the index is limited
+to 16-bits. If there is no room in a table then the compiler will
+generate multiple dex files following a convention that indicates to
+the runtime that the dex files should be considered one unit. Classes
+may not be split over dex files and each dex file is required to verify
+separately. It is possible to organize the tables to either achieve a
+smaller file, or to optimize start-up speed.
+Dex instructions are 2-byte aligned and may be up to 10 bytes
+in length [14]. They consist of a 1-byte opcode and then multiple
+bytes encoding registers used and defined, constants, branch offsets
+and symbol table indices. Registers are encoded into either 4, 8 or
+16 bits depending on the instruction. A consequence of the register
+encoding is that all instructions can access the low 0 through 15
+registers, a subset the higher 16 through 255 registers and an even
+smaller set registers 256 through 65,535. To work around these
+limitations move instructions can copy a register’s value from a
+high to a low numbered register or vice-versa.
+Instructions that require a variable number of inputs, most commonly ‘invokes’, have two forms. The first form is to have a list of
+up to 5 registers, numbered 0 through 15. The second ‘range’ form
+takes a base register, any of the 65,535 registers, and a length. An
+additional instruction may appear after these instructions to place
+the result into a register.
+There are smaller two-address forms of some binary instructions, where the first source register is also the destination. Table 1
+shows the four possible encodings of the add instruction, which
+has two-address and add-immediate forms. The two-address form
+has opcode 𝐵0 and registers must be in the range 0 to 15. If the add
+literal is a signed 8-bit value then registers 0 to 255 can be encoded
+with opcode 𝐷8, whilst 16-bit literals are possible with opcode 𝐷0
+
+Efficient global register allocation
+
+– Generally the number of registers should be limited by the
+number of live values. If fragmentation occurs then extra
+registers and move operations are necessary to create a
+consecutive range of registers.
+– The number of move instructions to set up the registers
+for a range operation is proportional to the number of
+arguments to the method invocation. Code size can be
+minimized by coalescing and assigning the output of an
+instruction to the register required for the range operation.
+This may increase fragmentation.
+
+but with a limitation that only registers 0 to 15 can be used. If a
+register larger than 255 is needed then a move will be necessary,
+similarly a constant greater than 16-bit will need generating into a
+register.
+Opcode
+90
+B0
+D0
+D8
+
+Byte 1
+vA
+vA and vB
+vA and vB
+vA
+
+Byte 2 Byte 3
+vB
+vC
+Not used
+Literal 16
+vB
+Literal 8
+
+Table 1: Dex file add instruction encodings. vA, vB and vC
+encode a register number
+
+64-bit long and double values occupy adjacent pairs of registers,
+with the lowest numbered register being encoded. While the encoding permits the long or double register to be an odd number,
+runtimes typically penalize odd numbered allocations and do not
+allow them to reside in 64-bit machine registers.
+The number of instructions within a method is limited to a 32-bit
+value, however, the encoding of exceptions limits most method
+locations to being 16-bit. The number of registers required by a
+method can vary and is held in its metadata2 . Incoming parameters
+to a method arrive in the highest numbered registers. For example,
+if a method has 10 registers and 4 registers for parameters, registers
+6 to 9 will hold the parameters at the start of the method. If a
+parameter is in register 16 and then used by an instruction such as
+‘instance-of’, that can only encode registers 0 to 15, the parameter
+will first need moving into a lower numbered register.
+To summarize the challenges of register allocation of dex instructions, they are:
+• Multiple encodings exist for instructions, the shorter forms
+may only be usable for certain registers or literal values.
+• If all registers 0 to 15 are allocated then instructions may
+fail to be encoded. One solution, that leads to suboptimal
+code generation and is used by the dx and d8 compilers
+[4, 31], is in register assignment to reserve a pool of low
+numbered ‘temporary’ registers that are moved into and
+out-of to support the high numbered register. The approach
+taken in the presented compiler is to ‘spill’ and ‘fill’ low
+numbered registers into high numbered registers with move
+instructions by live range splitting.
+• If register allocation increases the number of registers then
+parameters are moved. Move instructions may be necessary
+to copy parameters into registers that can encode instructions with them.
+• Move instructions can create redundant copies of a value, and
+the register allocator can reduce future move instructions
+by reusing values already within an encodable register.
+• Range operations, or long and double pairs of registers that
+are a range of length 2, require registers to be consecutive:
+2 As
+
+65,536 registers can be encoded, and this is generally greater than the number
+of instructions, a naïve register allocator could give each instruction its own register.
+However this ignores issues with ranges, longs and doubles and that such an allocation
+would cause frequent stack overflow errors
+
+While some of these challenges are relatively unique to dex files,
+there are similarities with constraints that exist in more general
+instruction sets such as for vector register files, spilling-to and
+filling-from the stack and two-address encoding.
+
+2.2
+
+The compiler
+
+The compiler consists of front ends, middle end optimizations over
+the intermediate representation (IR) and back ends.
+2.2.1 Front ends. The compiler front end can read common Java
+program wire formats, namely class files and dex files [4, 23]. It
+builds an IR that describes symbols, classes, fields, methods, annotations and exceptions. Similar to tools like ProGuard [21], a complete
+model of a Java program is held in memory for optimization.
+The Java bytecode, or dex instructions, are parsed into a controlflow graph (CFG) and SSA form using an approach similar to [20]
+where predecessor basic blocks are always processed first, to allow
+Φ instructions to be inserted at merges. Loop back-edges and exception catch blocks are handled pessimistically, with Φ instructions
+introduced for all values and then eliminated via simplification and
+dead code elimination. A different approach to SSA form construction is [7] that trades creating and optimizing away unnecessary Φ
+instructions at the cost of recursing over the CFG.
+2.2.2 Middle end optimizations. A range of both interprocedural
+and intraprocedural optimizations are performed on the IR. Being
+SSA based allows for straightforward global (between basic block)
+optimizations, such as common sub-expression elimination, not
+possible in ProGuard that uses Java bytecode as an intermediate
+form. Dataflow optimizations are performed at the whole program
+and method level, with a type lattice that models constants, type
+and nullness of references as well as integer ranges. At the method
+level, type information is held within the instruction and always
+conservatively correct unless a fixed point is being computed. Fixed
+points are computed efficiently using Bourdoncle’s approach [5]. By
+holding type information within the instruction, pattern matching
+avoids being specialized upon the size of, for example, an add - i.e.
+there are no int-add, long-add, float-add, double-add instructions
+as the type information is sufficient to determine the kind of add
+necessary.
+As the IR is being used for Java, runtime exceptions may occur on many instructions. Dominance is computed on basic blocks
+within the compiler. If dominance is not required, multiple exception throwing instructions may be within the same basic block
+as with the factored control-flow graph [12]. When dominance is
+required, blocks are split at instructions that may throw exceptions
+
+Ian Rogers
+
+with gotos appended afterward. Breaking blocks is known as unfactoring the CFG. Often null-pointer exceptions are known not
+to occur on the ‘this’ pointer, freshly allocated objects and constants. The type analysis carries this information forward allowing
+instructions to determine whether a runtime exception may occur
+and avoiding splitting blocks in cases it is known not possible. It is
+further possible to avoid to split blocks when they are not within
+try-regions, as long as potentially exception throwing instructions
+are not being reordered with memory operations. Java source compilers will implicitly create try-regions for synchronized blocks, to
+ensure that objects are unlocked on all control-flow edges, this can
+cause more try-regions than just what is present at the source level.
+2.2.3 Back ends. The compiler has two back ends, one capable of
+producing Android dex files and the other Java class files. This paper
+focuses on dex file generation. The dex back end must perform various ‘legalizations’, such as ensuring synchronized methods begin
+and end with monitor acquiring and releasing instructions. It must
+also form the dex file, or files, symbol tables. To generate instructions the symbol table layout, the SSA instructions and a register
+allocation are required. The register allocation maps from the SSA
+instruction to its allocated register except in the case of a folded
+constant, when no mapping will exist. To ensure as compact a representation as possible various peephole passes are also performed,
+for example, opportunistically using a smaller ‘if’ instruction rather
+than a ‘switch’.
+
+3 THE REGISTER ALLOCATOR ALGORITHM
+3.1 Preparing to allocate
+Before register allocation is performed the CFG is unfactored to
+ensure instruction level dominance, but only within try-regions
+as memory operations will not be reordered. The compiler aims
+to minimize the number of registers allocated, with more registers being necessary when more instructions are live. The ‘shrink
+live range’ pass aims to move instructions as close to their uses
+as possible while maintaining correct semantics. An area where
+semantics are by default relaxed is around out-of-memory errors.
+An out-of-memory error for a 𝑛𝑒𝑤 in Java should be thrown ahead
+of the constructor’s arguments being evaluated (section 12.5 [17]).
+The compiler allows 𝑛𝑒𝑤 operations to sink next to the constructor
+call to avoid holding the uninitialized object live for the duration
+of argument evaluation.
+During front end parsing and optimization, all constants were
+deduplicated and held within the entry block. This simplifies global
+value numbering, done as a part of global common sub-expression
+and load/store elimination. It is hoped that constants will be folded
+into instructions but certain uses require a register, for example,
+array indices and method parameters. Dex has special array filling
+operations, but often these are not applicable for the operands of
+the array stores. Reusing a constant within a register can reduce
+code size but the large live ranges of the constants increases register
+usage. If more registers are used then larger instruction encodings,
+or moves, may be necessary and this removes the code size benefit
+of sharing the register. To reduce register usage, the compiler splits
+constants ahead of register allocation. Constants required to be in
+a register are duplicated ahead of their use, which if they dominate
+
+later uses may be reused. A naïve heuristic is currently used to
+determine whether to use one or multiple splits, and that is if
+the number of non-folded uses is ≥ 3 the compiler reuses the
+register. The constant’s live range can be split further during register
+allocation, and constants are favored for live range splitting as they
+are trivial to rematerialize.
+Liveness is computed as a fixed point on a reverse weak topological sort order of basic blocks [5]. Live-ins to an instruction are
+calculated from the live-outs unioned with the inputs to the instruction, less the instruction itself if it was live-out. Treating Φs similarly
+would cause all Φ inputs to be live on all predecessors. Instead Φ
+inputs are inserted into the live-outs of predecessor blocks before
+the fixed point calculation is performed. An alternate approach,
+that avoids computing a fixed point, for strict SSA programs with a
+loop-nesting forest in two passes is presented in [6].
+Ahead of register allocation, the CFG has critical edges split and
+parallel copy blocks inserted in predecessor blocks. The parallel
+copy moves are named Φ-moves within the compiler and are coalesced during register allocation. A different copy operation is a
+‘swap-move’, which is introduced to add a temporary name to solve
+the ‘swap problem’, critical edge splitting solving the ‘lost copy’
+problem of coming out of SSA form [2].
+In the unfactored CFG, it is common for edges to exception catch
+blocks to be critical edges. An edge is critical if the source basic block
+has > 1 successor and the target basic block > 1 predecessor. Catch
+blocks generally have the first condition as there is exceptional
+and regular control-flow. Catch blocks have a first instruction to
+gather the thrown exception known as ‘GetException’ in the IR.
+Following critical edge splitting many of these blocks containing
+the ‘GetException’ instruction exist, and a Φ instruction in what
+was the catch block gathers the different values. When possible, the
+compiler merges all of the equivalent ‘GetException’ blocks ahead
+of register allocation to reduce the IR’s complexity. This does not
+introduce a critical edge as there are > 1 predecessor basic blocks
+but still just a single successor basic block.
+
+3.2
+
+The outer loop
+
+A lower bound on the number of registers required for the allocation
+is the maximum number of live instructions, ignoring constants
+that are folded, and counting live long and double instructions
+twice - dex files requiring that long and double values are in two
+adjacent registers. In the compiler, register allocation fails when
+either no register or no suitable register can be found. For example,
+if an ‘int-to-long’ instruction cannot locate a pair of consecutive
+registers, for the long result, then the inner register allocator loop
+fails with a cause and an iterator at the point of failure. The live
+instructions are also known at this point.
+Other register allocators for the dex instruction set, such as dx
+and d8 [4, 31], allocate registers in a single pass and then rename
+registers during register assignment. During assignment it is determined if the register constraints for the allocation hold, and if not
+moves are introduced. Temporary registers in the low 15 registers,
+that always satisfy instruction constraints, are either reserved prior
+to allocation, or room created by shuffling the allocated register
+numbers up. Adding one temporary may invalidate constraints on
+
+Efficient global register allocation
+
+another instruction and so moves may be repeatedly added until
+constraints are satisfied.
+Our compiler performs allocation over blocks in the final code
+layout order. The final code layout uses a queue to determine which
+block to visit next. Loop headers and blocks within the same tryregion are placed at the head of the queue. Exception successors
+or code paths that terminate at a throw, are placed on the end of
+the queue. By falling through to successors code size is minimized.
+Meta-data size is minimized by keeping try-regions intact. It is
+considered unlikely that exceptions will be thrown or caught.
+Exception handling code often has a large number of live variables to describe a failure, and so this colder code can be a point
+of an allocation failure. Allocation failures such as this could be
+avoided by a basic block traversal order that prioritizes blocks with a
+large number of live values. The basic block traversal order impacts
+the efficiency of the algorithm, for example a reverse post-order
+traversal was used in early work to reduce liveness holes [28]. Using
+the final layout ordering was used to best aid the development of
+heuristics for allocating a free register, as will be described in section 3.7, and also for determining best policies to handle allocation
+failures, as described in section 3.3. We will consider basic block
+traversal order further in section 5 while section 4 shows measured
+numbers for allocation failures with this order in Android code.
+We will consider the allocation order of other register allocators
+in section 6. The next section describes how allocation failures are
+recovered from.
+
+numbered register, see section 3.5. ‘Fill-moves’ may be necessary
+to move the high numbered register into a low numbered register
+to satisfy the constraints of an instruction. The split instruction is
+selected from those that are live so that the cost, in terms of inserted
+moves with some consideration of coalescing, is minimized. Two
+possible filling strategies are considered for the split, introducing
+a ‘fill-move’ prior to every use that requires it or having a single
+‘fill-move’ that dominates all uses.
+
+3.4
+
+Algorithm 1: Linear scan algorithm simplified to not include spilling
+1
+2
+3
+
+4
+5
+
+6
+
+3.3
+
+Allocation failure and live range splitting
+
+A failure to allocate at an instruction, or between basic blocks,
+within the main register allocation loop, triggers an allocation failure with multiple remedies. When the number of registers used is
+small, increasing the number of registers is preferred. To ensure
+constraints can be met when the number of registers goes beyond
+15 or 255, moves are introduced before instructions that can only
+use the lower numbered registers. Similarly, parameters that have
+fixed high register numbers have moves introduced to provide a
+degree of freedom in which register they are encoded for the bulk
+of the method. For example, a frequent problem is the ‘this’ pointer
+arriving in a high numbered register but then needing to be in
+registers 0 to 15 for a field access. Moving the parameters at entry
+allows a single dominating move.
+Invoke instructions can either have up to 5 arguments in the
+registers 0 to 15, where longs and doubles require two registers, or
+take a range of registers. If there are more than 15 registers, or a
+method takes more than 5 arguments, a block of moves is placed to
+set up the method invocation. At register allocation time the block
+is identified by the type of move, and a set of registers between 0
+and 15 or a contiguous range of registers can be allocated at once.
+The chosen method minimizes register moves and may resort to
+pre-allocation, see section 3.5, to achieve this.
+Heuristics are used to reduce the chance of live range splitting
+being necessary, see section 3.7. However, when it is necessary
+the outer loop has provided the failure recovery code with the
+point of the allocation failure and the set of live values. Typically
+a split is necessary to free up a low numbered register. A register
+is freed using a special ‘spill-move’ that is pre-allocated to a high
+
+Register allocation
+
+Algorithm 1 shows Poletto and Sarkar’s original linear scan algorithm simplified to remove spilling3 [28]. When spills are necessary
+because of constraints, live range splits are performed as described
+in section 3.3.
+
+7
+8
+
+9
+10
+
+Function LinearScanRegisterAllocation
+active ← ∅;
+foreach live interval i, in order of increasing start point
+do
+ExpireIntervals(i);
+𝑟𝑒𝑔𝑖𝑠𝑡𝑒𝑟 [i] ← a register removed from pool of free
+registers;
+add i to active, sorted by increasing end point
+Function ExpireIntervals
+foreach interval j in active, in order of increasing end
+point do
+if 𝑒𝑛𝑑𝑝𝑜𝑖𝑛𝑡 [j] ≥ 𝑠𝑡𝑎𝑟𝑡𝑝𝑜𝑖𝑛𝑡 [i] then
+return;
+remove j from active;
+add 𝑟𝑒𝑔𝑖𝑠𝑡𝑒𝑟 [j] to pool of free registers;
+
+11
+12
+
+To summarize the algorithm, it moves forward over intervals
+in the order of their start points. The algorithm first expires all
+intervals that end before this start point, when an interval expires
+it is removed from the set of active intervals and its associated
+register marked as free. A value that’s not live-out but is live-in has
+expired. Once any registers have been freed, a register is selected
+to associate with the interval and the interval is made active.
+Algorithm 2 shows the main loop of the new register allocation
+algorithm. Some terms in the algorithm are:
+• active - a mapping from a register to an instruction that is
+live within it. It is similar to the active interval in algorithm 1.
+• future-active - a mapping from a register to a set of instructions that will occupy it later in the scan. This section will
+consider this set further, and sections 3.5 and 5 concern its
+use in optimizations.
+3 Spilling
+
+is removed due to the large number of dex registers. To consider the new
+algorithm for a limited size register file and stack, the low numbered registers can map
+to the register file while high numbered registers can be considered on the stack.
+
+Ian Rogers
+
+Algorithm 2: Main register allocation loop
+1
+2
+3
+4
+5
+6
+
+7
+8
+
+9
+
+10
+
+11
+12
+
+13
+14
+
+15
+16
+
+Function RegisterAllocation
+active ← ∅;
+future-active ← PreAllocation();
+visited ← ∅;
+live-outs ← ∅;
+foreach cur is the current basic block from the CFG
+iterator do
+live-ins ← set of instructions live into cur;
+ExpireIntervals(active, future-active, visited,
+live-outs, live-ins);
+StartIntervals(active, future-active, live-outs,
+live-ins);
+foreach i is the current instruction from forward
+iteration over cur do
+if i has inputs then
+ExpireIntervalsForInstr(cur, i, live-outs,
+active, future-active, visited, uses);
+if i is not a folded constant then
+AllocateRegister(cur, i, active,
+future-active);
+live-outs ← i;
+visited ← cur;
+
+• live-ins - the values live into a point in the program iteration.
+The live-ins are computed for basic blocks by a liveness pass
+described in section 3.1.
+• live-outs - the values live out of the last basic block or instruction. This set is updated as the algorithm moves forward.
+Live-outs are also known for the end of each basic block.
+• uses - a mapping from an instruction to a set of instructions
+that use it.
+• CFG iterator - an iterator over the basic blocks of the program.
+Measurements in section 4 are from an iterator over blocks
+in the final code layout order.
+The functions within the algorithm will be explained next, but
+at this high-level it can be seen that algorithm 2 is similar to the
+regular linear scan algorithm 1. Rather than iterating over intervals,
+the algorithm iterates over basic blocks and the instructions within
+the basic block. When going between blocks the live-ins to the block
+show which instructions need to be in active. An instruction may be
+live-out of a basic block but not live within the block that has been
+just iterated to. To handle holes in liveness the algorithm moves an
+instruction out of the active set and places it in the future-active
+set. We term instructions moved in this way as being paused. It is
+invariant that an instruction be absent from both, or in exactly one
+of, active and future-active.
+As with liveness holes, Φ instructions, and their associated predecessor block parallel copies, must be placed in either the active
+or future-active sets when they are allocated. It is invalid to place
+something into the active or future-active set associated with a
+
+register if a LiveAtTheSameTime property is true with an instruction already within the set. The LiveAtTheSameTime property is
+explained below, but in the common trivial case if active and the
+future-active are empty then the register can be allocated.
+The difference between active and future-active is that active
+forms the set of instructions currently occupying registers at the
+iteration point in the algorithm. To handle Φ instructions and liveness holes, intervals may be merged in a conventional linear scan
+algorithm. This algorithm summarizes equivalent information in
+the future-active set. To merge two intervals in a conventional
+linear scan algorithm, the intervals must not overlap. To place an
+instruction in active or future-active, in the presented approach,
+the LiveAtTheSameTime property must not hold between the instructions within the active and future-active sets and the instruction being added. Characteristics of the programs being compiled
+will determine how often LiveAtTheSameTime is computed, for
+example, a program consisting of a single basic block has no Φ
+instructions or liveness holes by definition, and therefore need not
+use LiveAtTheSameTime. Characteristics of Android programs and
+their IR are measured section 4.
+Algorithms 3 and 4 show the implementation of the functions
+used in algorithm 2. For the simplicity of presentation, allocation of Φ, blocks of moves and the functions FreeRegister and
+PauseRegister (moving a register from active to future-active)
+are not shown. The cost function used to select the best register
+is described in section 3.7 and it is also responsible for coalescing
+moves.
+Algorithm 3: Expire and start intervals between basic
+blocks
+1 Function ExpireIntervals
+Input: active, future-active, visited, live-outs, live-ins
+2
+foreach instruction i in live-outs but not in live-ins do
+3
+foreach block in CFG not in visited do
+4
+if i is live-in then
+5
+PauseRegister (i, active, future-active);
+6
+continue outer loop;
+7
+8
+
+9
+10
+
+FreeRegister (i, active);
+Function StartIntervals
+Input: cur,active, future-active, visited, live-outs,
+live-ins
+foreach instruction i in live-ins but not in live-outs do
+AllocateRegister (cur, i, active, future-active);
+
+In algorithm 4 the condition on line 9 can only be true for Φmoves. The condition on line 14 has some subtlety, it is not sufficient
+to say there is not a use in an unvisited basic block as an instruction
+may be live over a basic block, but neither used or defined within
+it. To see whether checking 𝑐𝑢𝑟 and unvisited blocks is necessary
+the uses of 𝑗 are checked to see whether there is just a use by 𝑖,
+whether there are multiple uses within 𝑐𝑢𝑟 and whether there are
+uses in unvisited blocks other than 𝑐𝑢𝑟 . Scanning backward to find
+other future uses is similar to bottom-up local register allocation
+[32], but here the algorithm is performing global rather than local
+
+Efficient global register allocation
+
+Algorithm 4: Expire an interval at an instruction and to
+allocate a register
+1
+2
+3
+4
+5
+
+Algorithm 5: Live at the same time
+1
+
+Function ExpireIntervalsForInstr
+Input: cur, i, live-outs, active, future-active, visited, uses
+foreach input value j of instruction i do
+if j is folded constant then
+remove j from live-outs;
+continue;
+if j not in live-outs then
+/*j is a duplicate input
+continue;
+
+6
+
+7
+
+*/
+
+if j is in live-outs of 𝑐𝑢𝑟 then
+if basic block of j is not 𝑐𝑢𝑟 and j has no later uses
+within 𝑐𝑢𝑟 than i and j is defined after i then
+/*Liveness hole within 𝑐𝑢𝑟
+*/
+PauseRegister (j, active, future-active);
+remove j from live-outs;
+
+8
+9
+
+10
+11
+
+2
+3
+
+4
+
+5
+6
+7
+8
+9
+10
+11
+
+continue;
+
+12
+
+remove j from live-outs;
+if j has uses in 𝑐𝑢𝑟 after i or j is in the live-ins of a
+block not in visited then
+PauseRegister (j, active, future-active);
+else
+FreeRegister (i, active);
+
+13
+14
+
+15
+16
+17
+
+12
+13
+14
+15
+16
+17
+
+18
+19
+20
+21
+22
+23
+
+Function AllocateRegister
+Input: 𝑐𝑢𝑟 , i, active, future-active
+if future-active contains i then
+active ← 𝑖;
+Remove i from future-active;
+else
+Select lowest-cost register to allocate to i ensuring
+LiveAtTheSameTime is false. If no register is found
+then fail allocation.
+
+18
+19
+20
+21
+22
+23
+24
+
+25
+26
+
+allocation. In section 5 we will show how the backward scan can
+be avoided.
+Algorithm 5 shows how LiveAtTheSameTime is calculated. The
+algorithm’s complexity is 𝑂 (number of instructions within basic
+block). If the order of instructions within a basic block is known,
+then this can be reduced to 𝑂 (number of uses of an instruction) as
+shown in algorithm 6. The ordered variant of the algorithm is used
+for the measurements in section 4. The ordering requirement is different from linearly numbering all instructions as in a conventional
+linear scan, just the order within a basic block need be known.
+
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+
+3.5
+
+Pre-allocation
+
+As the target of the compiler is the dex file format, fixed registers
+are limited to just the parameters. If the compiler were targeting an
+architecture, for example, that required operands for divide instructions to be in certain registers, then these would be pre-allocated.
+Pre-allocation in the compiler means taking certain instructions and
+
+37
+
+Function LiveAtTheSameTime
+Input: lhs, rhs
+if basic block of lhs is the same as rhs then
+return LiveAtTheSameTimeSameBlock(lhs,rhs,basic
+block of lhs);
+return LiveAtTheSameTimeInBlock(lhs,rhs,basic block
+of lhs) ∨ LiveAtTheSameTimeInBlock(rhs,lhs,basic
+block of rhs);
+Function LiveAtTheSameTimeSameBlock
+Input: lhs, rhs, block
+lhsLiveOut ← is lhs in live-outs of block;
+rhsLiveOut ← is rhs in live-outs of block;
+if lhsLiveOut ∧ rhsLiveOut then
+return true;
+else if ¬lhsLiveOut ∧ ¬rhsLiveOut then
+(first, last) ← search forward in block until
+encountering lhs or rhs, first is the encountered
+instruction and last the other;
+foreach i in backward iteration over block do
+if i = last then
+return false;
+if first is input to i then
+return true;
+else
+if lhsLiveOut then
+swap lhs and rhs;
+foreach i in backward iteration over block do
+if i = rhs then
+return false;
+if lhs is input to i then
+return true;
+Function LiveAtTheSameTimeInBlock
+Input: lhs, rhs, lhsBlock
+if rhs in live-in of lhsBlock;
+then
+if rhs in live-out of lhsBlock;
+then
+return true;
+foreach i in backward iteration over lhsBlock do
+if i = lhs then
+return false;
+if rhs is input to i then
+return true;
+else
+return false;
+
+Ian Rogers
+
+Algorithm 6: Live at the same time using ordering
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+
+Function LiveAtTheSameTimeSameBlock
+Input: lhs, rhs, block, uses
+lhsLiveOut ← is lhs in live-outs of block;
+rhsLiveOut ← is rhs in live-outs of block;
+if 𝑙ℎ𝑠𝐿𝑖𝑣𝑒𝑂𝑢𝑡 ∧ 𝑟ℎ𝑠𝐿𝑖𝑣𝑒𝑂𝑢𝑡 then
+return true;
+else if ¬𝑙ℎ𝑠𝐿𝑖𝑣𝑒𝑂𝑢𝑡 ∧ ¬𝑟ℎ𝑠𝐿𝑖𝑣𝑒𝑂𝑢𝑡 then
+if lhs is before rhs then
+(first, last) ← (lhs, rhs)
+else
+(first, last) ← (rhs, lhs)
+foreach i in uses of first do
+if block =basic block of i ∧ i is after last then
+return true;
+else
+if lhsLiveOut then
+swap lhs and rhs;
+foreach i in uses of lhs do
+if block =basic block of i ∧ i is after rhs then
+return true;
+return false;
+Function LiveAtTheSameTimeInBlock
+Input: lhs, rhs, lhsBlock, uses
+if rhs in live-in of lhsBlock;
+then
+if rhs in live-out of lhsBlock;
+then
+return true;
+
+fewest instructions, or when this is equal, that occupy the highest
+numbered registers.
+Spills are pre-allocated after all other instructions, as with block
+moves, the compiler looks to see if a register will hold a value from
+a spill or a spill hold an already pre-allocated value. The register
+chosen for a spill is the highest numbered register that minimizes
+the number of generated move instructions.
+
+3.6
+
+3.7
+
+Allocation heuristics
+
+If the allocation of a register is not coalesced the register allocated
+is chosen on the basis of cost.
+• if the instruction being allocated satisfies the constraints for
+a 2-address instruction, inputs in low numbered registers
+and a suitable output register is available, then this lowers
+the cost of using one of the inputs as the output.
+• last active description - if debugging is requested then it is
+useful to keep local variables and parameters in the same
+register across allocation, to avoid modifying the debugging
+metadata. If the instruction being allocated’s debug information matches the last instruction to inhabit a register then
+the register is considered to have a lower cost.
+• last active - this set records which instruction previously
+inhabited the active register during the scan. The allocator
+prefers to clobber registers that do not have debug descriptions and those bearing object references. We wish to clobber
+object references as the compiler generates more efficient
+code than previous compilers, leading to object references
+frequently being left in a register and in the runtime’s interpreter having an extended live range. Clobbering the values
+first removes some of this problem5 .
+• the compiler aligns long and double values on even register
+numbers. The original ART ahead-of-time compiler had a
+simplistic mapping of dex registers to fixed ARM registers
+
+foreach i in uses of rhs do
+if lhsBlock =basic block of i ∧ i is after lhs then
+return true;
+return false;
+
+placing them into future-active before the main loop is ran. As described in section 3.3, spills are pre-allocated as well as block move
+operations. By allocating these moves early AllocateRegister
+can look at the future uses by moves of a value, and then choose
+the same register so that the move does not require an instruction
+to be generated. This is similar to fixed intervals in conventional
+linear scan algorithms [35].
+Code size is important for the compiler, and with poor register
+allocation move operations can make a substantial contribution. In
+pre-allocation of block moves the compiler takes into consideration
+that other block moves may duplicate a value in a different register.
+The compiler keeps a map from the input instruction, with Φ and
+moves removed, to the allocated register. When choosing registers
+to pre-allocate block moves into, knowing that a register holds a
+value, or a copy of it, lowers its cost to the pre-allocation code. The
+pre-allocation selects registers for block moves that produce the
+
+Coalescing
+
+The compiler coalesces by looking backward. When allocating a
+move, the top non-Φ or move input is computed4 . Iterating over the
+active registers the top non-Φ or move is computed for each active
+value. If the same value is seen then that register is considered to
+have a lower allocation cost.
+The compiler also coalesces looking forward. Section 3.5 described how block move pre-allocation selects registers to minimize
+moves. The compiler also looks at ‘future-active’, when allocating
+a register, to see if a move will later occupy that register that takes
+this instruction as an input.
+During code generation the top non-Φ or move input is remembered for each register. If a move is attempted to be generated to
+copy the same value into the register, it is elided. At basic block
+boundaries, that are not trivial fall-through cases, the map to elide
+moves is cleared.
+
+4 Spill
+
+and swap moves are considered somewhat differently. If spills are elided we
+may end up with live values in low numbered registers, removing their utility. Swap
+moves always terminate the input search as coalescing a swap move would remove
+the temporary copy of its input.
+5 The compiler’s front end introduces instructions to track explicit nulls being stored
+in local variables. This information is used to ensure such locals are clobbered by the
+register allocator to avoid an extended lifetime in the runtime’s interpreter.
+
+Efficient global register allocation
+
+Allocation Failure
+4.3%
+Instr. New Intervals
+20.5%
+
+Liveness
+35.0%
+
+Instr. Expire
+11.9%
+Block New Intervals
+2.8%
+Block Expire
+3.0%
+
+Pre-allocation
+22.5%
+
+Figure 2: Break down of register allocation time
+
+[10]. If longs or doubles were not in even numbered registers
+then they would be held in the stack frame and loaded and
+stored for each operation.
+• rather than allocating high numbered registers to free up
+low numbered registers, the compiler attempts to always
+allocate regular instructions in low numbered registers. Preallocation does the opposite when selecting registers. Allocation generally produces the smallest code size when it uses
+low numbered registers as these give the greatest freedom
+with instruction encoding.
+
+ANALYSIS
+
+We instrumented the compiler and compiled the Java classes to dex
+files for the Android platform from Android Open Source Project
+(branch android-9.0.0_r9) for the full_x86-user build [1]. Measurements were made per method compiled and then aggregated. The
+number of methods compiled was 693,166, with 4.851 basic blocks
+per method on average. The average number of instructions within
+a basic block was 7.482, and the average number of registers allocated per method was 3.532.
+Fig. 2 gives a timing breakdown of the parts of the register allocator6 . Almost half the register allocation time is spent in liveness
+analysis and pre-allocating instructions before the main loop is
+entered. As described in section 3.6 pre-allocation is used to improve coalescing and tries to align blocks of moves used to set up
+invoke instructions. This form of pre-allocation is specific to dex
+code generation and so such a proportion of time being spent in
+pre-allocation need not be necessary for other targets. Expiring
+and then starting intervals using live sets between basic blocks
+accounts for 5.806% of compilation time, whilst doing the same for
+instructions accounts for 32.424% of register allocation time.
+AreLiveAtTheSameTime replaces intervals within the register
+allocator, of the methods compiled 80.206% required no calls to
+this function. We rank the methods by the number of calls to
+
+1000
+
+Maximum calls per instruction
+
+4
+
+AreLiveAtTheSameTime and then plot their maximum calls per instruction to AreLiveAtTheSameTime broken apart into total, within
+the same block or different blocks. The number of instructions includes retry attempts, and AreLiveAtTheSameTime is counted for
+pre-allocation and the main allocation. Calls per instruction is used
+as longer methods are expected to make more calls. Fig. 3 shows
+this data. For 90%, 99% and 99.9% of methods, the maximum calls
+to AreLiveAtTheSameTime per instruction is less than 10, 70 and
+400 respectively. The majority of the calls are to determine liveness between instructions in different basic blocks. Whilst the large
+numbers of calls are for a small fraction of methods, they are disappointingly large. We found that the outlying cases, with large
+numbers of calls, solely comprised of large class initializers that
+required a large number of constants. These methods would also
+frequently use invokes and range based method invocation that
+made use of pre-allocation. Section 3.1 described the live range
+splitting for constants as being naïve and more splitting would reduce calls to AreLiveAtTheSameTime but possibly at that the cost
+of code quality. Section 5 describes how the number of calls could
+be reduced using different block and instruction iteration strategies.
+On average each instruction is used by less than one other instruction, 0.793 for our test data. Fig. 4 shows the breakdown of
+what kind of instruction uses exist. 33.819% of instructions have
+no uses, 60.452% are used in just their defining basic block and
+59.362% have just one use. We conclude that over 90% of intervals
+for instructions are trivial - a single use, or uses just within the
+defining basic block.
+
+All live at same time
+Different blocks
+Same block
+
+100
+
+10
+
+1
+
+80
+
+82
+
+84
+
+86
+
+88
+
+90
+
+92
+
+94
+
+96
+
+98
+
+Normalized method rank
+6 As
+
+individual parts of the register allocation execute too quickly to measure with operating system time calls, the Intel rdtsc instruction was used and scaled appropriately
+to give wall clock time. Results are the average of 30 runs of building Android single
+threaded on an Intel Xeon E5-2690 at 2.9GHz with 64GB of RAM.
+
+Figure 3: Maximum number of AreLiveAtTheSameTime calls
+per instruction against normalized method rank
+
+100
+
+Ian Rogers
+
+0 uses
+Use in same block
+Use in different block
+Use in same & different
+block
+1 use
+>1 use
+
+0%
+
+25%
+
+50%
+
+75%
+
+100%
+
+Figure 4: Kinds of instruction uses
+The outer loop will retry allocation for pre-allocation to aid coalescing, if there are insufficient registers7 and to split live ranges
+to free up low numbered registers. Fig. 5 gives a breakdown of the
+kinds of retry attempt that cause the outer loop to restart. In 81.330%
+of the methods compiled no retrying was necessary, and for a further 18.195% allocation was only retried as there were insufficient
+registers to meet instruction constraints8 . Pre-allocation is 0.5% of
+all retry attempts, and is used to introduce block moves. Initially
+block moves are considered not to be necessary for operations with
+a small number of arguments. If insufficient low numbered registers are available then the block moves are pre-allocated in higher
+numbered registers so that they are visible to forward coalescing
+and allocation retried.
+Live range split
+3.5%
+
+More registers
+24.5%
+
+6
+
+Pre-allocation
+0.5%
+
+No retry
+71.4%
+
+Figure 5: Kinds of retry attempt for the outer allocation loop
+
+5
+
+IMPROVEMENTS
+
+By using the final code layout order to allocate registers, it was
+hoped that the best decisions for register allocation and how to
+handle allocation failures could be made. For example, in the case of
+trivial fall-through between blocks, information to guide clobbering
+7 As
+
+heuristics could be retained. However, final code layout order is not
+optimized to avoid liveness holes. For example, a value could be used
+in a catch block at the end of the iteration order, and consequently
+the future-active register can end up holding the value during most
+of the allocation. All allocations to that register will then require
+a LiveAtTheSameTime test. Using a reverse post-order traversal
+would likely reduce this problem, as could considering loops and
+loop nesting [5, 6].
+A different problem is in establishing whether the use of a value is
+the last use. The expire functions must either iterate over unvisited
+blocks, or scan uses within a block. Hecht and Ullman established
+that CFG traversal order can be informed by dominance [19]. Going
+in a dominance order would still not simplify the last use question,
+but reversing the order and iterating backward through instructions
+would. In a such a traversal, a use would allocate a register whereas
+arriving at the definition would indicate that the register is now
+free, all other live range holes would indicate a pause.
+A backward traversal would also allow block moves to be allocated before their inputs. Pre-allocation of block moves to aid
+coalescing causes greater use of the future-active sets, and more
+LiveAtTheSameTime tests.
+Whilst improving runtime performance is possible, it is also
+possible to improve the quality of code generation. Other interval
+based allocators, such as the greedy register allocator in LLVM
+[26], do not allocate registers in order of start point but instead use
+priority queues to determine the ordering of intervals to allocate.
+A similar approach is applicable to this compiler where instead
+of a priority queue of intervals, a priority queue of instructions
+can be formed. Allocation would be similar to pre-allocation, see
+section 3.5. Fitting instructions into registers in an ad hoc manner
+may motivate the construction of intervals to lower the cost of
+AreLiveAtTheSameTime, but other heuristics may achieve a similar
+effect. If intervals were a performance improvement then they could
+be lazily constructed as common IR patterns, such as 33.819% of
+instructions having no uses, would still benefit from the approach
+presented here.
+
+the compiler does not perform a register assignment pass, to minimize moves, it
+needs the exact the register numbers to compute registers for parameters.
+8 These numbers differ from figure 5 as a method may retry allocation more than once.
+
+RELATED WORK
+
+From the beginning of linear scan register allocation, the removal
+of interval creation has been in the mind of developers [28]. Poletto
+and Sarkar’s approach was based on strongly connected components and produced an approximation of liveness that impacted
+code quality in large benchmarks, in the extreme making them 6.8
+times slower. They reasoned that the approach may be suitable
+when quickly compiling small functions. Similar to small functions
+are ‘trivial traces’ for which Eisl et al. present a bottom-up register
+allocator that is faster than linear scan [16]. However, given the
+lowering of code quality this allocator is used for the compilation
+of traces of lower importance to peak performance. Sarkar and
+Barik contributed extended linear scan to improve code generation
+quality to being equivalent to graph coloring while retaining linear
+scan’s performance [30].
+Treescan register allocation seeks to exploit properties of SSA
+form and avoids the creation of intervals [15]. A primary use for
+the Treescan register allocator was envisioned to be in just-in-time
+compilers where fast compile times could be beneficial over code
+
+Efficient global register allocation
+
+quality. A code quality issue in Treescan is that information about
+what will need to occupy a register is not kept, instead moves are
+inserted and possibly loop backedges broken so that fixed and Φ
+register requirements can be met (this is known as repairing). Precoalescing looks to reduce this code generation issue. If an ability
+to look-ahead is given to Treescan, such as with ‘future-active’
+sets, then the behavior will match the register allocator here with a
+reverse post order block traversal strategy. However, as described in
+section 5, for minimal code generation time a post-order traversal
+iterating backward through instructions in the basic block may be
+faster as the last use need not be considered to expire an interval.
+Treescan is built around a fast liveness analysis [3] whereas the
+approach here uses a global liveness described in section 3.1. In detecting ‘live-at-the-same-time’ between instructions the approach
+has similarities to bottom-up local register allocation [32]. Whilst
+simplistic this approach keeps the intermediate representation and
+side metadata down to a minimum, and as such has similarities
+with efforts in compilers such as sea-of-nodes representations [13].
+Previous work has contrasted linear scan and graph coloring
+forms of register allocation [29, 30]. As the interference graph is
+synonymous with graph coloring, liveness intervals have become
+synonymous with linear scan allocators, and this work shows how a
+well performing linear scan allocator can be made without liveness
+intervals, with an attempt to better guide decisions around live
+range splitting and coalescing.
+Optimal register allocation has looked to use cost models to
+compute a cheapest possible register allocation [18, 24]. Cost models are related to heuristics, for example, LLVM’s greedy register
+allocator places a cost on allocating into callee-save registers as
+the prologue and epilogue will need to save and restore them [26].
+A cost model can model spilling and filling the callee-save, and if
+given enough freedom, consider spilling and filling in more than
+just the prologue and epilogue. The compile time performance of
+optimal register allocation has meant that it has not been widely
+adopted. Learning good heuristics for scan based allocation, from
+an optimal allocation, could enable a compromise in produced code
+quality and compile time register allocator performance.
+The heuristics for coalescing presented in section 3.6 are similar
+to register hints introduced by Wimmer and Mössenböck [34, 35], in
+that they are a cheap heuristic hoping to reduce code size. Similarly
+another simple heuristic is that they avoid fills and spills within
+loops to improve runtime performance. In this work code size was
+more important and so a similar heuristic was not used in live range
+splitting.
+Treescan aimed to minimize repairing through pre-coalescing
+and used an interference like analysis based on SSA form to do
+this [2, 9]. Efficient coalescing and SSA register allocation are also
+tackled by Braun et al. [8]. Unlike those works, this work does not
+coalesce based on representations or analyses. Coalescing decisions
+are considered during the allocation pass and splits introduced
+at the point the machine constraints are reached. In dex code redundant copies of values are common, consider an argument to
+a method that is passed many times and must appear at different
+argument positions. The allocator elides copies reusing existing
+duplicates. The lightweight approach presented has allowed for
+unique machine optimizations to be applied and it is a significant
+
+virtue of the approach, brought about by the desire to avoid implementation complexity.
+
+7
+
+CONCLUSIONS
+
+The popularity of linear scan register allocation led to the popularity of intervals to determine interference between values being
+allocated. This paper has shown a scan based register allocation
+algorithm without intervals, removing a significant cost from linear
+scan allocation while retaining its global register allocation property. The paper has presented this algorithm within a production
+compiler mapping between virtual machines, aiming at minimizing
+code size. A compile time breakdown is given showing the new
+algorithm to have low cost, as well as features of the IR that justify the choice of the algorithm - specifically that over 90% of live
+ranges are trivial and over 80% of methods can be register allocated
+without consideration of what will later be in the register. The
+analysis of what happens in the 20% shows that for Java code the
+costs increase for a small percentage of methods, in particular class
+initializers.
+The approach is lightweight allowing for novel coalescing optimizations. The paper has also considered how the algorithm may be
+improved in both runtime performance and code generation quality. The lack of constraints on block order allows for trade-offs but
+may put pressure on ‘future-active’ sets and ‘live-at-the-same-time’
+calls as a consequence. However, the allocation algorithm is unique
+among SSA register allocators that avoid graphs and intervals in
+that these trade-offs can be fully explored.
+In the context of dex code generation the approach did not seek
+to minimize register allocation time and focused on code quality, for
+example by retrying register allocation when machine constraints
+were reached. Even with the sub-optimal basic block iteration order
+and retrying, the cost of the global register allocation is less than
+two times the liveness computation. With low register allocation
+cost, we believe the approach to be broadly useful for fast and low
+memory overhead compilation such as for just-in-time compilers.
+
+8
+
+ACKNOWLEDGMENTS
+
+The author wishes to thank Google for their support. This work
+wouldn’t have been possible without the encouragement, feedback,
+support and energy of Lirong He, Andreas Gampe, Jisheng Zhao,
+Raj Barik, Vivek Sarkar, Ross McIlroy, Martin Maas, Jason Parachoniak, Michael Quigley, Nicholas Tobey, Arnaud Venet, Shai Barak,
+Eddie Aftandilian, Jeremy Manson, Kevin Bierhoff, Liam Cushon,
+Chuck Rasbold, Ivan Posva, Danny Berlin, Sanjay Ghemawat, Jim
+Stichnoth and Diego Novillo. The author would also like to thank
+Matthias Braun and Lang Hames for enlightening conversations.
+
+REFERENCES
+[1] Open Handset Alliance. 2018. Android Open Source Project. https://source.
+android.com/.
+[2] Benoit Boissinot, Alain Darte, Fabrice Rastello, Benoit Dupont de Dinechin, and
+Christophe Guillon. 2009. Revisiting Out-of-SSA Translation for Correctness,
+Code Quality and Efficiency. In Proceedings of the 7th Annual IEEE/ACM International Symposium on Code Generation and Optimization (CGO ’09). IEEE Computer
+Society, Washington, DC, USA, 114–125.
+[3] Benoit Boissinot, Sebastian Hack, Daniel Grund, Benoît Dupont de Dine hin,
+and Fabri e Rastello. 2008. Fast Liveness Checking for Ssa-Form Programs.
+In Proceedings of the 6th Annual IEEE/ACM International Symposium on Code
+
+Ian Rogers
+
+[4]
+[5]
+
+[6]
+[7]
+
+[8]
+[9]
+[10]
+[11]
+[12]
+
+[13]
+[14]
+[15]
+
+[16]
+
+[17]
+[18]
+[19]
+
+[20]
+
+[21]
+[22]
+
+[23]
+[24]
+
+[25]
+
+[26]
+
+Generation and Optimization (CGO ’08). Association for Computing Machinery,
+New York, NY, USA, 35–44.
+Dan Bornstein. 2008. Dalvik VM internals. In Google I/O developer conference.
+https://youtu.be/ptjedOZEXPM.
+François Bourdoncle. 1993. Efficient chaotic iteration strategies with widenings.
+In Formal Methods in Programming and Their Applications, Dines Bjørner, Manfred
+Broy, and Igor V. Pottosin (Eds.). Springer Berlin Heidelberg, Berlin, Heidelberg,
+128–141.
+Florian Brandner, Benoit Boissinot, Alain Darte, Benoît Dupont De Dinechin, and
+Fabrice Rastello. 2011. Computing Liveness Sets for SSA-Form Programs. Research
+Report RR-7503. INRIA.
+Matthias Braun, Sebastian Buchwald, Sebastian Hack, Roland Leißa, Christoph
+Mallon, and Andreas Zwinkau. 2013. Simple and Efficient Construction of Static
+Single Assignment Form. In Compiler Construction, Ranjit Jhala and Koen De Bosschere (Eds.). Springer Berlin Heidelberg, Berlin, Heidelberg, 102–122.
+Matthias Braun, Christoph Mallon, and Sebastian Hack. 2010. Preference-Guided
+Register Assignment. In Compiler Construction, Rajiv Gupta (Ed.). Springer Berlin
+Heidelberg, Berlin, Heidelberg, 205–223.
+Zoran Budimlic, Keith D. Cooper, Timothy J. Harvey, Ken Kennedy, Timothy S.
+Oberg, and Steven W. Reeves. 2002. Fast Copy Coalescing and Live-Range
+Identification. SIGPLAN Not. 37, 5 (May 2002), 25–32.
+Brian Carlstrom, Anwar Ghuloum, and Ian Rogers. 2014. The ART runtime. In
+Google I/O 2014. https://www.google.com/events/io/io14videos/b750c8da-aebee311-b297-00155d5066d7.
+Gregory J. Chaitin, Marc A. Auslander, Ashok K. Chandra, John Cocke, Martin E.
+Hopkins, and Peter W. Markstein. 1981. Register Allocation via Coloring. Comput.
+Lang. 6, 1 (Jan. 1981), 47–57.
+Jong-Deok Choi, David Grove, Michael Hind, and Vivek Sarkar. 1999. Efficient and
+Precise Modeling of Exceptions for the Analysis of Java Programs. In Proceedings
+of the 1999 ACM SIGPLAN-SIGSOFT Workshop on Program Analysis for Software
+Tools and Engineering (PASTE ’99). ACM, New York, NY, USA, 21–31.
+Cliff Click and Michael Paleczny. 1995. A Simple Graph-Based Intermediate
+Representation. SIGPLAN Not. 30, 3 (March 1995), 35–49.
+The Android Source Code. 2020. Dalvik bytecode. https://source.android.com/
+devices/tech/dalvik/dalvik-bytecode.
+Quentin Colombet, Benoit Boissinot, Philip Brisk, Sebastian Hack, and Fabrice
+Rastello. 2011. Graph-Coloring and Treescan Register Allocation Using Repairing.
+In Proceedings of the 14th International Conference on Compilers, Architectures
+and Synthesis for Embedded Systems (CASES ’11). Association for Computing
+Machinery, New York, NY, USA, 45–54.
+Josef Eisl, Stefan Marr, Thomas Würthinger, and Hanspeter Mössenböck. 2017.
+Trace Register Allocation Policies: Compile-time vs. Performance Trade-offs.
+In Proceedings of the 14th International Conference on Managed Languages and
+Runtimes (ManLang 2017). ACM, New York, NY, USA, 92–104.
+James Gosling, Bill Joy, Guy L. Steele, Gilad Bracha, and Alex Buckley. 2014.
+The Java Language Specification, Java SE 8 Edition (1st ed.). Addison-Wesley
+Professional.
+Lang Hames and Bernhard Scholz. 2006. Nearly Optimal Register Allocation
+with PBQP. In Modular Programming Languages, David E. Lightfoot and Clemens
+Szyperski (Eds.). Springer Berlin Heidelberg, Berlin, Heidelberg, 346–361.
+Matthew S. Hecht and Jeffrey D. Ullman. 1973. Analysis of a Simple Algorithm
+for Global Data Flow Problems. In Proceedings of the 1st Annual ACM SIGACTSIGPLAN Symposium on Principles of Programming Languages (POPL ’73). ACM,
+New York, NY, USA, 207–217.
+Thomas Kotzmann, Christian Wimmer, Hanspeter Mössenböck, Thomas Rodriguez, Kenneth Russell, and David Cox. 2008. Design of the Java HotSpot Client
+Compiler for Java 6. ACM Transactions on Architecture and Code Optimization 5,
+1, Article 7 (May 2008), 7:1–7:32 pages.
+Eric Lafortune. 2018. ProGuard Java Optimizer and Obfuscator. https://
+sourceforge.net/projects/proguard/.
+Chris Lattner and Vikram Adve. 2004. LLVM: A Compilation Framework for
+Lifelong Program Analysis & Transformation. In Proceedings of the International
+Symposium on Code Generation and Optimization: Feedback-directed and Runtime
+Optimization (CGO ’04). IEEE Computer Society, Washington, DC, USA, 75–.
+Tim Lindholm, Frank Yellin, Gilad Bracha, and Alex Buckley. 2014. The Java
+virtual machine specification. Pearson Education.
+Roberto Castañeda Lozano, Mats Carlsson, Gabriel Hjort Blindell, and Christian
+Schulte. 2016. Register Allocation and Instruction Scheduling in Unison. In
+Proceedings of the 25th International Conference on Compiler Construction (CC
+2016). ACM, New York, NY, USA, 263–264.
+Hanspeter Mössenböck and Michael Pfeiffer. 2002. Linear Scan Register Allocation in the Context of SSA Form and Register Constraints. In Compiler Construction, R. Nigel Horspool (Ed.). Springer Berlin Heidelberg, Berlin, Heidelberg,
+229–246.
+Jakob Stoklund Olesen. 2011. Register Allocation in LLVM 3.0. In 2011 LLVM
+Developers’ Meeting.
+
+[27] Massimiliano Poletto, Dawson R. Engler, and M. Frans Kaashoek. 1997. Tcc: A
+System for Fast, Flexible, and High-level Dynamic Code Generation. In Proceedings of the ACM SIGPLAN 1997 Conference on Programming Language Design and
+Implementation (PLDI ’97). ACM, New York, NY, USA, 109–121.
+[28] Massimiliano Poletto and Vivek Sarkar. 1999. Linear Scan Register Allocation.
+ACM Transactions on Programming Languages and Systems 21, 5 (Sept. 1999),
+895–913.
+[29] Hongbo Rong. 2009. Tree register allocation. In 2009 42nd Annual IEEE/ACM
+International Symposium on Microarchitecture (MICRO). 67–77.
+[30] Vivek Sarkar and Rajkishore Barik. 2007. Extended Linear Scan: An Alternate
+Foundation for Global Register Allocation. In Proceedings of the 16th International
+Conference on Compiler Construction (CC’07). Springer-Verlag, Berlin, Heidelberg,
+141–155.
+[31] Android Studio. 2020. d8. https://developer.android.com/studio/command-line/
+d8.
+[32] Linda Torczon and Keith Cooper. 2012. Engineering A Compiler (2nd ed.). Morgan
+Kaufmann Publishers Inc., San Francisco, CA, USA.
+[33] Omri Traub, Glenn Holloway, and Michael D. Smith. 1998. Quality and Speed
+in Linear-scan Register Allocation. In Proceedings of the ACM SIGPLAN 1998
+Conference on Programming Language Design and Implementation (PLDI ’98).
+ACM, New York, NY, USA, 142–151.
+[34] Christian Wimmer and Michael Franz. 2010. Linear Scan Register Allocation on
+SSA Form. In Proceedings of the 8th Annual IEEE/ACM International Symposium on
+Code Generation and Optimization (CGO ’10). ACM, New York, NY, USA, 170–179.
+[35] Christian Wimmer and Hanspeter Mössenböck. 2005. Optimized Interval Splitting in a Linear Scan Register Allocator. In Proceedings of the 1st ACM/USENIX
+International Conference on Virtual Execution Environments (VEE ’05). ACM, New
+York, NY, USA, 132–141.
+
+

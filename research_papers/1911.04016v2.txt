@@ -1,0 +1,711 @@
+1
+
+arXiv:1911.04016v2 [cs.SE] 22 Jul 2021
+
+Challenges for Inclusion in Software Engineering:
+The Case of the Emerging Papua New Guinean
+Society
+Raula Gaikovina Kula, Christoph Treude, Hideaki Hata, Sebastian Baltes, Igor Steinmacher,
+Marco Aurélio Gerosa, Winifred Kula Amini
+NAIST, University of Adelaide, Shinshu University, Federal University of Technology Paraná
+Northern Arizona University, PNG Digital ICT Cluster
+raula-k@is.naist.jp, {christoph.treude, sebastian.baltes}@adelaide.edu.au, hata@shinshu-u.ac.jp
+igor@utfpr.edu.br, Marco.Gerosa@nau.edu, winifred.amini@gmail.com
+
+Abstract—Software plays a central role in modern societies,
+with its high economic value and potential for advancing societal
+change. In this paper, we characterise challenges and opportunities for a country progressing towards entering the global
+software industry, focusing on Papua New Guinea (PNG). By
+hosting a Software Engineering workshop, we conducted a qualitative study by recording talks (n=3), employing a questionnaire
+(n=52), and administering an in-depth focus group session with
+local actors (n=5). Based on a thematic analysis, we identified
+challenges as barriers and opportunities for the PNG software
+engineering community. We also discuss the state of practices
+and how to make it inclusive for practitioners, researchers, and
+educators from both the local and global software engineering
+community.
+Keywords-Inclusion, emerging society, software engineering.
+
+I. I NTRODUCTION
+Advances in technology have the potential to transform
+societies [1]. As a society currently undergoing technological,
+economic, and social transformations, Papua New Guinea
+(PNG) is entering the digital age and showing signs of an
+emerging local software engineering community. In 2018, a
+local PNG software development team won the annual APEC
+App Challenge (https://www.apec.org/Press/Features/2018/05
+30 app). Such progress paves the way for local economic
+development, with opportunities for young and talented individuals to develop software in areas such as natural resources,
+finance, healthcare, and education. These developments also
+open the local society to the global software engineering (SE).
+Following the work by Reijswoud et al. [2] carried out in
+2009, we set out to conduct a qualitative study with the local
+community in PNG, exploring the current situation and possible future directions in that emerging software development
+society. The goal of this study is to answer the research question, what are the challenges (as barriers and opportunities)
+for Software Engineering (SE) in an emerging society? To
+answer this question, we organised a workshop in PNG and
+conducted an empirical analysis based on three recorded talks,
+52 questionnaire responses, and a focus group session with
+five participants. Through thematic analysis, we derived five
+themes that affect software engineering in emerging societies
+
+Figure 1.
+
+Overview of the thematic approach for the study
+
+such as PNG. From that analysis, we distilled a set of local
+as well as global implications.
+II. PAPUA N EW G UINEA AS AN E MERGING S OCIETY
+According to the World Bank [3], PNG has a population
+of over 9.1 million (2020) with a diversity of geographic and
+natural resources. The country also has an overall economic
+growth performance consistent with the real Gross Domestic
+Product (GDP) per capita, averaging 4% since the mid-2000s.
+Sound macroeconomic management and more efficient service
+delivery are critical to ensure that development benefits reach
+a higher number of Papua New Guineans, particularly given
+that 87% of Papua New Guineans live in rural areas. The
+growth trajectory and abundant resources provide a reliable
+platform for greater economic engagement with Asia and
+further abroad. The country’s economy is currently dominated
+by resource-driven sectors, such as agricultural, forestry, and
+fishing sectors and the minerals and energy extraction sector.
+The World Bank report states that the population is highly
+dispersed and fragmented, as a result of the mountainous and
+archipelagic geography, low urbanization rate (13 percent),
+
+2
+
+(a)
+Talks
+
+Invited
+Talks
+
+Background
+
+(b)
+Survey
+
+Software
+Development
+Skills
+
+Tools and
+Infrastructure
+
+Outlook
+
+Private Sector (Business Officer) - Talk on Internet Connectivity
+Government Organization (Chief Executive Officer) - Talk on Government Plans for ICT in PNG
+Financial Institution (Project Manager) - Talk on ICT in a Financial Institution
+
+What is your current role and affiliation?
+Have you ever worked on a closed-source software project?
+Have you ever worked on an open-source software project?
+If you have contributed to open-source before, how did you choose which project to contribute?
+Have you spent time outside of PNG for education or work? If so, where and for how long?
+What attracted you to attend this workshop?
+-What formal education have you had in programming and/or software development?
+If you had any education in programming/software development, what motivated you to learn?
+Where did/do you learn programming/software development outside of formal education?
+What do you see as the main strengths of programming/software development education in PNG?
+What do you see as the main challenges for programming/software development education in PNG, what would it be?
+If you could change one thing about programming/software development education in PNG, what would it be?
+-What tools do you use when developing software?
+Where and how did/do you find these tools?
+How do you keep up with the latest trends and developments relevant to software development?
+If you could change one thing about tools/infrastructure for software development in PNG, what would it be?
+-In your opinion, what is the role of programming and software development for industry and society in PNG?
+What do you think will be the most important trends in programming and software development for PNG in the next few
+years?
+Would you be willing to have a quick follow-up chat with us? How can we reach you?
+
+Market/Hiring
+
+(c)
+Focus
+Group
+
+Infrastructure
+
+Education/Training
+
+Government
+
+Figure 2.
+
+How is the software market? What are the opportunities? (languages and platforms etc.)
+What kind of recognition would be interesting after training people?
+When you hire someone, what kinds of evidence do you request to understand the skills and abilities of the
+candidates?
+Would you consider looking at the GitHub profile?
+How to create awareness about what is possible to learn/work with/do with software development?
+-How common is it to have computers at home/school/freely accessible?
+If available somewhere, what is the pre-set of applications?
+Who should be responsible to lead some kind of project?
+Should it be inside existing high schools, universities, etc.?
+-How should software development education be adapted?
+University vs. school level?
+When do they start teaching programming?
+When should they start?
+How do developers learn to code? (since the internet connection is unstable, copy and paste may be less
+common)
+What about mentoring? Who would be a mentor? How would mentors be recruited? How would mentors
+be trained?
+Where on the Internet do you look for information about software development?
+-How do you feel that politics and government act in terms of supporting software development initiatives?
+What do you need from the government to help promote the field?
+
+Summary of the three data sources, from which information was collected for the study.
+
+high ethnolinguistic diversity (840 distinct language groups),
+and social identities that are primarily small-scale, hence
+sharing the political economy characteristics of resource-rich
+states.
+PNG’s emergence into the digital age may foster access to
+life-enhancing services in areas such as health and education.
+It may also catalyze innovation and economic growth,
+with the promise of new jobs and increased tax revenues
+(https://www.gsma.com/r/mobileeconomy/pacific-islands/).
+Like other emerging nations, PNG’s Internet connectivity
+remains comparatively low, but is continuously improving.
+From 2010 until 2013, the Internet penetration increased
+from 1.3% to 6.5%. Since 2013, Internet penetration has
+jumped from 6.5% to 30% in 2018. This penetration is,
+however, significantly lower than in neighbour countries
+like Fiji (84% in 2018). This situation is about to improve
+with a new submarine fibre-optic cable connection to
+Australia (https://oxfordbusinessgroup.com/news/how-png-a
+chieving-faster-more-reliable-internet-access). The formal
+economy is divided into two sectors, state and non-state
+
+institutions. However, PNG’s informal economy was valued
+at 12 billion kina (US$3.5 billion), which is equivalent to
+approximately one-fifth of the GDP and about 60% of the nonresource GDP [4]. Considering the large number of people
+participating in the informal economy, the PNG government
+has begun to invest in Small to Medium Enterprises (SMEs)
+to advocate for financial inclusion (https://oxfordbusinessgr
+oup.com/analysis/growth-unchained-new-technologies-coupl
+ed-infrastructure-upgrades-are-expanding-access-financial).
+For example, since mid-2017, banks have actively promoted
+the distributed ledger technology blockchain for providing
+alternate forms of financial services. Progress, however,
+has been slow. As of mid-2018, only about 9.2% of the
+population has access to some form of digital wallet. The
+PNG government has begun to invest in SMEs to advocate
+for financial inclusion.
+A. The Software Engineering Perspective: BRIDGES
+Based on the underlying research goal, we conducted a
+qualitative study involving local actors from the emerging
+
+3
+
+Table II
+T HEMES WHICH EMERGED FROM THE DATA ANALYSIS
+
+Table I
+D EMOGRAPHICS OF INVITED SPEAKERS (S1-S3), QUESTIONNAIRE
+RESPONSES (Q1-Q52) AND PARTICIPANTS IN THE FOCUS GROUP (P1-P5)
+
+Theme
+
+ID
+
+Man/Women
+
+S1
+S2
+S3
+
+Man
+Man
+Woman
+
+Q1-Q23
+Q24-Q35
+Q36-Q45
+Q46-Q52
+P1
+P2
+P3
+P4
+P5
+
+Demographic
+
+Sector
+
+Business Officer
+Chief Executive Officer
+Project Manager
+
+State Institution
+Government
+Non-state Institution
+
+-
+
+High School Students
+Professionals (IT)
+Startup associates
+Students (Undergrad)
+
+State Institution
+Non-state Institution
+SMEs
+State Institution
+
+Woman
+Man
+Woman
+Woman
+Man
+
+Managerial (IT)
+Managerial (Non-IT)
+Student (Undergrad)
+Entrepreneur (CEO)
+IT Consultant
+
+Non-state Institution
+Non-state Institution
+State Institution
+SMEs
+Non-state Institution
+
+local software engineering community. To this end, we organized and hosted the International Workshop on BRIdging
+the Divides with Globally Engineered Software (BRIDGES) at
+https://naist-se.github.io/BRIDGES2019/. The workshop was
+run by the University of Papua New Guinea (UPNG) and Nara
+Institute of Science and Technology (NAIST). Recruitment
+was through UPNG, as well as open invitations sent to the
+local high schools, and all state and non-state institutions
+located in Port Moresby. We formally invited a representative
+from the PNG government. The workshop and survey were
+conducted in English as the main form of communication.
+The workshop was held for three days in Port Moresby, the
+capital city of PNG and the largest urban city in the Pacific
+region, with a population estimated at over 350 thousand.
+III. S TUDY D ESIGN
+Illustrated in Figure 1, we use our research question to structure our analysis, based on the thematic analysis framework
+proposed by Braun and Clarke [5]. Figure 2 shows the list
+of questions that were used in our study. Each data source is
+described below:
+1) Workshop Talks (n=3): The BRIDGES Workshop talks
+given by local SE community members were recorded.
+All three talks ranged from 25 to 30 minutes each
+and included interactive discussions with the audience
+afterwards. We recruited these three presenters as they
+represent different sectors in PNG, including government
+(S2) - Department of Higher Education Research, Science
+and Technology, non-state - an Internet Service Provider
+(S3), and financial institution (S1).
+2) Questionnaire-based Survey (n=52): We handed the questionnaire out to all BRIDGES workshop participants and
+to the participants of a startup meetup that was organized
+on the same day. The questionnaire was composed of
+workshop participants’ demographics and their perceptions related to education, tools and infrastructure. As
+shown in Table I, we received 52 responses, with the
+majority of responses from high school or undergraduate
+students that attended the event. The professionals include
+staff that work in the IT department, as well as managers
+and system analysts of their institutions.
+
+# Focus Group
+Contributions
+
+# Codes
+
+Barriers
+
+Limited dedicated SE training
+Establish trust in local SE
+
+4
+3
+
+25
+4
+
+Opportunities
+
+Investment potential in local SE
+Market focused on
+customising off-the-shelf
+Early stages of
+technological leapfrogging
+
+4
+4
+
+9
+29
+
+3
+
+4
+
+3) Focus Group Discussion (n=5): After an analysis of the
+survey responses and workshop talks, the authors decided
+to organize a semi-structured focus group session. Participants were recruited from the workshop attendees and
+those that filled out the survey. The authors also made
+sure to incorporate diverse backgrounds and perspectives
+(professional and student, women and men, working in
+management and consulting, from IT and non-IT fields,
+and in large institutions and startups). This in-depth focus
+group “round table” discussion took place two days after
+we collected the survey responses, lasting 1 hour and 41
+minutes.
+For data analysis, we used transcripts of the talks and the
+survey responses to gather insights on the state of practice,
+then used the focus group for a deeper exploration based on
+the survey results. Our initial coding started with the analysis
+of the focus group, as it contained the largest content of
+information. This resulted in a total of 79 codes, including
+codes such as “not enough developers and designers” and
+“outside of Port Moresby, most education related to computers
+and IT is theory.” The next round of coding then included the
+analysis and was merged with and reinforced by the codes
+generated from the workshop talks and the responses of the
+survey. The first four authors collaboratively conducted the
+initial round of analysis, while the remaining three authors
+were used as validity checks to ensure that the analysis was
+consistent throughout.
+Table II summarises the themes which emerged from our
+analysis, together with the number of codes and number of
+focus group participants which contributed to each theme.
+As the table shows, each theme relates to codes that were
+assigned to quotes from at least three of the five focus
+group participants. An additional eight codes from the original
+annotation were used to inform the discussion of implications,
+cf. Section V. Each theme was further augmented with data
+from the analysis of the survey responses and talks.
+We sent a follow-up survey to 28 participants (i.e., the focus
+group participants, invited speakers, and survey participants
+who left their contact details) to further assess the credibility
+of our themes. Seven participants responded to the survey
+(response rate of 25%).
+IV. F INDINGS
+We identified the following themes as barriers and opportunities for the PNG SE community.
+
+4
+
+A. Limited software engineering training (Barrier)
+With an adult literacy rate of 63.4% as of 2015
+(taken from https://knoema.com/atlas/Papua-New-Guinea/top
+ics/Education/Literacy/Adult-literacy-rate), education unsurprisingly plays a large role in the advancement of PNG as
+an emerging society. The needs around software development
+education were summarised by one of our focus group participants as follows:
+“I think we need specialised skills. From a graduate
+perspective, when we come out of uni, we only know
+the basics, we learn the general stuff—networking
+and programming, everything [...] From where I’m
+working now, there are IT people in the organisation,
+but I think they lack the specialised skill in software
+engineering so they can support the organisation
+and build something, build a system, instead of just
+the general knowledge of everything.” –P3
+In the survey, we asked participants about one thing they
+would change regarding software development education in
+PNG. Six professionals mentioned changing the education
+system either by teaching coding early (in primary or high
+school) or by offering higher-education courses dedicated to
+software development. Researchers and practitioners should be
+involved in designing an updated curriculum:
+“It’s just they’re learning stuff that’s not up-to-date
+to where the industry is today. The other thing is,
+a research-backed and industry-backed curriculum
+that’s developed so that when our students graduate,
+they go out with the skills that are relevant to the
+world today.” –P4
+In an emerging society that has only recently reached the
+new frontiers of the digital age due to its developing education
+base, finding mentors within the country is challenging:
+“Nobody’s done it before us. Without mentors, everything is pioneering, it’s the first time.” –P1
+Participants mentioned several online education websites,
+including FreeCodeCamp, O’Reilly, Udacity, and Coursera,
+which can serve as a substitute for formal education in some
+situations.
+B. Establish trust in local software engineers (Barrier)
+Taken together, the limited dedicated software engineering
+training and investment in the local software engineering
+workforce lead to trust issues in the abilities of the local
+workforce—a classic “chicken-and-egg” problem: Trust will
+only increase once the workforce is well-educated. Still, at
+the moment, investment goes to foreign entities rather than
+the local workforce, as P4 highlights:
+“If we tender for a project, like let’s say the government, they’re likely to get another firm outside, not
+a Papua New Guinean firm.” –P4
+Developing trust in the local software engineering workforce is as much a cultural issue as it is an educational issue:
+“The problem we have not only in PNG but in the
+Pacific Islands is we don’t trust our own [...] we need
+to pay for someone to be an international person to
+
+join us so that they can trust us. [...] Because we
+don’t trust our own qualification. It comes down to
+that. [...] The mentality is the answers are always
+outside rather than inside, so they would pay larger
+amounts of money for someone outside rather than
+trusting someone inside.” –P1
+C. Market focused on customising off-the-shelf software
+(Opportunity)
+As a result of limited capacity as well as company and
+government policies to buy off-the-shelf software, the market
+for software developers in PNG is relatively small and provides
+more opportunities for customisation than developing software
+from scratch:
+“A lot of the bigger companies [...] buy off-the-shelf
+products. [...] The products are normally standard
+off-the-shelf, and then they would be customised, but
+usually the vendor would provide the software development to the company; and the in-house software
+development team would have very minimal software
+development. They would most likely develop the
+intranet for the internal company or the website.”
+–P1
+Overseas companies, often from nearby Australia, are attempting to fill this gap, but this comes with costs related to
+software security, for example:
+“Most of the technology companies that do come
+in—most of the tenders for many of these large
+projects, not just large projects, but any sort of
+custom software development project—are overseas.
+There’s a lack of local capacities, and support and
+maintenance are provided by those companies offshore as well. [...] Security is a big issue. If people
+in the company don’t understand how the system is
+built, especially if it’s a custom one, then you never
+know how the system is properly protected.” –P4
+While this could create a potential for the local software
+development market, such potential often remains untapped,
+and even startups focus on the customisation of existing
+technologies:
+“So the opportunity is for us to develop it based on
+our rules or the way we do business, but because we
+don’t have enough software developers or designers,
+we can’t be able to design systems that are fit for
+purpose.” –P1
+D. Early stages of technological leapfrogging (Opportunity)
+Technological leapfrogging refers to the transit of countries
+from the condition of relative underdevelopment to that of
+an advanced industrial and technological state in a relatively
+short span of time [6]. This process typically follows three
+steps: (1) importing and absorbing highly modern technology,
+(2) replicating, producing, and improving the imported technology, and (3) moving on to innovations on one’s own. Our
+data suggest that PNG currently finds itself at the early stages
+of such technological leapfrogging.
+
+5
+
+“Education is a big a thing. In PNG, amongst average Papua New Guineans, their idea of technology
+is just the Internet or Facebook or whatever they
+use.” –P4
+To move further along the path to technological leapfrogging will require improved digital technology and digital
+literacy, as evidenced by this anecdote from one of our focus
+group participants:
+“Last year, when I was in another province of PNG,
+we ran a one week workshop for girls in ICT there.
+So we got girls from throughout that province from
+the high schools. And there were about 25 girls and
+three of the girls that attended had never touched a
+computer before. And they were literally scared to
+touch a computer because they thought they would
+break something. So not everyone has access to digital technology. [...] So access to digital technology
+is one, and then digital literacy is another thing.”
+–P4
+A side effect of limited digital literacy is the tendency to
+try to run before one can crawl, e.g., by investing in the latest
+technologies despite a lack of foundational knowledge and
+experience. Investments into the latest technologies do not necessarily trickle down to the software engineering community:
+“A lot of our CEOs are traveling overseas, and
+they’re reading a lot of these in-flight magazines.
+So there’s a lot of content on Blockchain. So right
+now there’s so much money being pumped in here
+to bring Blockchain software developers into the
+country. [...] But it’s not being translated down, we
+don’t understand how we could use Blockchain when
+the Internet’s not that good, and we don’t have the
+software engineering community.” –P1
+A large barrier that is frequently mentioned in the talks,
+the survey responses, and the focus group is the high cost and
+low speed of the Internet infrastructure. Mobile Internet access,
+which is most commonly used, costs around 150 Papua New
+Guinean Kina per month (approx. US$45) for 30GB, unlimited
+access costs around 850 Kina per month (approx. US$250).
+Participants pointed to the general potential of “open source
+software” and “learning online”.
+“There is no point in building a big highway (internet cable), [when] there are no cars (applications)
+to ride on that highway. We hope this workshop can
+give our people incentive to build software to put
+the cars on this road. We hope our people can build
+software that puts traffic on what we are building.”
+–S1
+S1 belongs to the state-owned entity that has been commissioned by the government to build a fibre-based network
+that will connect all 22 provinces across PNG, enabling the
+implementation of data centers that are expected to benefit the
+business, education, and healthcare sectors.
+
+E. Investment potential in local software engineers (Opportunity)
+Boardrooms of Papua New Guinean companies were characterised as “non-techy” by the participants of our focus group:
+“If you see our executives, they are all fifty-plus,
+they are all old-school, they don’t understand that
+tech plays an essential role in this day and age. [...]
+Our IT guys are lower down in the hierarchy, so
+they’re not sitting with management.” –P2
+As a consequence, companies do not invest in training
+through software engineering internships or joint courses with
+industry. While such internships exist in the mining sector,
+and mechanical and system engineering have internships and
+graduate programs, there are no internships in IT or software
+engineering:
+“So when it comes to software, because the people
+at the top don’t understand, we don’t design the
+software according to what the requirements are, so
+it usually comes out not the way we expect it to.”
+–P1
+V. S TATE OF P RACTICE
+As part of the follow-up survey, we find that participants
+strongly confirm statements relating to three of our five
+themes, but interestingly, there was no consistent agreement
+about the use of global technology, such as open source
+and global platforms like GitHub and Stack Overflow (early
+stages of technological leapfrogging) and whether dedicated
+SE training was up-to-date (training). We now synthesize
+insights from our work to focus on lowering barriers and
+seeking opportunities for SE in PNG.
+A. For the PNG ICT Industry
+Our work covers the professionals that are both from the
+state, non-state and SMEs. Similar to other resource-rich
+countries, non-state institutions rely on state-intuitions and
+donor organizations to drive change. Hence, we identify three
+practices the all institutions could follow to enable inclusion
+into the global software engineering community. This would
+be in the form of offering more (i) training, (ii) internships
+and (iii) lowering the barrier for SMEs. Conducting shortterm training to help onboarding local developers to create a
+local workforce capable of fulfilling the technical needs is an
+important step. It would directly address the theme of ‘limited
+dedicated SE training’ and indirectly enable the market to not
+solely focus on customising off-the-shelf software if custom
+solutions can be built in PNG. Moreover, a qualified local
+workforce will help ‘establish trust in local SE’ and lowering
+the barriers for startup companies will help with the ‘investment potential in local SE’.
+At the level of PNG practitioners, our findings indicate
+that supporting local actors in an emerging society to become
+members of the global software development community can
+contribute to the sustainability of software engineering. Such
+engagement could, for example, happen in the context of opensource software, through contribution and knowledge-sharing
+with global platforms such as GitHub and Stack Overflow.
+
+6
+
+B. For the Global Research Community
+Similarly to Craggs and Rashid [7], we identified trust as
+a crucial concept in our study. Further research is needed on
+how to establish trust in the local workforce in an emerging
+society, taking the important role of training investment into
+account. More work is needed to understand what the predictors are for the success of such programs in a given society.
+Inclusion in the global SE should be encouraged, for example,
+participation in international conferences leading to exposure
+to cutting edge technology. Researchers should explore how
+global communication channels and social media can be leveraged as practices to help include the local SE communities
+from emerging societies. For example, PNG participants were
+invited to attend a Mining Software Repositories conference
+under the widening participation program (details at https://20
+21.msrconf.org/attending/widening-participation-program) for
+inclusion.
+C. For Educators (both local and global)
+Our findings indicate a need to update the existing education
+curricula related to SE. In-line with the PNG ICT industry
+implications, the focus for the state and non-state institutions
+should be on upgrading the capacity of local educators,
+and importing foreign education. Non-state institutions should
+advice that education of the local ICT should be a higher
+priority than simply offshoring work, which becomes costly
+in the long run. Global initiatives such as Google Summer of
+Code (GSoC) are partly aimed at emerging societies, and have
+found large uptake in some of them.
+VI. O UTLOOK
+Recent literature has recognized that existing software engineering (SE) processes, methods and practice are not suitable
+for the direct application in emerging countries [8]. Reports
+from Ethiopia [9], Iran [10], Serbia [11], and Sub-Saharan
+Africa [12] highlight different problems that affect the success
+of software development industry in these countries; in particular they mention low infrastructure [9, 12], lack of financial
+resources [10, 11], and social and environmental factors [12].
+We can see that most of the reported problems are similar to
+those we uncovered in this paper.
+There are also initiatives in place aiming to strengthen
+the software and Information Technology industry in a way
+to benefit these countries. There are several ICT4D (Information and Communications Technologies for Development)
+initiatives aimed at bridging the digital divide by ensuring
+equitable access to up-to-date communications technologies.
+One example is the Health Information Systems Programme
+(HISP) for developing countries (https://www.mn.uio.no/ifi/en
+glish/research/networks/hisp/).
+When we look at the literature focusing on software development industry in developing and underdeveloped countries,
+several studies show that government support is essential for
+the growth of a local ecosystem, by supporting education and
+infrastructure initiatives, for example [10, 11]. Other authors
+specifically point to Open Source Software (OSS) as a trigger
+to the software industry in an emerging country [13, 14]. PNG
+
+has not embraced these advantages offered by OSS yet, as we
+could notice analyzing the work of Van Reijswoud et al. [2].
+In addition to the strategies mentioned above, we saw that one
+of the main strategies to foster the local software industry is
+reshaping education in emerging countries (e.g., [8, 15].)
+The emerging society of PNG has only recently reached the
+digital age frontiers, with early signs of a local SE community.
+While we cannot claim generalisation of our results beyond
+PNG, we expect that our insights can be transferred to similar
+emerging societies. Our future work will focus on testing our
+assumptions in a wider context, especially in the area of Global
+Software Development, to solve trust issues in distributed
+teams, and communication issues across different cultures.
+ACKNOWLEDGEMENTS
+We would like to thank all the participants and organizers
+of the BRIDGES at https://naist-se.github.io/BRIDGES2019/,
+from NAIST and the University of PNG. Furthermore, the
+event was supported by Oil Search, PNG DataCo, PNG
+Science and Technology Council Secretariat, Nasfund Papua
+New Guinea and PNG Digital ICT Cluster.
+R EFERENCES
+[1] M. Castells, The Rise of the Network Society, 2nd ed.
+Wiley-Blackwell, 2010.
+[2] V. Van Reijswoud et al., “The power to change: Adopting
+free and open source software in papua new guinea,”
+Contemporary PNG Studies, vol. 10, p. 40, 2009.
+[3] Worldbank, “Overview of papua new guinea,” https://
+www.worldbank.org/en/country/png/overview, 2008, accessed: 2019-10-25.
+[4] GSMA. (2019) Sleeping giant at the heart of png economy. https://tinyurl.com/y6m3pzay. Accessed: 2019-1025.
+[5] V. Braun and V. Clarke, “Using thematic analysis in
+psychology,” Qualitative research in psychology, vol. 3,
+no. 2, pp. 77–101, 2006.
+[6] M. Bhagavan, “Technological leapfrogging by developing countries,” EOLSS: Paris, France, 2001.
+[7] B. Craggs and A. Rashid, “Trust beyond computation
+alone: Human aspects of trust in blockchain technologies,” in ICSE-SEIS 2019, 2019.
+[8] R. Osman, “Teaching software engineering in developing
+countries: a position paper,” in COMPSAC 2012, 2012.
+[9] D. Teka, Y. Dittrich, and M. Kifle, “Usability challenges
+in an ethiopian software development organization,” in
+CHASE 2016, 2016.
+[10] E. Khaksar and A. Khaksar, “Study of the software
+industry problems in iran,” American Journal of Systems
+and Software, vol. 3, no. 1, pp. 20–23, 2015.
+[11] M. Stefanovic, M. Matijevic, and G. Devedzic, “Ict
+industry in serbia: Condition and improvement by qms,”
+World Journal of Science, Technology and Sustainable
+Development, vol. 7, no. 1, pp. 73–90, 2010.
+[12] A. Mursu, H. A. Soriyan, K. Olufokunbi, and M. Korpela, “Information systems development in a developing
+
+7
+
+country: Theoretical analysis of special requirements in
+nigeria and africa,” in HICSS 2000.
+[13] D. Gakh, “Open source software to support the education
+processes in software development in post-soviet countries,” in INTERNET-EDUCATION-SCIENCE 2018,
+2018.
+[14] G. Camara and F. Fonseca, “Information policies and
+open source software in developing countries,” Journal
+of the American society for information science and
+technology, vol. 58, no. 1, pp. 121–132, 2007.
+[15] K. Garg and V. Varma, “Software engineering education
+in india: Issues and challenges,” in CSEE&T 2008, 2008.
+
+

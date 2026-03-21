@@ -1,0 +1,423 @@
+arXiv:2301.07516v1 [cs.SE] 18 Jan 2023
+
+Quality Attributes Optimization of Software
+Architecture: Research Challenges and Directions
+Daniele Di Pompeo
+
+Michele Tucci
+
+University of L’Aquila
+L’Aquila, Italy
+daniele.dipompeo@univaq.it
+
+Charles University
+Prague, Czech Republic
+tucci@d3s.mff.cuni.cz
+
+Abstract—The estimation and improvement of quality attributes in software architectures is a challenging and timeconsuming activity. On modern software applications, a modelbased representation is crucial to face the complexity of such
+activity. One main challenge is that the improvement of distinctive
+quality attributes may require contrasting refactoring actions
+on the architecture, for instance when looking for trade-off
+between performance and reliability (or other non-functional
+quality attributes). In such cases, multi-objective optimization can
+provide the designer with a more complete view on these tradeoffs and, consequently, can lead to identify suitable refactoring
+actions that take into account independent or even competing
+objectives.
+In this paper, we present open challenges and research directions to fill current gaps in the context of multi-objective software
+architecture optimization.
+Index Terms—refactoring, multi-objective optimization, software architecture, performance
+
+I. I NTRODUCTION
+Different factors, such as the addition of new requirements,
+the adaption to new execution contexts, or the deterioration
+of non-functional attributes, can lead to software refactoring.
+Identifying the best refactoring operations is challenging because there is a wide range of potential solutions and no
+automated assistance is currently available. In this situation,
+search-based approaches have been widely used [1, 2, 3, 4, 5].
+Multi-objective optimization approaches, which are searchbased, have lately been used to solve model refactoring
+optimization issues [6, 7]. Searching among design alternatives
+(for example, through architectural tactics) is a typical feature
+of multi-objective optimization methodologies used to solve
+model-based software restructuring challenges [8, 7].
+The automated refactoring of software models plays an
+important role in optimizing software architectures, as it
+allows generating design alternatives while preserving the
+external behavior of its functionalities. While being beneficial
+in finding such alternatives, the automated refactoring process can generate a considerable number of new solutions
+that are difficult for the designer to navigate. As a result,
+choosing the best refactoring methods from such a huge set
+of options requires significant effort, which can be reduced
+by multi-objective algorithms. However, in order to explore
+the solution space and produce an (almost) optimal Pareto
+frontier, multi-objective algorithms may require a significant
+amount of hardware resources (such as time and memory
+
+allocation). Even when automated, finding and creating Pareto
+boundaries can frequently take many hours or even days.
+Therefore, assessing and understanding the performance of
+multi-objective algorithms in software model refactoring is
+of paramount importance, especially when the goal is to
+integrate them into the design and evolution phases of software
+development.
+In this paper, we present open challenges that, to the best of
+our knowledge, hinder the exploitation of search-based techniques within the context of quality attribute optimization of
+software architectures. We also describe the plan to overcome
+some of the listed open challenges.
+II. S TATE OF THE ART
+In the past ten years, approaches on software architecture
+multi-objective optimization have been developed to optimize
+various quality attributes (such as reliability and energy) [9, 10,
+11, 12, 6]; with various degrees of freedom in the modification
+of architectures (such as service selection [13].
+Recent research analyzes the capacity of two distinct multiobjective optimization algorithms to enhance non-functional
+features inside a particular architecture notation (i.e., Palladio
+Component Model) [7, 14, 15]. The authors use architectural
+approaches to find the best solutions, which primarily include
+changing system parameters (such as hardware settings or
+operation requirements).
+Menasce et al. have provided a framework for architectural
+design and quality optimization, [16]. This framework makes
+use of architectural patterns to help the search process (such
+as load balancing and fault tolerance). The approach has two
+drawbacks: performance indices are computed using equationbased analytical models, which may be too simple to capture
+architectural details and resource contention; the architecture
+must be designed in a tool-specific notation rather than in a
+standard modeling language (as we do in this paper).
+A method for modeling and analyzing AADL architectures
+has been given by Aleti et al. [17]. A tool that may be
+used to optimize various quality attributes while adjusting
+architecture deployment and component redundancy has also
+been introduced.
+Cortellessa and Di Pompeo [6] have presented a multiobjective framework aimed at improving the quality of architectural models specified by Æmilia [18]. Cortellessa and Di
+
+Initial Architecture
+
+optimization process. Often, when the objectives are more than
+3, we are in a many-objective optimization process. Finally,
+when a stopping criterion is met, the optimization process ends
+and the final offspring will form the Pareto frontier.
+
+Refactoring Actions
+
+Bio-Inspired Actions
+Architecture Alternatives
+
+Objectives
+
+...
+
+[are the stopping criteria
+met?]
+
+Fig. 1. A typical framework for quality attributes optimization of software
+architecture.
+
+Pompeo analyzed the sensibility of genetic algorithms when
+changing the configuration parameters.
+Cortellessa et al. [19] have instead studied the impact
+of specific non-functional quality metric (i.e., performance
+antipatterns [20]) on the overall quality of Pareto frontiers. In
+order to evaluate the overall quality of Pareto frontiers in this
+study, Cortellessa et al. exploited established quality indicators
+within the search-based theory.
+Di Pompeo and Tucci [21] have investigated the effect of introducing a time budget to multi-objective optimization driven
+by non-functional quality attributes (such as performance and
+reliability) on the overall Pareto frontiers quality. The idea
+beyond the approach is to introduce concepts of search-based
+techniques already investigated within different domains to the
+software model optimization context.
+III. Q UALITY ATTRIBUTE O PTIMIZATION FRAMEWORK
+Figure 1 depicts a classic search-based framework based
+on genetic algorithms. The framework starts from an Initial
+Architecture and a set of Refactoring Actions. The initial
+architecture is the subject architecture to be optimized, while
+the refactoring actions are the set of all available actions that
+are combined by the Bio-Inspired Actions, which are selection,
+mutation, and crossover.
+The crossover operator mates solutions to evolve the species.
+Several crossover policies, such as the single point crossover,
+can be employed in this step. In this case, the chromosome
+will be split in two halves, and they will be alternatively
+combined. While the crossover operation is performed, the
+mutation operator randomly selects an element belonging to
+the chromosome and change it with a new one, as a genetic
+mutation would do in nature. The selection operator is in
+charge of discarding the worst elements in the offspring (i.e.,
+the architecture alternatives). Once the offspring is made,
+elements belonging to the offspring are sorted with respect
+to the objectives (i.e., through the sorting operator). When
+there are more than one objective, we are in a multi-objective
+
+IV. O PEN C HALLENGES
+Lack of automation: As introduced before, when searchbased techniques are put in place they require to generate a
+higher number of alternatives, even thousands. Therefore, the
+automation to form alternatives is a must-have functionality
+in every model-based optimization framework. Introducing
+automation in such a context would be a step ahead towards
+the adoption of search-based techniques within model-based
+optimization processes. Furthermore, the automation is strictly
+related to the modelling notation and its expressiveness. To
+the best of our knowledge, we introduced the first refactoring engine for UML [20]. Our refactoring engine exploits
+the Epsilon suite 1 , and provides some facilities to refactor
+three different UML views, i.e., Component, Sequence, and
+Deployment diagrams. Then, we exploited the refactoring
+engine in a search-based optimization framework, where we
+sought optimal solutions with respect to four competitive
+objectives [19, 21].
+Problem formalization: One of the relevant aspects for
+applying search-based techniques is the formalization of the
+problem. Often, search-based approaches exploit evolutionary
+algorithms and, in the majority of the cases, genetic algorithms
+are used to search the solution space. Furthermore, a genetic
+algorithm is a bio-inspired algorithm that requires a chromosome to be manipulated for the evolution of the species.
+To the best of our knowledge, there not exist guidelines
+in literature to represent specific problems as chromosomes.
+Positional structures are exploited to draw problems in modelbased optimization studies [8, 7]. Thus, each position of the
+chromosome have a fixed meaning. One of the advantages
+of using positional chromosomes is their fastest execution of
+bio-inspired actions on them. However, the positional structure
+has the drawback to be too inexpressive within the context
+of model-based software refactoring. To overcome the above
+limitation, there exists a chromosome representation that reports a refactoring action into a chromosome position [20].
+Nevertheless, it is slower than the positional structure due
+to the complexity of compatibility checking among elements
+within chromosomes.
+For the above issues, we see an interesting research direction
+of the problem formalization within model-based software
+optimization that should fill the gap with more established
+search-based optimization problems.
+Time and resources requirements: Improving quality attributes by means of optimization techniques often requires
+a considerable amount of time and resources, as the search
+for better solutions relies on the manipulation of modelling
+artifacts. Usually, the process of generating a new design alternative also involves a number of transformations from software
+1 https://www.eclipse.org/epsilon
+
+design models (e.g., UML) to non-functional models (e.g.,
+Queueing Networks, Markov Chains). These target models
+are then used to quantify quality attributes like performance
+and reliability, either analytically or through simulation. Given
+their inherent complexity and the toolchain employed in these
+contexts, it is generally challenging to make these activities
+more efficient. As a consequence, they tend to extend the
+overall time needed for the optimization process. Moreover,
+when this process is performed on models that are not just
+toy examples but realistic in size and complexity, it can last
+several days [19]. This clearly poses a challenge in adopting
+search-based optimization techniques in practical software
+engineering scenarios. Finally, given the random nature of the
+algorithms that are usually employed in this context, it is very
+difficult to predict how long it will take for the process to
+complete. This issue is exacerbated by the fact that, in most
+cases, the solution space is unknown to the designer at the
+beginning of the optimization.
+Architectural quality metrics: When considering the
+multi-objective optimization in general, there is no lack of
+metrics (e.g., quality indicators) that can be used to quantify the performance, and consequently the outcome, of the
+optimization process. Nonetheless, such metrics only provide
+feedback that is based on the numerical values achieved by the
+solutions in the Pareto front for each objective. This viewpoint
+is useful to quantify the improvement realized by the solutions
+in terms of quality attributes and with respect to the initial
+model. However, the designer would not gain any feedback on
+how the architectural model itself changed during the process.
+This makes it difficult to compare the solutions in the Pareto
+front with the initial architecture and among themselves. Such
+a comparison is crucial because it guides the decision-making
+process of adopting a new design. In this regard, quality
+metrics that represent architectural aspects like the change in
+the number of communication paths, in their length, in the
+complexity of components, or in the number of exchanged
+messages, could make this comparison practical, and avoid
+inspecting every solution to obtain enough knowledge to make
+an informed decision.
+Explainability: As it is the case for many other optimization techniques, the solutions that are obtained through
+multi-objective optimization do not carry information about
+the specific causes that led to the generation and selection
+of such solutions. For instance, at the end of an automated
+refactoring process guided by a genetic algorithm, while we
+can, of course, inspect the solutions to learn what refactoring
+actions were applied to obtain the best results, we have no
+knowledge about the circumstances that made those choices
+preferable to all the others. In other words, we cannot explain
+why some modifications should be applied to our architecture
+other than for the quality attributes they seem to improve.
+In order to understand the modifications, we would have to
+know why they are beneficial. Unfortunately, in this kind of
+optimization processes, this is left for the designer to figure
+out. In this sense, the lack of explainability of results makes
+it difficult for the designer to justify the new modifications
+
+that she is proposing on the basis of a completely automated
+process.
+Reproducibility: Reproducing results of optimization experiments has been an important concern in recent years,
+both for researchers and practitioners. Of course, the main
+obstacle in this regard is represented by the random nature of
+many optimization techniques when it comes to the generation
+of new solutions and the exploration of the solution space.
+On top of this, when optimizing architectures, the solution
+space is difficult or impossible to define beforehand. More
+often than not, the solution space is not represented by just
+all the possible combinations of feasible modifications to the
+initial architecture, but it is built as the process goes on and
+the set of architectural elements that are possible targets of
+modifications changes. This uncertainty in the definition of
+the solution space and, consequently, in the obtained results
+is usually tackled by performing multiple runs of the same
+experiments, and by trying to reach conclusions on the basis
+of the information gathered in all the runs. While this is
+reasonable and practical in most cases, it can be very expensive
+when optimizing architectures, and less effective on large
+solution spaces. Therefore, achieving perfect reproducibility
+is still a challenge in architectural optimization, and one that
+is rarely addressed by the relevant literature.
+V. C ONCLUSION
+In this paper, we reported open challenges of quality attributes optimization of software architectures. To the best of
+our knowledge, these open challenges hinder the utilization of
+search-based techniques in software architecture optimization.
+Furthermore, our agenda foster new research activities in the
+field of software architecture optimization, especially for the
+optimization of non-functional properties, such as performance
+and reliability.
+As short-term future work, we will try to tackle the challenge about the lack of automation. We already presented
+approaches targeted at this challenge [19, 18]. However, we
+plan on extending the introduced automation by supporting
+more refactoring actions, for example by implementing the
+Fowler’s refactoring portfolio [22].
+As mid-term future work, we will attempt to address the
+challenge about the architectural quality metrics. We plan to
+exploit quality estimation techniques well-recognized in the
+search-based community [23].
+As long-term future work, we will attempt to address the
+challenge about the problem formalization. To empirically
+address this challenge, a profound analysis of several software
+architectures is probably required, and each one will generate
+a specific optimization problem.
+ACKNOWLEDGMENT
+Daniele Di Pompeo is supported by the Centre of EXcellence on Connected, Geo-Localized and Cybersecure Vehicle
+(EX-Emerge), funded by the Italian Government under CIPE
+resolution n. 70/2017 (Aug. 7, 2017).
+
+Michele Tucci is supported by the OP RDE project No.
+CZ.02.2.69/0.0/0.0/18 053/0016976 “International mobility of
+research, technical and administrative staff at the Charles
+University”.
+
+[13]
+
+R EFERENCES
+[1] T. Mariani and S. R. Vergilio, “A systematic review on
+search-based refactoring,” InfSoft, vol. 83, pp. 14–34,
+Mar. 2017.
+[2] A. Ouni, M. Kessentini, K. Inoue, and M. Ó Cinnéide,
+“Search-Based Web Service Antipatterns Detection,”
+TSC, vol. 10, no. 4, pp. 603–617, 2017.
+[3] A. Ramı́rez, J. R. Romero, and S. Ventura, “A survey
+of many-objective optimisation in search-based software
+engineering,” JSS, vol. 149, pp. 382–395, 2019.
+[4] M. Ray and D. P. Mohapatra, “Multi-objective test
+prioritization via a genetic algorithm,” Innov. Syst. Softw.
+Eng., vol. 10, no. 4, pp. 261–270, 2014. [Online].
+Available: https://doi.org/10.1007/s11334-014-0234-2
+[5] A. Aleti, B. Buhnova, L. Grunske, A. Koziolek,
+and I. Meedeniya, “Software architecture optimization
+methods: A systematic literature review,” IEEE Trans.
+Software Eng., vol. 39, no. 5, pp. 658–683, 2013.
+[Online]. Available: https://doi.org/10.1109/TSE.2012.64
+[6] V. Cortellessa and D. Di Pompeo, “Analyzing the sensitivity of multi-objective software architecture refactoring
+to configuration characteristics,” InfSoft, vol. 135, p.
+106568, 2021.
+[7] Y. Ni, X. Du, P. Ye, L. L. Minku, X. Yao, M. Harman, and
+R. Xiao, “Multi-objective software performance optimisation at the architecture level using randomised search
+rules,” InfSoft, vol. 135, p. 106565, 2021.
+[8] A. Koziolek, H. Koziolek, and R. H. Reussner,
+“Peropteryx: automated application of tactics in multiobjective software architecture optimization,” in 7th
+International Conference on the Quality of Software
+Architectures, QoSA 2011, I. Crnkovic, J. A. Stafford,
+D. C. Petriu, J. Happe, and P. Inverardi, Eds.
+ACM, 2011, pp. 33–42. [Online]. Available: https:
+//doi.org/10.1145/2000259.2000267
+[9] A. Martens, H. Koziolek, S. Becker, and R. H. Reussner,
+“Automatically improve software architecture models for
+performance, reliability, and cost using evolutionary algorithms,” in ICPE. New York, New York, USA: ACM
+Press, 2010, pp. 105–116.
+[10] R. Li, R. Etemaadi, M. T. M. Emmerich, and M. R. V.
+Chaudron, “An evolutionary multiobjective optimization
+approach to component-based software architecture design,” in CEC. IEEE, 2011, pp. 432–439.
+[11] I. Meedeniya, B. Buhnova, A. Aleti, and L. Grunske,
+“Architecture-Driven Reliability and Energy Optimization for Complex Embedded Systems,” in QoSA.
+Springer, 2010, pp. 52–67.
+[12] A. Martens, D. Ardagna, H. Koziolek, R. Mirandola, and
+R. H. Reussner, “A Hybrid Approach for Multi-attribute
+QoS Optimisation in Component Based Software Sys-
+
+[14]
+
+[15]
+
+[16]
+
+[17]
+
+[18]
+
+[19]
+
+[20]
+
+[21]
+
+[22]
+
+[23]
+
+tems,” in Research into Practice – Reality and Gaps,
+2010, pp. 84–101.
+V. Cardellini, E. Casalicchio, V. Grassi, F. Lo Presti,
+and R. Mirandola, “QoS-driven Runtime Adaptation of
+Service Oriented Architectures,” in ESEC/FSE, 2009, pp.
+131–140.
+A. Rago, S. A. Vidal, J. A. Diaz-Pace, S. Frank, and
+A. van Hoorn, “Distributed quality-attribute optimization
+of software architectures,” in SBCARS 2017. ACM,
+2017, pp. 7:1–7:10. [Online]. Available: https://doi.org/
+10.1145/3132498.3132509
+S. Becker, H. Koziolek, and R. H. Reussner, “The
+Palladio component model for model-driven performance
+prediction,” JSS, vol. 82, no. 1, pp. 3–22, Jan. 2009.
+D. A. Menascé, J. M. Ewing, H. Gomaa, S. Malek,
+and J. P. Sousa, “A framework for utility-based service
+oriented design in SASSY,” in WOSP/SIPEW, 2010, pp.
+27–36.
+P. H. Feiler and D. P. Gluch, Model-Based Engineering
+with AADL - An Introduction to the SAE Architecture
+Analysis and Design Language, ser. SEI series in software engineering. Addison-Wesley, 2012.
+D. Arcelli, V. Cortellessa, M. D’Emidio, and D. Di
+Pompeo, “EASIER: an Evolutionary Approach for multiobjective Software archItecturE Refactoring,” in ICSA,
+2018, pp. 1–10.
+V. Cortellessa, D. Di Pompeo, V. Stoico, and M. Tucci,
+“On the impact of performance antipatterns in multiobjective software model refactoring optimization,”
+in 2021 47th Euromicro Conference on Software
+Engineering and Advanced Applications (SEAA). IEEE,
+2021, p. 224–233. [Online]. Available: https://ieeexplore.
+ieee.org/document/9582578/
+D. Arcelli, V. Cortellessa, and D. Di Pompeo,
+“Performance-driven software model refactoring,”
+InfSoft, vol. 95, pp. 366–397, 2018. [Online]. Available:
+https://doi.org/10.1016/j.infsof.2017.09.006
+D. Di Pompeo and M. Tucci, “Search budget in multiobjective refactoring optimization: a model-based empirical study,” in 48th Euromicro Conference on Software
+Engineering and Advanced Applications, SEAA 2022.
+IEEE, 2022, pp. 406–413, to appear. [Online]. Available:
+https://doi.org/10.1109/SEAA56994.2022.00070
+M. Fowler, “Refactoring: Improving the design of
+existing code,” in Extreme Programming and Agile
+Methods Conference, ser. Lecture Notes in Computer
+Science, vol. 2418. Springer, 2002, p. 256. [Online].
+Available: https://doi.org/10.1007/3-540-45672-4 31
+M. Li, T. Chen, and X. Yao, “How to evaluate solutions
+in pareto-based search-based software engineering: A
+critical review and methodological guidance,” IEEE
+Trans. Software Eng., vol. 48, no. 5, pp. 1771–1799,
+2022. [Online]. Available: https://doi.org/10.1109/TSE.
+2020.3036108
+
+

@@ -1,0 +1,1108 @@
+Feature Unification in TAG Derivation Trees
+Sylvain Schmitz
+
+Joseph Le Roux
+
+arXiv:0804.4584v1 [cs.CL] 29 Apr 2008
+
+LORIA, INRIA Nancy Grand Est, France
+LORIA, Nancy Université, France
+Sylvain.Schmitz@loria.fr
+Joseph.LeRoux@loria.fr
+
+Abstract
+The derivation trees of a tree adjoining grammar provide a first insight
+into the sentence semantics, and are thus prime targets for generation systems. We define a formalism, feature-based regular tree grammars, and a
+translation from feature based tree adjoining grammars into this new formalism. The translation preserves the derivation structures of the original
+grammar, and accounts for feature unification.
+
+1
+
+Introduction
+
+Each sentence derivation in a tree adjoining grammar (Joshi and Schabes, 1997,
+TAG) results in two parse trees: a derived tree (Figure 1a), that represents
+the phrase structure of the sentence, and a derivation tree (Figure 1b), that
+records how the elementary trees of the grammar were combined. Each type of
+parse tree is better suited for a different set of language processing tasks: the
+derived tree is closely related to the lexical elements of the sentence, and the
+derivation tree offers a first insight into the sentence semantics (Candito and
+Kahane, 1998). Furthermore, the derivation tree language of a TAG, being a
+regular tree language, is much simpler to manipulate than the corresponding
+derived tree language.
+S
+VP
+
+NP
+D
+NP
+N
+one
+
+NP
+P
+of
+
+D
+the
+
+V
+NP
+N
+
+caught
+
+VP
+
+has
+
+V
+caught
+
+cats
+
+NP0
+
+cats
+
+NP
+D
+
+NP
+
+a
+
+N
+fish
+
+(a) Derived tree.
+
+NP1
+VP
+
+has
+
+fish
+
+NP
+
+the
+
+NP
+
+a
+
+NPr
+
+one of
+(b) Derivation tree.
+
+Figure 1: Parse trees for “One of the cats has caught a fish.” using the grammar
+of Figure 2.
+
+2
+
+S. Schmitz and J. Le Roux
+
+
+bot:
+
+NPNA
+N⋄
+one
+
+agr : 3sg
+const : +
+
+D
+
+
+NPr
+
+[
+
+bot: agr : 3pl
+
+ agr : 3pl  ∗
+NPf
+bot: def : +
+
+P
+
+of
+
+h
+
+bot:
+
+] NP
+N⋄
+
+i
+agr : x
+const : + NPr
+
+cats
+
+def : +
+
+D⋄
+
+the
+
+[
+
+top: agr : x
+
+
+
+bot:
+
+agr : x
+const : −
+
+NP∗
+f
+
+
+
+bot:
+
+agr : 3sg
+mode : ind
+
+]
+NP0 ↓
+
+
+VPr
+
+V⋄bot:[ mode : ppart ]VP∗f
+has
+
+
+
+top:
+
+[
+
+S
+agr : x
+mode : ind
+
+
+
+bot: mode : ppart
+
+V⋄
+caught
+
+NP
+]VP
+
+N⋄
+NP1 ↓
+
+h
+
+bot:
+
+i
+agr : 3sg
+NPr
+const : +
+
+fish
+
+def : −
+
+D⋄
+a
+
+
+
+bot:
+
+agr : 3sg
+const : −
+
+ NP∗
+f
+
+Figure 2: A feature-based tree adjoining grammar. For the sake of clarity, we
+identify elementary trees with their anchors in our examples.
+
+Derivation trees are thus the cornerstone of several approaches to sentence
+generation (Koller and Striegnitz, 2002; Koller and Stone, 2007), that rely crucially on the ease of encoding regular tree grammars, as dependency grammars
+and planning problems respectively. Derivation trees also serve as intermediate representations from which both derived trees (and thus the linear order
+information) and semantics can be computed, e.g. with the abstract categorial grammars of de Groote (2002), Pogodalla (2004), and Kanazawa (2007), or
+similarly with the bimorphisms of Shieber (2006).
+Nevertheless, these results do not directly apply to many real-world grammars, which are expressed in a feature-based variant of TAGs (Vijay-Shanker,
+1992). Each elementary tree node of these grammars carries two feature structures that constrain the allowed substitution or adjunction operations at this
+node (see for instance Figure 2). In theory, such structures are unproblematic,
+because the possible feature values are drawn from finite domains, and thus the
+number of grammar categories could be increased in order to account for all
+the possible structures. In practice, the sheer number of structures precludes
+such a naive implementation: for instance, the 50 features used in the XTAG
+English grammar (XTAG Research Group, 2001) together define a domain containing more than 1019 different structures. Furthermore, finiteness does not
+hold for some grammars, for instance with the semantic features of Gardent
+and Kallmeyer (2003).
+Ignoring feature structures typically results in massive over-generation in
+derivation-centric systems. We define a formalism, feature-based regular tree
+grammars, that produces derivation trees that account for the feature structures
+found in a tree adjoining grammar. In more details,
+• we recall how to generate the derivation trees of a tree adjoining grammar
+through a regular tree grammar (Section 2), then
+• we define feature-based regular tree grammars and present the translation
+from feature-based TAG (Section 3); finally,
+• we provide an improved translation inspired by left corner transformations
+(Section 4).
+We assume the reader is familiar with the theory of tree-adjoining grammars
+(Joshi and Schabes, 1997), regular tree grammars (Comon et al., 2007), and
+feature unification (Robinson, 1965).
+
+Feature Unification in TAG Derivation Trees
+
+2
+
+3
+
+Regular Tree Grammars of Derivations
+
+In this section, we define an encoding of the set of derivation trees of a tree
+adjoining grammar as the language of a regular tree grammar (RTG). Several
+encodings equivalent to regular tree grammars have been described in the literature; we follow here the one of de Groote (2002), but explicitly construct a
+regular tree grammar.
+Formally, a tree adjoining grammar is a tuple hΣ, N, I, A, Si where Σ is a
+terminal alphabet, N is a nonterminal alphabet, I is a set of initial trees α, A is
+a set of auxiliary trees β and S is a distinguished nonterminal from N . We note
+γr the root node of the elementary tree γ and βf the foot node of the auxiliary
+tree β. Let us denote by γ1 , . . . , γn the active nodes of an elementary tree γ,
+where a substitution or an adjunction can be performed;1 we call n the rank of
+γ, denoted by rk(γ). We set γ1 to be the root node of γ, i.e. γ1 = γr . Finally,
+lab(γi ) denotes the label of node γi .
+Each elementary tree γ of the TAG will be converted into a single rule
+X→
+− γ(Y1 , . . . , Yn ) of our RTG, such that rk(γ) = n and each of the Yi symbols
+represents the possible adjunctions or substitutions of node γi . We introduce
+accordingly two duplicates NA = {XA | X ∈ N } and NS = {XS | X ∈ N } of N ,
+and a nonterminal labeling function defined for any active node γi with label
+lab(γi ) = X as
+(
+XA
+nt(γi ) =
+XS
+
+if γi is an adjunction site
+if γi is a substitution site
+
+(1)
+
+The grammar rule corresponding to the elementary tree anchored by “one of”
+in Figure 2 is then NP A →
+− one of(NP A , DA , PA , NA ), meaning that this tree
+adjoins into an NP labeled node, and expects adjunctions on its nodes NP r , D,
+P , and N . Given our set of elementary TAG trees, only the first one of these
+four will be useful in a reduced RTG.
+Definition 1. The regular derivation tree grammar G = hSS , N , F, Ri of a
+TAG hΣ, N, I, A, Si is a RTG with axiom SS , nonterminal alphabet N = NS ∪
+NA , terminal alphabet F = I ∪ A ∪ {εA } with ranks rk(γ) for elementary trees
+γ in I ∪ A and rank 0 for εA , and with set of rules
+R = {XS →
+− α(nt(α1 ), . . . , nt(αn )) | α ∈ I, n = rk(α), X = lab(αr )}
+
+∪ {XA →
+− β(nt(β1 ), . . . , nt(βn )) | β ∈ A, n = rk(β), X = lab(βr )}
+∪ {XA →
+− εA | XA ∈ NA }
+
+The ε-rules XA →
+− εA for each symbol XA account for adjunction sites where
+no adjunction takes place. The RTG has the same size as the original TAG and
+the translation can be computed in linear time.
+1 We consider in particular that no adjunction can occur at a foot node. We do not consider
+null adjunctions constraints on root nodes and feature structures on null adjoining nodes,
+which would rather obscure the presentation, and we do not treat other adjunction constraints
+either.
+
+4
+
+S. Schmitz and J. Le Roux
+
+caught
+cats
+εA
+
+εA
+
+caught
+fish
+
+fish
+
+has
+
+cats
+
+εA
+
+the
+
+has
+
+εA
+
+one of
+
+εA
+
+εA
+
+Figure 3: Some trees generated by the regular tree grammar of Example 2.
+
+Example 2. The reduced regular tree grammar corresponding to the tree adjoining grammar of Figure 2 is then:
+hSS , {SS , VP S , VP A , NP S , NP A },
+{one of, the, cats, has, caught, a, fish, εA },
+{ SS −
+→ caught(NP S , VP A , NP S ),
+NP S −
+→ cats(NP A ),
+NP S −
+→ fish(NP A ),
+NP A −
+→ the(NP A ),
+NP A −
+→ a(NP A ),
+NP A −
+→ one of(NP A ),
+NP A −
+→ εA ,
+VP A −
+→ has(VP A ),
+VP A −
+→ εA }i
+
+Let us recall that the derivation relation induced by a regular tree grammar
+G = hSS , N , F, Ri relates terms2 of T (F, N ), so that t =
+⇒ t0 holds iff there
+3
+exists a context C and a rule A →
+− a(B1 , . . . , Bn ) such that t = C[A] and t0 =
+C[a(B1 , . . . , Bn )]. The language of the RTG is L(G) = {t ∈ T (F) | SS =
+⇒∗ t}.
+
+One can check that the grammar of Example 2 generates trees with a root
+labeled with “caught”, and three subtrees, the leftmost and rightmost of which
+labeled with “cats” or “fish” followed by an arbitrary long combination of nodes
+labeled with “one of”, “a” or “the”. The central subtree is an arbitrary long
+combination of nodes labeled with “has”. Each branch terminates with εA . Two
+of these trees can be seen on Figure 3. Our RTG generates the derivation trees
+of a version of the original TAG expunged from its feature structures.
+
+2 The set of terms over the alphabet F and the set of variables X is denoted by T (F , X );
+T (F , ∅) = T (F ) is the set of trees over F .
+3 A context C is a term of T (F , X ∪ {x}), x 6∈ X , which contains a single occurrence of x.
+The term C[t] for some term t of T (F , X ) is obtained by replacing this occurrence by t.
+
+Feature Unification in TAG Derivation Trees
+
+3
+3.1
+
+5
+
+Unification on TAG Derivation Trees
+Feature-based Regular Tree Grammars
+
+In order to extend the previous construction to feature-based TAGs, our RTGs
+use combinations of rewrites and unifications—also dubbed narrowings (Hanus,
+1994)—of terms with variables in N × D, where N denotes the nonterminal
+alphabet and D the set of feature structures.4
+Definition 3. A feature-based regular tree grammar hS, N , F, D, Ri comprises
+an axiom S, a set N of nonterminal symbols that includes S, a ranked terminal
+alphabet F, a set D of feature structures, and a set R of rules of form (A, d) →
+−
+a((B1 , d01 ), . . . , (Bn , d0n )), where A, B1 , . . . , Bn are nonterminals, d, d01 , . . . , d0n are
+feature structures, and a is a terminal with rank n.
+The derivation relation =
+⇒ for a feature-based RTG G = hS, N , F, D, Ri relates pairs of terms from T (F, N × D) and u-substitutions, such that (s, e) ⇒
+=
+(t, e0 ) iff there exist a context C, a rule (A, d) →
+− a((B1 , d01 ), . . . , (Bn , d0n )) in
+R with fresh variables in the feature structures, a structure d0 , and an usubstitution σ verifying
+s = C[(A, d0 )], t = C[a((B1 , σ(d01 )), . . . , (Bn , σ(d0n )))],
+σ = mgu(d, e(d0 )) and e0 = σ ◦ e.
+The language of G is
+L(G) = {t ∈ T (F) | ∃e, ((S, >), id ) ⇒
+= ∗ (t, e)}.
+Features percolate hierarchically through the computation of the most general unifier mgu at each derivation step, while the global u-substitution e acts
+as an environment that communicates unification results between the branches
+of our terms.
+Feature-based RTGs with a finite domain D are equivalent to regular tree
+grammars. Unrestricted feature-based RTGs can encode Turing machines just
+like unification grammars (Johnson, 1988), and thus we can reduce the halting
+problem on the empty input for Turing machines to the emptiness problem for
+feature-based RTGs, which is thereby undecidable.
+
+3.2
+
+Encoding Feature-based TAGs
+
+For each tree γ with rank n, we now create a rule P →
+− γ(P1 , . . . , Pn ). A
+right-hand side pair Pi = (nt(γi), d0i ) stands
+for
+an
+active
+node γi with fea
+: top(γi )
+ture structure d0i = feats(γi ) = top
+bot : bot(γi ) , where top(γi ) and bot(γi ) denote
+respectively the top and bottom feature structures of γi .
+The left-hand side pair P = (A, d) carries the interface d = in(γ) of γ with
+the rest of the grammar, such that d percolates the root top feature, and the
+4 In order to differentiate TAG tree substitutions from term substitutions, we call the latter
+u-substitutions. Given two feature structures d and d0 in D, we denote by the u-substitution
+σ = mgu(d, d0 ) their most general unifier if it exists. We denote by > the most general element
+of D, and by id the identity.
+
+6
+
+S. Schmitz and J. Le Roux
+
+foot bot feature for auxiliary trees. Formally, for each initial tree α in I and
+auxiliary tree β in A, using a fresh variable t, we define
+
+ :t
+(2)
+in(α) = top
+top : top(αr )
+i
+h top : t
+: top(βr )
+(3)
+in(β) = top
+bot : bot(β )
+f
+
+The interface thus uses the top features of the root node of an elementary tree,
+and we have to implement the fact that this top structure is the same as the
+top structure of the variable that embodies the root node in the rule right-hand
+side. With the same variable t, we define accordingly:
+(
+
+top : t
+if γi = γr
+bot : bot(γ )
+(4)
+feat(γi ) =  top : top(γir) 
+otherwise
+bot : bot(γi )
+ : v
+− εA for each symbol XA in order to
+Finally, we add ε-rules (XA , top
+bot : v ) →
+account for adjunction sites where no adjunction takes place. Let us denote by
+tr(γi ) the pair (nt(γi ), feats(γi )).
+Definition 4. The feature-based RTG G = hSS , NS ∪ NA , F, D, Ri of a TAG
+hΣ, N, I, A, Si with feature structures in D has terminal alphabet F = I ∪ A ∪
+{εA } with respective ranks rk(α), rk(β), and 0, and set of rules
+R = {(XS , in(α)) →
+− α(tr(α1 ), . . . , tr(αn )) | α ∈ I, n = rk(α), X = lab(αr )}
+∪ {(XA , in(β)) →
+− β(tr(β1 ), . . . , tr(βn )) | β ∈ A, n = rk(β), X = lab(βr )}
+ top : t 
+∪ {XA bot : t →
+− εA | XA ∈ NA }
+
+Example 5. With the grammar of Figure 2, we obtain the following ruleset:
+»
+– i
+“
+h
+”
+agr : x
+SS > −
+→ caught NP S [ top : [ agr : x ] ] , VP A top : mode : ind
+, NP S >
+bot : [ mode : ppart ]
+`
+ˆ :t
+˜´
+NP S [ top : t ] −
+→ cats NP A top
+bot : [ agr : 3pl ]
+
+NP S [ top : t ] −
+→ fish(NP A [ top : t ])
+–«
+„
+» top : t
+h top : t
+i
+"
+#
+»
+–
+agr : x
+agr : x
+NP A bot : const
+−
+→
+the
+NP
+A bot : const : +
+: −
+def : +
+„
+» top : t
+–«
+h top : t
+i
+"
+#
+–
+»
+agr : 3sg
+agr : 3sg
+NP A bot : const
+−
+→
+a
+NP
+A bot : const : +
+: −
+def : −
+h top : t
+i
+“
+h top : t
+i”
+»
+–
+–
+»
+agr
+:
+3pl
+agr : 3sg
+NP A bot : def : +
+−
+→ one of NP A bot : const
+: +
+ˆ : v˜
+NP A top
+−
+→ εA “
+bot : v
+h top : t
+i”
+˜
+ˆ :t
+»
+–
+agr : 3sg
+VP A top
+→ has VP A bot : mode
+bot : [ mode : ppart ] −
+: ind
+ˆ : v˜
+VP A top
+−
+→ εA
+bot : v
+
+With the grammar of Example 5, one can generate the derivation tree for
+“One of the cats has caught a fish.” This derivation is presented in Figure 4.
+Each node of the tree consists of a label and of a pair (t, e) where t is a term
+from T (F, N × D) and e is an environment.5 In order to obtain fresh variables,
+we rename variables from the RTG: we reuse the name of the variable in the
+grammar, prefixed by the Gorn address of the node where the rewrite step
+5 Actually,
+
+we only write the change in the environment at each point of the derivation.
+
+Feature Unification in TAG Derivation Trees
+
+7
+
+takes place. Labels indicate the chronological order of the narrowings in the
+derivation.
+Labels in Figure 4 suggest that this derivation has been computed with a
+left to right strategy. Of course, other strategies would have led to the same
+result. The important thing to notice here is that the crux of the derivation
+lies in the fifth rewrite step, where the agreement between the subject and the
+verb is realized. Substitutions sites are completely defined when all adjunctions
+in the subtree have been performed. In the next section we propose a different
+translation that overcomes this drawback.
+
+4
+
+Left Corner Transformation
+
+Derivations in the previous feature-based RTG are not very predictive: the
+substitution of “cats” into “caught” in the derivation of Figure 1b does not
+constrain the agreement feature of “caught”. This feature is only set at the
+final ε-rewrite step after the adjunction of “one of”, when the top and bottom
+features are unified. More generally, given a substitution site, we cannot a priori
+rule out the substitution of most initial trees, because their root does usually
+not carry a top feature.
+A solution to this issue is to compute the derivations in a transformed grammar, where we start with the ε-rewrite, apply the root adjunctions in reverse
+order, and end with the initial tree substitution. Since our encoding sets the
+root adjunct as the leftmost child, this amounts to a selective left corner transformation (Rosenkrantz and Lewis II, 1970) of our RTG—an arguably simpler
+intuition than what we could write for the corresponding transformation on
+derived trees.
+
+4.1
+
+Transformed Regular Tree Grammars
+
+The transformation involves regular tree grammar rules of form XS →
+− α(XA , ...)
+for substitutions, and XA →
+− β(XA , ...) and XA →
+− εA for root adjunctions. After
+a reversal of the recursion of root adjunctions, we will first apply the ε rewrite
+using a rule XS →
+− εS (X) with rank 1 for εS , followed by the root adjunctions
+X→
+− β(X, ...), and finally the substitution itself X →
+− α(...), with a decremented
+rank for initial trees.
+Example 6. On the grammar of Figure 2, we obtain the rules:
+SS
+NP S
+NP
+NP
+NP
+NP
+VP A
+VP A
+
+−
+→ caught(NP S , VP A , NP S )
+−
+→ εS (NP )
+−
+→ cats
+−
+→ fish
+−
+→ the(NP )
+−
+→ one of(NP )
+−
+→ has(VPA )
+−
+→ εA
+
+Adjunctions that do not occur on the root of an initial tree, like the adjunction of “has” in our example, keep their original translation using XA →
+− β(XA , ...)
+and XA →
+− εA rules. We use the nonterminal symbols X of the grammar for
+
+8
+
+S. Schmitz and J. Le Roux
+
+root adjunctions and initial trees, and we retain XS for the initial εS rewrite on
+substitution nodes.
+Definition 7. The left-corner transformed RTG Glc = hSS , N ∪NS ∪NA , Flc , Rlc i
+of a TAG hΣ, N, I, A, Si has terminal alphabet Flc = I ∪ A ∪ {εA , εS } with respective ranks rk(α) − 1, rk(β), 0, and 1, and set of rules
+Rlc = {XS →
+− εS (X) | XS ∈ NS }
+
+∪ {X →
+− α(nt(α2 ), . . . , nt(αn )) | α ∈ I, n = rk(α), X = lab(αr )}
+
+∪ {X →
+− β(X, nt(β2 ) . . . , nt(βn )) | β ∈ A, n = rk(β), X = lab(βr )}
+∪ {XA →
+− β(nt(β1 ), . . . , nt(βn )) | β ∈ A, n = rk(β), X = lab(βr )}
+∪ {XA →
+− εA | XA ∈ NA }
+
+Due to the duplicated rules for auxiliary trees, the size of the left-corner
+transformed RTG of a TAG is doubled at worst. In practice, the reduced
+grammar witnesses a reasonable growth (10% on the French TAG grammar
+of Gardent (2006)).
+The transformation is easily reversed. We define accordingly the function
+lc-1 from T (Flc ) to T (F):
+lc-1 (εS (t)) = s(t, εA )
+s(β(t1 , t2 , ..., tn ), t) = s(t1 , β(t, fβ2 (t2 ), ..., fβn (tn )))
+s(α(t1 , ..., tn ), t) = α(t, fα2 (t1 ), ..., fαn+1 (tn ))
+a(γ(t1 , ..., tn )) = γ(fγ1 (t1 ), ..., fγn (tn ))
+(
+a(t)
+if γi is an adjunction site
+fγi (t) =
+lc-1 (t) if γi is a substitution site
+We can therefore generate a derivation tree in L(Glc ) and recover the derivation
+tree in L(G) through lc-1 .
+
+4.2
+
+Features in the Transformed Grammar
+
+Example 8. Applying the same transformation on the feature-based regular
+tree grammar, we obtain the following rules for the grammar of Figure 2:
+»
+– i
+“
+h
+”
+agr : x
+SS > −
+→ caught NP S [ top : [ agr : x ] ] , VP A top : mode : ind
+, NP S >
+bot : [ mode : ppart ]
+`
+ˆ : t ˜´
+NP S [ top : t ] −
+→ εS NP top
+bot : t
+NP [ bot : [ agr : 3pl ] ] −
+→ cats
+NP >
+→ fish
+» top : t
+–−
+“
+h top : t
+i”
+"
+#
+»
+–
+agr : x
+agr : x
+NP bot : const : + −
+→ the NP bot : const
+: −
+» top : t def : + –
+“
+h top : t
+i”
+"
+#
+»
+–
+agr : 3sg
+agr : 3sg
+NP bot : const : +
+−
+→ a NP bot : const
+: −
+def : −
+h top : t
+i
+“
+h top : t
+i”
+»
+–
+»
+–
+agr : 3sg
+agr : 3pl
+NP bot : const
+−
+→
+one
+of
+NP
+bot :
+: +
+def : +
+“
+h top : t
+i”
+ˆ top : t
+˜
+»
+–
+agr
+→ has VP A bot : mode :: 3sg
+VP A bot : [ mode : ppart ] −
+ind
+ˆ : v˜
+VP A top
+−
+→ εA
+bot : v
+
+Feature Unification in TAG Derivation Trees
+
+9
+
+Since we reversed the recursion of root adjunctions, the feature structures
+on the left-hand side and on the root node of the right-hand side of auxiliary
+rules are swapped in their transformed counterparts (e.g. in the rule for “one
+of”).
+This version of a RTG for our example grammar is arguably much easier to
+read than the one described in Example 5: a derivation has to go through “one
+of” and “the” before adding “cats” as subject of “caught”.
+The formal translation of a TAG into a transformed feature-based RTG
+requires the following variant trlc of the tr function: for any auxiliary tree β in
+A and any node γi of an elementary tree γ in I ∪ A, and with t a fresh variable
+of D:
+ :t
+
+inlc (β) = top
+(5)
+bot : bot(βf )
+i
+(h top : t
+top : top(γr )
+if γi = γr
+bot : bot(γr )
+(6)
+featslc (γi ) =
+feats(γi )
+otherwise
+trlc (γi ) = (nt(γi ), featslc (γi ))
+
+(7)
+
+Definition 9. The left-corner transformed feature-based RTG Glc = hSS , N ∪
+NS ∪ NA , Flc , D, Rlc i of a TAG hΣ, N, I, A, Si with feature structures in D has
+terminal alphabet Flc = I ∪ A ∪ {εA , εS } with respective ranks rk(α) − 1, rk(β),
+0, and 1, and set of rules
+ : t
+Rlc = {XS [ top : t ] →
+− εS (X top
+bot : t ) | XS ∈ NS }
+∪ {(X, feats(α1 )) →
+− α(trlc (α2 ), . . . , trlc (αn ))
+
+| α ∈ I, n = rk(α), X = lab(αr )}
+
+∪ {(X, featslc (β1 )) →
+− β((X, inlc (β)), trlc (β2 ), . . . , trlc (βn ))
+
+| β ∈ A, n = rk(β), X = lab(βr )}
+
+∪ {(XA , in(β)) →
+− β(tr(β1 ), trlc (β2 ), . . . , trlc (βn ))
+∪ {XA
+
+ top : t 
+bot : t
+
+→
+− εA | XA ∈ NA }
+
+| β ∈ A, n = rk(β), X = lab(βr )}
+
+Again, the translation can be computed in linear time, and results in a
+grammar with at worst twice the size of the original TAG.
+
+5
+
+Conclusion
+
+We have introduced in this paper feature-based regular tree grammars as an adequate representation for the derivation language of large coverage TAG grammars. Unlike the restricted unification computations on the derivation tree
+considered before by Kallmeyer and Romero (2004), feature-based RTGs accurately translate the full range of unification mechanisms employed in TAGs.
+Moreover, left-corner transformed grammars make derivations more predictable,
+thus avoiding some backtracking in top-down generation.
+Among the potential applications of our results, let us further mention more
+accurate reachability computations between elementary trees, needed for instance in order to check whether a TAG complies with the tree insertion grammar (Schabes and Waters, 1995, TIG) or regular form (Rogers, 1994, RFTAG)
+
+10
+
+S. Schmitz and J. Le Roux
+
+conditions. In fact, among the formal checks one might wish to perform on
+grammars, many rely on the availability of reachability relations.
+Let us finally note that we could consider the string language of a TAG
+encoded as a feature-based RTG—in a parser for instance—, if we extended the
+model with topological information, in the line of Kuhlmann (2007).
+
+References
+Marie-Hélène Candito and Sylvain Kahane. Can the TAG derivation tree represent a semantic graph? An answer in the light of Meaning-Text Theory. In TAG+4, pages 25–28, 1998. URL http://www.kahane.fr/?u_act=
+download&dfile=MTT-TAG1998.pdf.
+Hubert Comon, Max Dauchet, Rémi Gilleron, Christof Löding, Florent Jacquemard, Denis Lugiez, Sophie Tison, and Marc Tommasi. Tree Automata Techniques and Applications. 2007. URL http://www.grappa.univ-lille3.fr/
+tata.
+Philippe de Groote. Tree-adjoining grammars as abstract categorial grammars.
+In Robert Frank, editor, TAG+6, pages 145–150, 2002. URL http://www.
+loria.fr/~degroote/papers/tag02.pdf.
+Claire Gardent. Intégration d’une dimension sémantique dans les grammaires d’arbres adjoints. In Piet Mertens, Cédrick Fairon, Anne Dister,
+and Patrick Watrin, editors, TALN’06, pages 149–158. Presses universitaires de Louvain, 2006. URL http://www.loria.fr/~gardent/publis/
+taln06-semfrag.pdf.
+Claire Gardent and Laura Kallmeyer. Semantic construction in feature-based
+TAG. In EACL’03, pages 123–130. ACL Press, 2003. ISBN 1-333-56789-0.
+doi: 10.3115/1067807.1067825.
+Michael Hanus. The integration of functions into logic programming: From
+theory to practice. Journal of Logic Programming, 19–20:583–628, 1994. URL
+http://citeseer.ist.psu.edu/hanus94integration.html.
+Mark Johnson. Attribute-Value Logic and the Theory of Grammar, volume 16
+of CSLI Lecture Notes Series. University of Chicago Press, 1988. ISBN 0937073-37-7. URL http://standish.stanford.edu/bin/detail?fileID=
+1733047017X.
+Aravind K. Joshi and Yves Schabes. Tree-adjoining grammars. In Grzegorz
+Rozenberg and Arto Salomaa, editors, Handbook of Formal Languages, volume 3: Beyond Words, chapter 2, pages 69–124. Springer, 1997. ISBN 3-54060649-1. URL http://citeseer.ist.psu.edu/joshi97treeadjoining.
+html.
+Laura Kallmeyer and Maribel Romero. LTAG semantics with semantic
+unification. In Owen Rambow and Matthew Stone, editors, TAG+7,
+pages 155–162, 2004. URL http://www.cs.rutgers.edu/TAG+7/papers/
+kallmeyer-c.pdf.
+
+Feature Unification in TAG Derivation Trees
+
+11
+
+Makoto Kanazawa. Parsing and generation as Datalog queries. In ACL’07,
+pages 176–183. ACL Press, 2007. URL http://www.aclweb.org/anthology/
+P07-1023.
+Alexander Koller and Matthew Stone. Sentence generation as a planning problem. In ACL’07, pages 336–343. ACL Press, 2007. URL http://www.aclweb.
+org/anthology/P07-1043.
+Alexander Koller and Kristina Striegnitz. Generation as dependency parsing.
+In ACL’02, pages 17–24. ACL Press, 2002. doi: 10.3115/1073083.1073088.
+Marco Kuhlmann. Dependency Structures and Lexicalized Grammars. Doctoral
+dissertation, Saarland University, Saarbrücken, Germany, 2007. URL http:
+//www.ps.uni-sb.de/Papers/abstracts/kuhlmann2007dependency.pdf.
+Sylvain Pogodalla. Computing semantic representation: Towards ACG abstract terms as derivation trees. In Owen Rambow and Matthew Stone,
+editors, TAG+7, pages 64–71, 2004. URL http://www.cs.rutgers.edu/
+TAG+7/papers/pogodalla.pdf.
+J. Alan Robinson. A machine-oriented logic based on the resolution principle. Journal of the ACM, 12(1):23–41, 1965. ISSN 0004-5411. doi:
+10.1145/321250.321253.
+James Rogers. Capturing CFLs with tree adjoining grammars. In ACL’94,
+pages 155–162. ACL Press, 1994. doi: 10.3115/981732.981754.
+Daniel J. Rosenkrantz and Philip M. Lewis II. Deterministic left corner parsing.
+In 11th Annual Symposium on Switching and Automata Theory, pages 139–
+152. IEEE Computer Society, 1970.
+Yves Schabes and Richard C. Waters. Tree insertion grammar: a cubic-time
+parsable formalism that lexicalizes context-free grammar without changing
+the trees produced. Computational Linguistics, 21(4):479–513, 1995. ISSN
+0891-2017. doi: 10.1016/0165-0114(94)00364-7.
+Stuart M. Shieber. Unifying synchronous tree-adjoining grammars and tree
+transducers via bimorphisms. In EACL’06. ACL Press, 2006. ISBN 1-93243259-0. URL http://www.aclweb.org/anthology/E06-1048.
+K. Vijay-Shanker. Using descriptions of trees in a tree adjoining grammar.
+Computational Linguistics, 18(4):481–517, 1992. ISSN 0891-2017. URL http:
+//www.aclweb.org/anthology/J92-4004.
+XTAG Research Group. A lexicalized tree adjoining grammar for English.
+Technical Report IRCS-01-03, IRCS, University of Pennsylvania, 2001. URL
+http://www.cis.upenn.edu/~xtag/.
+
+6:
+
+agr : 3sg
+const : +
+
+
+})
+
+7 : (εA , 21v 7→
+
+
+
+mode : ind
+
+agr : 3sg
+mode : ind
+
+
+)
+
+h
+
+i
+})
+
+
+), {31t 7→ ⊤})
+agr : 3sg
+const : +
+def : −
+
+3
+agr : 3sg
+bot : 4 const : + 5
+def : −
+
+2
+
+ top : ⊤
+
+10 : (εA , {311v 7→
+
+9 : (a(NPA
+
+8 : (fish (NPA [ top : ⊤ ]) , {3t 7→ ⊤})
+
+Figure 4: A rewrite sequence in the feature-based RTG for the sentence “One of the cats has caught a fish.”
+
+5 : (εA , {0x 7→ 3sg, 1111v 7→
+
+
+
+
+
+h top : [ agr : 0x ] i
+
+4 : one of NPA bot : » agr : 3sg – , {111t 7→ [ agr : 0x ]}
+
+const : +
+
+]
+
+
+
+
+ » agr : 3sg – 
+ agr : 3sg 
+top :
+: ind –
+, {2t 7→ mode
+has V PA bot : » mode
+: ind }
+agr : 3sg
+
+
+
+ top : [ agr : 0x ] 
+
+3
+2
+agr : 3pl
+agr : 0x ] , 11x 7→ 3pl}
+3 : the NPA bot : 4 const
+,
+{11t
+→
+7
+[
+5
+:+
+
+i
+
+
+
+h
+: [ agr : 0x ]
+, {1t 7→ [ agr : 0x ]}
+2 : cats NPA top
+bot : [ agr : 3pl ]
+
+def : +
+
+[
+
+
+h » agr : 0x – i
+
+:
+mode : ind
+1 : caught NP S [ top : [ agr : 0x ] ] , VP A top
+,
+NP
+⊤
+S
+bot : mode : ppart
+
+0 : ((S, ⊤), id )
+
+12
+S. Schmitz and J. Le Roux
+
+

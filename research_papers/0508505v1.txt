@@ -1,0 +1,972 @@
+arXiv:math/0508505v1 [math.ST] 25 Aug 2005
+
+The Annals of Statistics
+2005, Vol. 33, No. 3, 1016–1035
+DOI: 10.1214/009053604000001138
+c Institute of Mathematical Statistics, 2005
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L.
+DAVIES AND U. GATHER
+By P. Laurie Davies and Ursula Gather
+University of Duisburg–Essen and Technical University Eindhoven, and
+University of Dortmund
+We thank all the discussants for their contributions and in particular we
+wish to thank Hampel. The concept of breakdown point goes back to his
+Ph.D. thesis [Hampel (1968)] and he was the first to exhibit a high breakdown equivariant regression estimate now known as the least median of
+squares [Hampel (1975)], a fact which is sometimes forgotten. These two
+sources are the starting point of the present discussion. In his contribution
+Hampel gives us insight into the thoughts which led to his definition of breakdown point, intended as it was to complement the infinitesimal behavior of
+a functional as described by the influence function. Hampel emphasizes that
+equivariance considerations were not part of his definition and he had in
+mind correlation statistics “where there is no equivariance at all.” He considers correlation in some detail and, as we disagree with him on this very
+topic, we give a detailed analysis of correlation statistics in our rejoinder.
+We hope that this will help clarify the issues involved.
+1. On breakdown. The first signification of the word “breakdown” given
+in the Oxford Dictionary starts with the following subsignification:
+“1. a. The act of breaking and falling down: a ruinous downfall, a collapse.”
+2. Breakdown to points and variations. Genton and Lucas and Oja argue for the usefulness of the breakdown concept in situations not covered
+by the results of our paper. They claim that at least in an intuitive sense
+breakdown occurs if the value of a functional is driven to the boundary or to
+an interior point which is independent of the uncontaminated sample. A formal definition of breakdown point is given which is intended to cover such
+possibilities. A first version is to be found in Genton and Lucas (2003) and is
+referred to by Oja. It defines the breakdown point as the smallest amount of
+contamination which can cause the statistic to assume only a finite number
+This is an electronic reprint of the original article published by the
+Institute of Mathematical Statistics in The Annals of Statistics,
+2005, Vol. 33, No. 3, 1016–1035. This reprint differs from the original in
+pagination and typographic detail.
+1
+
+2
+
+P.L. DAVIES AND U. GATHER
+
+of values independently of the uncontaminated observations. On the basis of
+this definition the arithmetic mean is claimed to have a finite-sample breakdown point of 1/n. The argument is as follows: if the first observation of
+the sample is contaminated, (ξ1 , y2 , . . . , yn ), and we let ξ1 tend to infinity,
+then the sample mean tends to infinity, that is, to a single value which is
+independent of y2 , . . . , yn . However, for any finite value of ξ1 the arithmetic
+mean takes on a continuum of values on varying the uncontaminated part of
+the sample. The only way of reducing the arithmetic mean to a single value
+is to introduce the symbol ∞ as a possible value for the contamination. The
+symbol ∞ is thus elevated to a real entity for data. The new definition avoids
+this but our reaction is similar: any definition of breakdown based on the
+concept of Lebesgue measure zero must be at fault. According to the new
+definition the functional
+T (Pn ) = max{−n, min{n, TLS (Pn )}}
+has a breakdown point of 1/n. We perturb it and put
+T ∗ (Pn ) = T (Pn ) +
+
+1
+n
+
+Z
+
+sin(x) dPn (x).
+
+The set of values taken on by T ∗ (Pn ) as we vary the uncontaminated part of
+the sample has Lebesgue measure at least 2/n2 as long as not all the sample
+is contaminated, and the breakdown point is therefore 1. As the perturbation
+tends with 1/n to zero, T ∗ remains consistent and asymptotically normal at
+the model. Oja mentions the classical skewness statistic
+((1/n) (xi − x̄)3 )2
+P
+b1 =
+,
+((1/n) (xi − x̄)2 )3
+P
+
+but this can be treated in the same manner by putting
+b∗1 = b1 + sin(nb1 ),
+which is still invariant but does not converge.
+A second criticism we made of the definition of Genton and Lucas (2003)
+is that any realizable functional immediately breaks down for the simple reason that it can only take on a finite number of values; all data and statistics
+are of finite precision. Genton and Lucas mention this in their contribution
+as a weakness of the new definition and so it is. No reasonable definition
+of breakdown can rely on the myth of a continuum of possible values for a
+statistic or the associated myth of infinite precision. When applying mathematics to applied problems it is important that the discrete problem can be
+well approximated by the continuous one. Genton and Lucas’ use of infinite
+precision and a continuum of values and sets of Lebesgue measure zero is not
+of this sort. Their continuous formulations do not approximate the discrete
+world of statistics.
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+3
+
+We point out further that the definitions of Genton and Lucas, and also of
+Oja (Definition 4), represent a complete break with the meaning of breakdown as it is used in statistics. Transferred to the statistical context the
+“ruinous downfall” of Section 1 is expressed in terms of distances and arbitrarily large bias. None of this is present in a concept of breakdown in
+terms of the number or Lebesgue measure of the set of all possible limits
+of contaminated samples. No mention is made of bias, that is, how far the
+value of the statistic can move from its value at the uncontaminated sample
+for a given amount of contamination. Yet it is this which has motivated
+robust statistics from the influence function via bias to breakdown point.
+In a sense the proposal put forward by Genton and Lucas is the very opposite of this. Rather than moving arbitrarily far, the statistic has broken
+down if it does not move at all. It is said that it then cannot convey any
+information in the sample. Even this is not always the case. Consider the
+statistical functional T75 which takes on the fixed value of 75 for all data
+sets. This has a breakdown point of 0 according to the Genton–Lucas definition. German insurance companies are required to use life expectancies
+specified by law. In the case of a male they could, for example, be forced to
+use the functional T75 to estimate life expectancy in years. The effect can
+be felt but it is not a ruinous downfall. It would be a ruinous downfall for
+the German insurance companies if they had to use a value of 65 and the
+reason is that 65 differs from the experienced lengths of life much more than
+does the fixed value of 75. Here as in the usual definition of breakdown it is
+the discrepancy which is important.
+3. Perturbations. The criticism we gave of Genton and Lucas’s definitions of breakdown has wider implications. We regard robust statistics as a
+perturbation theory for statistics. In particular, robust statistics must concern itself with perturbations of models and data sets and, in consequence,
+it must be able to deal with finite precision. The perturbations involved
+should be realistic ones and this will in general exclude perturbations described by the gross error neighborhood, which is simply too small. Unfortunately, the idea of stability under perturbations is sometimes lost, especially
+in theoretical work. Suppose a theorem on the existence and uniqueness of a
+functional requires assumptions about the existence and differentiability of a
+density function. These assumptions should then not be referred to as “under
+weak assumptions” but rather as “under very restrictive assumptions which
+violate the spirit of robustness.” Densities disappear under perturbations,
+likelihood disappears under perturbations as does the property of being a
+Lebesgue set of measure zero, efficiency is pathologically discontinuous, and
+so on. Perturbations and their consequences should be taken seriously by all
+who work in the area of robust statistics.
+
+4
+
+P.L. DAVIES AND U. GATHER
+
+4. Affine equivariant location functionals. The example of location functionals makes use of only the translation group although it seems natural
+to require affine equivariance. The problem is that for the affine group we
+have G1 = ∅ since if we iterate A(θ) = A(θ) + b this will in general not tend
+to infinity so Theorem 3.1 is not applicable. The highest breakdown point
+for translation equivariant functionals is 1/2 but there are affine equivariant location functionals which are based on scatter functionals and which
+have a breakdown point of at least that of the scatter functional, namely
+(1 − ∆(P ))/2. The gap has not been closed but Rousseeuw gives a sufficient
+condition for the bound (1 − ∆(P ))/2 to hold. His argument makes use of
+the convex hull which can be seen as a form of scatter functional albeit with
+a low breakdown point. In Davies and Gather (2002) we showed that the
+bound 1/2 is attainable at least at some empirical measures so that the gap
+remains.
+5. Metrics on P . We agree with Hampel’s comments on the gross error
+neighborhood but we do not like either of the alternatives he suggests. First,
+total variation is not much better than the gross error neighborhood; a
+distribution Q lies in the ε total variation neighborhood of P if and only
+if Q − P = ε(H1 − P ) − ε(H2 − P ) for some distributions H1 and H2 [see
+Rieder (2000), page 7]. Second, the Prohorov metric defined by
+(5.1)
+
+dpr (P, Q) = inf{ε > 0 : P (A) ≤ Q(Aε ) + ε},
+
+where
+Aε = {x : d(x, A) < ε},
+
+(5.2)
+
+conflates the last ε of (5.1) where it operates as a dimensionless probability
+with the ε of (5.2) where it represents a rounding error. We refer to Davies
+(1993) for a discussion of this point. Other simpler metrics are also capable
+of dealing with rounding errors. The Kolmogorov metric is defined by
+(5.3)
+
+dko (P, Q) = sup{|P (I) − Q(I)| : I = (−∞, x], x ∈ R}.
+
+Let Pn be the empirical distribution of some data and Pn∗ be the empirical
+distribution of the same data after rounding. If the rounding δ is less than the
+minimum gap between the unrounded observations, then dko (Pn , Pn∗ ) = 1/n
+assuming at least one observation to have been altered. It is sometimes
+argued that dko is too weak in the data analytical sense for comparing distributions. There are stronger versions which go under the name of Kuiper
+metrics. The Kuiper metric of order k is defined by
+(
+
+dku,k (P, Q) = sup
+(5.4)
+
+k
+X
+
+j=1
+
+)
+
+|P (Ij ) − Q(Ij )| : I1 , . . . , Ik disjoint finite intervals .
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+5
+
+Kuiper metrics of order k = 19 are used in Davies and Kovac (2004) in
+the context of providing approximate densities for data. The Kolmogorov
+and Kuiper metrics are restricted to R, but in higher dimensions metrics
+on Vapnik–Cervonenkis classes of sets retain many of their properties [see
+Pollard (1984)]. We refer to Davies (1993) for their use in the regression
+setting. The conflation of measurement error and probability in (5.1) can be
+avoided as follows. We define
+(5.5)
+
+dpk (P, Q) = inf{ε > 0 : P (I) ≤ Q(I ε ) + ε, for all intervals I},
+
+where I ε denotes the interval with the same center as I but with length
+|I| exp(ε). All occurrences of ε in (5.5) are now dimensionless. The idea is
+not new. We refer to Davies (1992, 1993).
+Hampel’s second argument for the Prohorov metric is that it metricizes
+weak convergence but we fail to see the relevance of this. The Kolmogorov
+metric (5.3) does not metricize weak convergence but nevertheless does have
+advantages over the Prohorov metric for proving central limit theorems. In
+particular we have
+√
+dko (Pn , P ) = OP (1/ n )
+(5.6)
+uniformly in P. If T is a functional with a bounded influence function
+I(x, T, P ), then under appropriate regularity conditions
+(5.7) T (Pn ) − T (P ) =
+
+Z
+
+I(x, T, P ) d(Pn (x) − P (x)) + oP (dko (Pn , P )),
+
+√
+which in the light of (5.6) gives us a central limit theorem for n(T (Pn ) −
+T (P )). The same reasoning fails for the Prohorov metric because (5.6) does
+not hold [see Kersting (1978)].
+6. Metrics on Θ. We turn to the metric D on Θ which quantifies the
+“ruinous downfall.” For location in R the choice D(θ1 , θ2 ) = |θ1 − θ2 | seems
+natural but the choice | log(θ1 /θ2 )| for scale is not quite as obvious. It does,
+however, have a strong justification in that numbers often have to be standardized by division by scale. If so, a scale of zero is a “ruinous downfall.” In
+higher dimensions breakdown in scale includes the data being concentrated
+on a lower-dimensional hyperplane, making it impossible to identify the influence of individual covariables. Again the word breakdown would seem
+appropriate. In an earlier version of our paper we considered the possibility
+of measuring differences in the parameter θ by differences in the corresponding distributions Pθ as in D(θ1 , θ2 ) = d(Pθ1 , Pθ2 ) for an appropriate metric d
+on the space of distributions, but this needs to be given more thought.
+Tyler has pointed out that if the parameter space is compact, then the
+metric is bounded so that condition (3.1) of our paper cannot possibly be
+satisfied. This is true, but just as metrics on P are chosen for the problem,
+
+6
+
+P.L. DAVIES AND U. GATHER
+
+so we can choose metrics on Θ according to the problem. If breakdown is
+defined in terms of convergence to some parameter values such as those on
+the boundary, then we can choose an appropriate metric as follows. We start
+by considering the problem of scale in R. The proof works by showing that
+if ε > (1 − ∆(P ))/2, then there exists an affine transformation A(x) = ax + b
+with |a| =
+6 1 and, for any n, distributions Q1n and Q2n satisfying
+d(P, Q1n ) < ε,
+
+T (Q1n ) = |a|n T (Q2n ).
+
+d(P, Q2n ) < ε,
+
+From this it follows that either
+lim inf (min(T (Q1n ), T (Q2n ))) = 0
+n→∞
+
+or
+
+lim sup(max(T (Q1n ), T (Q2n ))) = ∞.
+n→∞
+
+Using this fact we can define the breakdown point by
+(6.8)
+
+ε∗ (T, P, d, {0, ∞}) = inf{ε > 0 : inf[T (Q) : d(Q, P ) < ε] = 0
+or sup[T (Q) : d(Q, P ) < ε] = ∞}.
+
+This definition makes no reference to a metric but two points on the boundary of the parameter space, 0 and ∞, play a special role. The metric we
+use in this case is D(θ1 , θ2 ) = | log(θ1 /θ2 )| and, not surprisingly, the points 0
+and ∞ also play a special role here. The result is that ε∗ (T, P, d, {0, ∞}) =
+ε∗ (T, P, d, D). We see that breakdown as defined by (6.8) can be reformulated in terms of an appropriately chosen metric on the parameter space Θ.
+This remains true even if Θ is compact. Suppose Θ is equipped with a metric
+D ∗ , bounded or not, and that some parameter value θ0 is regarded as breakdown, for example, 0 in the scale context or 1 in the correlation context. We
+define the metric D on Θ by
+(6.9)
+
+Dθ0 (θ1 , θ2 ) =
+
+1
+D ∗ (θ
+
+1 , θ0 )
+
+−
+
+1
+D ∗ (θ
+
+2 , θ0 )
+
+.
+
+It follows that if we keep θ1 constant, then Dθ0 (θ1 , θ2 ) tends to infinity if
+and only if θ2 tends to θ0 . If we define in analogy to (6.8)
+(6.10)ε∗ (T, P, d, {θ0 }) = inf{ε > 0 : inf [D ∗ (θ0 , T (Q)) : d(Q, P ) < ε] = 0},
+
+then clearly ε∗ (T, P, d, {θ0 }) = ε∗ (T, P, d, Dθ0 ). If there is a set of parameter
+values Θ0 which are regarded as breakdown, for example, the boundary
+points, we define
+(6.11)
+
+DΘ0 (θ1 , θ2 ) = sup{Dθ0 (θ1 , θ2 ) : θ0 ∈ Θ0 }
+
+and again we have a metric which can be used to define breakdown. We
+define
+(6.12)
+
+ε∗ (T, P, d, Θ0 )
+= inf{ε > 0 : inf{inf[D ∗ (θ0 , T (Q)) : d(Q, P ) < ε] : θ0 ∈ Θ0 } = 0}
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+7
+
+and it follows that ε∗ (T, P, d, Θ0 ) = ε∗ (T, P, d, DΘ0 ) and also
+(6.13)
+
+ε∗ (T, P, d, Θ0 ) = inf{ε∗ (T, P, d, {θ0 }) : θ0 ∈ Θ0 }.
+
+Grize (1978), as we shall see below, defines breakdown as the minimum
+contamination such that all points in Θ0 are reachable and not just some
+such point. This can be accommodated by defining
+ε∗∗ (T, P, d, Θ0 )
+(6.14)
+= inf{ε > 0 : inf{θ ∈ Θ0 : sup[Dθ0 (T (P ), T (Q)) : d(P, Q) < ε] = ∞}}.
+In contrast to (6.13) this definition results in
+(6.15)
+
+ε∗∗ (T, P, d, Θ0 ) = sup{ε∗ (T, P, d, {θ0 }) : θ0 ∈ Θ0 }.
+
+There are no doubt other variations. The conclusion is that if breakdown
+is defined as convergence to some set of exceptional parameter values, then
+this can be described by a metric as required in our theorem. It still leaves
+open the question as to whether such a definition of breakdown is sensible
+but this can only be answered on a case-to-case basis.
+7. Breakdown point? Rousseeuw in his contribution argues for the use
+of breakdown “value” rather than “point.” We do not quite understand his
+reasoning and while usage is never absolute, we do not see any advantage in
+replacing “point” by “value.” Hampel mentions the analysis of variance as
+one situation where the term breakdown point may not be appropriate. In
+the simple two-way table breakdown occurs if the majority of observations
+in any one row or column are badly contaminated, but this is too pessimistic
+and gives an artificially low breakdown point. In Terbeck and Davies (1998)
+the breakdown or interaction patterns for the two-way table are characterized and it is shown how these are related to the L1 -solution and to Tukey’s
+median polish. Other articles concerned with patterns are Ellis and Morgenthaler (1992) for L1 regression and Kuhnt (2000) for contingency tables.
+8. Affine equivariance. We agree with Hampel that affine equivariance
+is not always a requirement and in two or more dimensions it is more difficult to justify than in one. We made comments to this effect in our paper.
+Nevertheless it is not always the case that outliers are apparent in the single
+coordinates and to find these some sort of equivariance would seem to be
+required. An example of a simple data set for which it is not sufficient just to
+look at the coordinates is given on page 57 of Rousseeuw and Leroy (1987).
+Programs based on high breakdown methods are now readily available and
+in our opinion should be used in a routine manner [Becker and Gather (1999,
+2001), Rocke (1996) and Rousseeuw and van Driessen (1999)]. The costs are
+negligible and the returns can be substantial.
+
+8
+
+P.L. DAVIES AND U. GATHER
+
+Fig. 1. Samples differing from the initial sample (upper left) by 3 points (upper right),
+9 points (lower left) and 14 points (lower right) with the rank-correlation changing from
+−0.332 to 0.278, 0.878 and 1, respectively.
+
+9. Correlation. This brings us to the perhaps most important part of the
+discussion. Hampel argues strongly that correlation provides an example of
+a useful concept of breakdown which does not have an equivariance structure. We argue that he is wrong on both counts: the concept is not useful and
+it does have an equivariance structure, albeit a simple one. We give a detailed
+reply which touches on many of the points discussed so far. Grize (1978) gives
+two definitions of breakdown for a rank correlation functional Trc . The first
+reads [see (6.14), (6.15)]
+(9.16)
+
+ε∗∗ (Trc , P, d, {−1, 1}) = inf{ε > 0 : sup{Trc (Q) : d(P, Q) < ε} = 1,
+inf{Trc (Q) : d(P, Q) < ε} = −1}
+
+and the second reads
+(9.17)
+
+ε∗∗ (|Trc |, P, d, {0, 1}) = inf{ε > 0 : sup{|Trc (Q)| : d(P, Q) < ε} = 1,
+inf{|Trc (Q)| : d(P, Q) < ε} = 0}
+
+for some appropriate metric d. For the total variation metric Grize calculates
+the breakdown points of Kendall’s and Spearman’s rank correlation for some
+particular distributions. We carry out a small experiment for Spearman’s
+functional Tsc . The top left panel of Figure 1 shows 20 data points with
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+9
+
+Fig. 2. The upper left panel shows a distribution considered by Grize (1978). The upper
+right panel shows the same data after a monotone transformation. The bottom left panel
+shows the breakdown [in the sense of (9.17)] of Spearman’s rank correlation to zero. The
+bottom right panel shows the breakdown of Spearman’s rank correlation to 1.
+
+Tsc (Pn ) = −0.332. Initially there are various sets of six points for which
+yi = h(xi ) with h a nondecreasing function. We choose one and then move
+one of the remaining points at a time until finally after 14 moves all the
+points satisfy yi = h(xi ) with h nondecreasing. For the final sample the rank
+correlation is 1 and we have, according to (9.16), breakdown. The top right
+panel of Figure 1 shows the sample after three moves, the bottom left after
+nine moves. The final sample is shown in the bottom right panel. At no stage
+do we experience a breakdown. Each sample differs only slightly from the
+previous one and the values of the rank correlation are perfectly reasonable
+for the sample they refer to. In Hampel’s terminology there is no pole. In
+a similar vein, Figure 2 shows a distribution considered by Grize for which
+he calculates the breakdown point 0.1 of Spearman’s rank correlation in the
+sense of (9.17). The top left panel shows the initial distribution and the top
+right panel the same data after a monotone transformation. A breakdown
+to zero is shown in the bottom left panel and to 1 in the bottom right
+panel. In our opinion the bottom right panel is the only one where one
+would not a priori question any observation and yet this is classified as
+breakdown. We now play a similar game in one dimension and consider a
+simple standard normal sample of size 20. We consider the median and as
+breakdown corresponds to an arbitrarily large value of the median we start
+
+10
+
+P.L. DAVIES AND U. GATHER
+
+with 100. The game is now to alter the initial sample point by point until
+after ten moves the value of the median is at least 100. The moves are
+almost prescribed. We choose any observation from the original sample and
+move it about 200 units to the right. After ten moves the median assumes
+a value of about 100. There is no other strategy. Even the first move alters
+the sample in a manner which distinguishes it immediately from the initial
+sample. Furthermore, when we progress from the ninth to the tenth move the
+median suddenly jumps from a value of about zero to one of about 100. We
+think this situation can be described by the word “breakdown.” Moreover,
+it holds for any translation equivariant functional if one replaces the points
+carefully as in (6.2) and not as in (6.3). Any such functional must break
+down by the tenth move at the latest.
+We now consider the usual linear correlation functional Tlc . For the initial
+data set of Figure 1 its value is −0.258. If we take any observation and move
+it to the point (γ, γ) and let γ tend to infinity, then Tlc tends to 1. In
+this situation it seems reasonable to use the word breakdown but perhaps
+discontinuity would be a better description. We analyze the problem more
+closely. Linear correlation can be placed into the context of our paper by
+introducing the following group structure. We define Glc to be the group of
+transformations g : R2 → R2 with
+(9.18)
+
+g(x, y) = (a1 x + b1 , a2 y + b2 )
+
+with a1 a2 6= 0. An equivariant functional T is one which satisfies
+
+(9.19)
+
+T (P g ) = sgn(a1 a2 )T (P ).
+
+Clearly the usual linear correlation functional Tlc is equivariant w.r.t. this
+group. The metric on the space of distributions is taken to be the strip
+metric
+(9.20)
+
+dST (P, Q) = sup{|P (C) − Q(C)| : C ∈ ST },
+
+where ST denotes the set of strips C
+(9.21)
+
+C = {(x, y) : −δ ≤ ax + by + c ≤ δ; a, b, c ∈ R, δ ∈ R+ }.
+
+We note that this metric is also “correct” as it is invariant under the
+group Glc :
+(9.22)
+
+dST (P, Q) = dST (P g , Qg ),
+
+g ∈ Glc .
+
+There is also a version of this metric which corresponds to (5.5) [see Davies
+(1993)]. To fit into the structure in our paper we also require a metric D on
+the parameter space Θ = [−1, 1]. The precise metric is not important because
+of the simple nature of the equivariance given in (9.19). To be concrete we
+put in (6.9)
+D ∗ (θ1 , θ2 ) := | tan(θ1 π/2) − tan(θ2 π/2)|,
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+11
+
+which is consistent with the desire to have breakdown at ±1.
+From (9.19) we see that the condition G1 6= ∅ is not satisfied and Theorem 3.1 does not provide a nontrivial upper bound. Indeed, there is an
+equivariant correlation functional with breakdown point 1, namely Tlco ≡ 0,
+but to forestall protests we give another. For an empirical distribution Pn
+we define
+1 X
+(9.23)
+Tlc (I),
+Tlc∗ (Pn ) =
+N I,|I|≥3
+where I is a subset of the data containing |I| observations, N = 2n − n −
+n(n − 1)/2 and Tlc (I) is, by an abuse of notation, Tlc evaluated at the empirical measure based on the set of observations in I. The functional Tlc∗
+is equivariant and also Fisher consistent. To calculate the breakdown point
+we consider an empirical measure Pn deriving from a sample of size n from
+a continuous distribution on R2 and another empirical measure Qn . We
+assume that the supports of each are contained in some compact set K.
+The reason for these assumptions is to reduce complications due to the fact
+that the linear correlation coefficient as usually defined requires the existence of moments. We consider a sequence of Qn with limn→∞ Tlc∗ (Qn ) = 1.
+From (9.23) it follows that the support of Qn must be contained in a strip
+Cn = {(x, y) : −δn ≤ an x + bn y + cn ≤ δn }
+with limn→∞ δn = 0. As Pn (Cn ) ≤ 2/n for sufficiently large n we have dST (Pn , Qn ) ≥
+1 − 2/n and hence
+ε∗∗ (Tlc∗ , Pn , dST , {−1, 1}) ≥ 1 − 2/n
+
+(9.24)
+
+for this class of probability measures. We generalize this result in a manner
+which emulates the setting of our paper. As G1 is empty we reformulate the
+definition of the functional ∆(P ) of (3.3) in our paper as follows. We set
+(9.25)∆(P ) = sup{P (B) : T (Q) not definable for Q with supp(Q) ⊂ B}.
+For example, in the case of scale in R the relevant sets B are singletons
+and a measure concentrated on a singleton must have scale either zero or ∞
+to be equivariant, both of which are excluded. If, following Grize, a linear
+correlation of ±1 is defined to be breakdown, the corresponding sets are
+lines and this leads to
+(9.26)
+
+∆+ (P ) = sup{P (C) : C = {(x, y) : ax + by + c = 0}, ab ≤ 0},
+
+(9.27)
+
+∆− (P ) = sup{P (C) : C = {(x, y) : ax + by + c = 0}, ab ≥ 0},
+
+and it follows that
+(9.28)
+
+ε∗∗ (Tlc∗ , P, dT U , {−1, 1}) = 1 − min{∆+ (P ), ∆− (P )}.
+
+12
+
+P.L. DAVIES AND U. GATHER
+
+The reasoning can be extended to rank correlation and this gives a more
+elegant theory as there are no problems with moments. The appropriate
+group is Grc which consists of all transformations g : R2 → R2 of the form
+(9.29)
+
+g((x, y)) = (ζ(x), η(y)),
+
+ζ, η, R → R,
+
+where each of ζ and η is either strictly increasing or strictly decreasing.
+A correlation functional Trc is equivariant with respect to this group if
+(9.30)
+
+Trc (P g ) = sgn(ζ ◦ η)Trc (P ),
+
+where sgn(ζ) = ±1 depending on whether ζ is strictly increasing or decreasing. The natural metric is the tube metric
+(9.31)
+
+dT U (P, Q) = sup{|P (C) − Q(C)| : C ∈ T U },
+
+where T U denotes the set of monotonic tubes C
+(9.32)C = {(x, y) : −δ ≤ h(x) + y ≤ δ, h : R → R strictly monotonic, δ ∈ R+ }.
+The metric is “correct” in that it is invariant with respect to the group Grc :
+(9.33)
+
+dT U (P, Q) = dT U (P g , Qg ),
+
+g ∈ Grc .
+
+As we now require correlations of ±1 only for data points which are strictly
+increasing or decreasing, we define analogously to (9.26) and (9.27),
+(9.34)∆+ (P ) = sup{P (C) : C = {(x, y) : y = h(x)}, h strictly increasing},
+(9.35)∆− (P ) = sup{P (C) : C = {(x, y) : y = h(x)}, h strictly decreasing}.
+From this it follows for Spearman’s rank correlation functional Tsc that
+(9.36)
+
+ε∗∗ (Tsc , P, dT U , {−1, 1}) = 1 − min{∆+ (P ), ∆− (P )}.
+
+In fact (9.36) holds for any functional for which Trc (P ) = 1 or −1 if and only
+if ∆+ (P ) = 1 or ∆− (P ) = 1, respectively, and consequently it also holds for
+Kendall’s τ . The appearance of min in (9.28) and (9.36) is due to Grize’s
+definition (9.16) of breakdown which refers to both boundary points. Usable estimates of ∆+ (Pn ) are available for empirical measures Pn deriving
+from nonatomic i.i.d. random variables in each component; that is, the components are also independent. Let the sample be (Xi , Yi ), i = 1, . . . , n, and
+consider the points (Xi1 , Yi1 ), . . . , (Xik , Yik ) with the Xij , j = 1, . . . , k, in
+increasing order. The points lie on some curve y = h(x) for a strictly increasing h if and only if the Yij , j = 1, . . . ,k, are also in increasing order.
+The probability of this is 1/k!. There are nk different samples of size k and
+we see that the probability that at least k points lie on some curve y = h(x)
+is at most
+1 n
+k! k
+
+ 
+
+≤
+
+nk
+.
+(k!)2
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+13
+
+By maximizing over k we obtain
+√
+∆+ (Pn ) = O(1/ n )
+and it follows from (9.36)
+(9.37)
+
+√
+ε∗∗ (Tsc , Pn , dT U , {−1, 1}) ≥ 1 − O(1/ n ).
+
+The fact that (9.36) also holds for Kendall’s τ apparently contradicts Hampel’s comments, but this is not so because it is definition (9.17) of breakdown to which Hampel’s comments apply. To proceed we consider the problem of maximizing
+∆+ (P ) subject to Trc (P ) = 0. For Tsc the answer is
+p
+∆+ (P ) = 3 1/2, which is attained at a distribution for which the rank of xi
+is i and theprank of yi is k + i, 1 ≤ i ≤ n − k, and n − i + 1, k + 1 ≤ ip≤ n,
+3
+3
+with
+1/2
+pk = n 1/2. The corresponding result for Kendall’s τ replaces
+= 1, it follows that the
+by 1/2. If now Q is any distribution with ∆+ (Q)
+p
+3
+breakdown point [in the sense of (9.17)]
+at
+Q
+is
+1
+−
+1/2 = 0.2063 for Spearp
+man’s rank correlation and 1 −
+1/2
+=
+0.2929
+for
+Kendall’s
+τ . If we now
+p
+move only half the mass of 1 − 3 1/2, it is clear that we can obtain distributions Q1 and Q2 at whichpSpearman’s and Kendall’s
+rank correlations have
+p
+breakdown points of (1 − 3 1/2 )/2 and (1 − 1/2 )/2, respectively, and that
+these are the smallest possible breakdown points. We have not understood
+Hampel’s claim BP (K) = 32 BP (S) as, as far as we can see, these refer to
+different distributions, one with ∆+ (Q1 ) = 0.85 and one with ∆+ (Q2 ) = 0.9,
+but this is only a minor point. The tube metric dT U is stronger than the
+strip metric dST but considerably weaker than the total variation metric
+dtv used by Grize. In particular it allows for wobbling of the observations.
+We also note that neither metric suffers from the deficiency of the Prohorov
+metric of mixing dimensionless probabilities with measurement units. The
+class ST of strips has polynomial discrimination but not the class T U as
+there are arbitrarily large finite subsets of R2 which can be shattered by T U
+[see Pollard (1984)].
+Finally, we point out the differences to Theorem 3.1. If we take the usual
+definition of breakdown as a worst-case situation rather than Grize’s definition which is a sort of best worst-case definition, then the breakdown point
+of Kendall’s or Spearman’s rank correlation is
+(9.38)
+
+ε∗ (Tlc∗ , P, dT U , {−1, 1}) = 1 − ∆(P ),
+
+where
+∆(P ) = max{∆+ (P ), ∆− (P )}.
+In the general situation we argue as follows. Let P0 denote the set of distributions at which T breaks down, which means that their support is contained in some exceptional subset of the sample space as in (9.25). Suppose
+
+14
+
+P.L. DAVIES AND U. GATHER
+
+0 < ∆(P ) < 1 and choose an exceptional subset B0 of the sample space
+with P (B0 ) = α, 0 < α < ∆(P ). If we define Q0 (·) = P (· ∩ B0 )/P (B0 ) and
+Q1 (·) = P (· ∩ (X \ B0 ))/(1 − P (B0 )), then Q0 and Q1 are probability measures with P = αQ0 + (1 − α)Q1 . If the metric on P satisfies (2.2) of our
+paper, we see that d(P, Q0 ) ≤ 1 − α and this implies
+(9.39)
+
+ε∗ (T, P, d, D) ≤ 1 − ∆(P ).
+
+This differs from the claim of Theorem 3.1 by the factor of 1/2 and it is
+precisely the group structure which produces this factor. Because of equivariance things start going wrong before one reaches an arbitrarily small
+neighborhood of some point in P0 . As Tyler mentions in his contribution,
+heuristic justifications for the factor of 1/2, such as not being able to distinguish between good and bad data, are too vague. One of the challenges of
+this paper is to obtain the factor of 1/2 or even some other factor without
+an equivariance structure.
+10. Principal component vectors. Tyler argues that it may be possible
+to define a reasonable concept of breakdown for principal component vectors,
+although he recognizes that there are problems involved. The idea is that
+breakdown occurs if contamination results in the first principal component
+vector being orthogonal to the first principal component vector without
+contamination. This example cannot be reformulated in terms of metrics as
+described in Section 6, as there is no special set of parameter values Θ0 .
+Furthermore, it is not possible to adjust the proof of Theorem 3.1 to include
+this case. However, we shall now argue that it does not make sense to talk
+about the breakdown of the principal component vectors without reference
+to the corresponding eigenvalues.
+Consider a two-dimensional data set for which the eigenvalues are the
+same. The set of first principal component vectors is now the set of all
+points on the unit circle with θ and −θ being identified. The smallest alteration of any observation will cause the space to collapse to a single direction,
+say θ1 = (1, 0), with the second principal component vector θ2 = (0, 1) being
+orthogonal to it. It is clear that there exists an arbitrarily small perturbation of the original data set such that θ1 = (0, 1) and θ2 = (1, 0). In other
+words, there exist data sets for which arbitrarily small perturbations cause
+breakdown in the first principal component vector. The perturbations can
+be so small as to be nondetectable and any computer of finite precision or
+some nonoptimal numerical recipe may result in the wrong answer and be
+the “cause” of the breakdown. It seems to us that this situation is one which
+is not describable by the word “breakdown.” We cannot think of any useful
+statistical procedure which can be made to break down by the smallest of
+perturbations of the data set. In practice, of course, use is not just made
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+15
+
+of the first principal component vector but of all those principal component vectors for which the eigenvalues are in some sense large. One data
+analytical strategy is to look at the two-dimensional plots on the first two
+principal component vectors, and here it is irrelevant if they are the wrong
+way round. The principal component vectors are defined as those directions
+where the variability of the data, however measured, is particularly large.
+The word “breakdown” can be more appropriately applied to a situation in
+which the large variability is the result of outliers and causes a direction of
+small variability to become one of large variability. It seems to us to be clear
+that the size of the eigenvalues will have to be taken into account. Principal component vectors do not therefore constitute a counterexample to our
+meta claim of no nontrivial theory of breakdown without groups. In spite
+of this Tyler has alerted us to the possibility of breakdown being defined in
+terms of a relationship between two parameter values rather than closeness
+to some specific parameter values. We cannot exclude the possibility of there
+being some perfectly reasonable concept of breakdown of this nature.
+11. Fisher consistency. Hampel does not like the example of regression
+through the origin and neither do we. It was included as an answer to a referee as to whether it was possible to construct a Fisher consistent functional
+with a breakdown point of at least 1/3. Fisher consistency seems to be
+the obvious candidate to replace group equivariance as a desirable property of a functional. We do not give a theorem as there are difficulties in
+defining what is meant by a reasonable parametric family, but a parametric family {Pθ , θ ∈ Θ} typically forms a very sparse subset of the set of all
+models. This is indicated by Figure 3 where the line represents the family
+of models in the space of all probability measures and the circles indicate
+an infinitesimal neighborhood. Fisher consistency describes the behavior of
+the functional only in the infinitesimal neighborhood. We are left free to
+define the functional elsewhere and this is what we exploit in our example.
+Equivariance considerations prevent this form of local definition. The orbits
+connect points which are far apart in the space of probability models and
+this prevents constructions such as the one we give.
+12. The samples (6.2) and (6.3). Hampel, Rousseeuw and Tyler all comment on the samples (6.2) and (6.3). Rousseeuw correctly remarks that one
+can often calculate the breakdown point of a functional directly and that
+such direct proofs do not rely on a repetition. Hampel says, also correctly,
+that the unnamed functional (there are many) must have a low breakdown
+and suggests that perhaps some small print is missing. What is missing is
+some large print explaining exactly what we intended with these two examples. Tyler saw clearly what was intended and has made some very interesting comments on (6.2) and (6.3). He also explicitly mentions the connection
+
+16
+
+P.L. DAVIES AND U. GATHER
+
+Fig. 3. A thin parametric model and an infinitesimal neighborhood within which Fisher
+consistency becomes relevant.
+
+with the area of computer vision which was one of our motivations as we
+indicate below. He points out that such apparently well-understood functionals such as appropriately tuned redescending M -functionals can exhibit
+the same behavior. We confess to not having been aware of this and we would
+have chosen another example had we known. As Tyler says, under appropriate conditions redescending affine equivariant M -functionals do not break
+down even under 99% contamination. This is exactly the phenomenon to
+which we intended to bring attention.
+The proof of Theorem 3.1 relies in part on exactly reproducing a portion
+of the data elsewhere. If there is no exact repetition as in (6.3), there will
+be many equivariant functionals which do not break down. One choice for
+sample (6.3) is
+(12.40)
+
+(
+
+(Tl (xn ), Ts (xn )) = arg min
+µ,σ
+
+3
+X
+
+)
+
+r(i) (µ, σ)2 ,
+
+j=1
+
+where
+2
+
+ri (µ, σ) = min
+
+
+
+1≤j≤n
+
+xj − µ
+− zi
+σ
+
+2
+
+and z1 = 1.5, z2 = 1.8 and z3 = 1.3. In this connection we mention Oja’s
+example of linear regression at the end of his Section 1. We fail to follow his
+argument as to why the estimate becomes uninformative. As it stands, the
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+17
+
+argument seems to make no use of the assumption n = 2k, in which case we
+can put k = 1 and the conclusion would seem to be that every regression
+equivariant functional has a breakdown point of 1/n. If n = 2k is implicitly
+meant, then breakdown occurs only if we cannot distinguish between the
+two samples. If we can distinguish between the two samples, for his example
+if x1 = x2 = · · · = xk = 0, then what is claimed as breakdown is nothing but
+equivariance (see Section 2 above).
+At first glance the functional (12.40) may seem very artificial but this is
+not so. It is constructed to find a particular pattern in the sample, namely
+affine transformations of 1.5, 1.8 and 1.3. Figure 4 shows the smile of the
+Cheshire cat and the problem is to locate it in a sea of noise into which it
+gradually disappears. This is only possible as the noise does not reproduce
+the signal. For real examples from the area of computer vision we refer
+to Wang and Suter (2004). In analytical terms one can define a modified
+breakdown point by
+(12.41) ε∗ (T, P, d, H) = inf{ε > 0 : sup |T (P ) − T (Q)|, d(P, Q) < ε, Q ∈ H},
+where H specifies what you want to protect yourself against. If H does not
+allow a repetition of the signal elsewhere, then affine equivariant functionals
+can attain breakdown points higher than 1/2. Moreover, the usual high
+breakdown functionals are typically of no help in this situation [see Wang
+and Suter (2004)].
+
+Fig. 4.
+
+The smile of the Cheshire cat gradually disappearing as it is corrupted by noise.
+
+18
+
+P.L. DAVIES AND U. GATHER
+
+13. Nonparametric statistics. In this paper we have shown that the concept of breakdown point has been generally accepted only in situations where
+there is a group structure sufficiently rich to allow the calculation of a nontrivial upper bound for the breakdown point. In his contribution Hampel
+speculates that this could be the reason why the breakdown point for correlation coefficients has not yet been widely accepted. In spite of this and as
+pointed out by an Associate Editor, we have not proved a theorem to the
+effect that a breakdown point is only sensible when a rich group structure
+exists. It is difficult to imagine what such a theorem would look like. Nevertheless the paper, the contributions of the discussants and our reply do
+seem to indicate that it will not be easy to come to an acceptable definition of breakdown with a nontrivial upper bound without a group structure.
+There is perhaps another reason why some definitions of breakdown have
+been successful. They are defined for so-called nonparametric functionals in
+the sense of Bickel and Lehmann (1975a, b). One can always calculate the
+median of a distribution in R and this is not associated with a restrictive
+stochastic model. We wish to emphasize this as we have the impression that
+it is sometimes assumed that functionals are only to be applied to data which
+is generated by some stochastic model but with contamination. Genton and
+Lucas entitle a section “Breakdown point for (in)dependent observations,”
+which suggests at least to us that they distinguish between samples which
+are generated by independent random variables and those which are not.
+The title of Genton and Lucas (2003) also tends in this direction. They
+write “Y is the set of all allowable samples” and later “Y is the set of all
+stationary AR(1) processes.” We think the intention is clear. The data are
+generated by a stationary AR(1) process and then contaminated by the outliers. On the other hand, the only possible mathematical interpretation of
+“the set of all stationary AR(1) processes” is the support of the model. As
+the support of an AR(1) process with Gaussian innovations is Rn , this means
+simply all samples, Y = Rn . Thus what at first glance seems plausible turns
+out to be untenable. This is the reason why the restrictions we place on data
+are analytical ones and not distributional ones. The median can be successfully applied to data which are very obviously dependent [see, e.g., Davies,
+Fried and Gather (2004)], but consider the data in Figure 5. For these data
+it makes no sense to artificially restrict ρ to the interval [−1, 1]. Rather one
+would point out that the data can be well approximated by an AR(1) model
+with ρ = −1.25 but not by a stationary AR(1) model. This simple message
+is lost if we are forced to specify a value in [−1, 1]. If breakdown is going to
+be meaningful in such a situation we suspect that it should be applied to a
+statistical procedure and not to the behavior of a single functional.
+14. Breakdown without groups and alternatives. We have argued above
+that the only generally accepted definitions of breakdown are in situations
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+19
+
+Fig. 5. A sample of size 14 generated by Xt+1 = −1.25Xt + 0.2Z(t) with Z(t) standard
+Gaussian white noise.
+
+where there is a sufficiently rich group and equivariance structure. If a need
+is felt to extend it to other situations, we state what we think are the minimal requirements. First, the definition should be capable of being made
+precise. He argues that breakdown is the smallest fraction of contamination
+which makes a test statistic “uninformative or unusable.” Later he argues
+that breakdown should have the same degree of vagueness as he claims to
+be the case with outliers. He continues that “when every statistician starts
+to talk about his or her own notion of a breakdown point, I think we have
+made it.” We think there are dangers in such an attitude. Ostensive definitions of breakdown with statisticians pointing in all directions are unlikely
+to contribute to a general acceptance of the word. Intuition is important,
+but just as is the case with outliers [see Davies and Gather (1993)] much
+is to be gained by undertaking the attempt to give a precise definition and
+to investigate its consequences. This not only deepens the understanding, it
+also sharpens the intuition. Semantics is important and we think that any
+generalizations of the concept of breakdown should be such as to be recognizably referring to some common element, in particular the presence of some
+natural pole. Second, it is not sufficient to give a definition of breakdown
+and show that it gives the correct answer in some particular cases. A definition of breakdown should be subjected to some form of analysis, including
+its stability under perturbations. The onus is on those who propose definitions of breakdown to do this. Third, the definition should be simple and
+
+20
+
+P.L. DAVIES AND U. GATHER
+
+intuitively appealing. Here we agree completely with He. If it requires more
+than sixty seconds to understand a definition, it is probably bad. Fourth,
+when calculating breakdown points use should be made of metrics which
+can accommodate rounding errors. Gross error neighborhoods and the total variation metric are too restrictive. Fifth, the definition should not be
+too restrictive and only apply to one single functional. It should apply to a
+whole family of functionals which offer different possibilities of quantifying
+the feature of interest, location, scale, correlation or nonparametric function.
+Sixth, there should be a class of reasonable functionals for which it makes
+sense to compare breakdown points. If such a definition of breakdown is not
+possible, there are alternatives. One is simply to compare different functionals by their continuity or bias properties, again if possible in weak metrics.
+For this to make sense it is not necessary that an explosion occurs. It may
+be that this proves more useful than trying to extend the idea of breakdown
+to situations for which it is not suitable.
+15. Conclusion. We thank all discussants for their contributions and
+hope that the disagreements that are apparent have been clarified by our
+rejoinder. In our paper we have not proved that breakdown without equivariance is not a sensible concept. On the other hand, in all situations we
+are aware of in which there is no or little equivariance (made precise by
+our main theorem), then either (i) breakdown points of 1 are attainable or
+(ii) the word breakdown is inappropriate (the movement from the top right
+to the bottom right panel of Figure 2) or (iii) the very definition of breakdown point is inadequate. An example without these weaknesses would be
+interesting.
+REFERENCES
+Becker, C. and Gather, U. (1999). The masking breakdown point of multivariate outlier
+identification rules. J. Amer. Statist. Assoc. 94 947–955. MR1723295
+Becker, C. and Gather, U. (2001). The largest nonidentifiable outlier: A comparison of
+multivariate simultaneous outlier identification rules. Comput. Statist. Data Anal. 36
+119–127. MR1847237
+Bickel, P. J. and Lehmann, E. L. (1975a). Descriptive statistics for nonparametric
+models. I. Introduction. Ann. Statist. 3 1038–1044. MR395020
+Bickel, P. J. and Lehmann, E. L. (1975b). Descriptive statistics for nonparametric
+models. II. Location. Ann. Statist. 3 1045–1069. MR395021
+Davies, P. L. (1992). The asymptotics of Rousseeuw’s minimum volume ellipsoid estimator. Ann. Statist. 20 1828–1843. MR1193314
+Davies, P. L. (1993). Aspects of robust linear regression. Ann. Statist. 21 1843–1899.
+MR1245772
+Davies, P. L., Fried, R. and Gather, U. (2004). Robust signal extraction for on-line
+monitoring data. Contemporary data analysis: Theory and methods. J. Statist. Plann.
+Inference 122 65–78. MR2057914
+
+REJOINDER TO “BREAKDOWN AND GROUPS” BY P. L. DAVIES AND U. GATHER
+21
+Davies, P. L. and Gather, U. (1993). The identification of multiple outliers (with discussion). J. Amer. Statist. Assoc. 88 782–801. MR1242933
+Davies, P. L. and Gather, U. (2002). Breakdown and groups. Technical Report 10/2002,
+Sonderforschungsbereich 475, Univ. Dortmund.
+Davies, P. L. and Kovac, A. (2004). Densities, spectral densities and modality.
+Ann. Statist. 32 1093–1136. MR2065199
+Ellis, S. P. and Morgenthaler, S. (1992). Leverage and breakdown in L1 regression.
+J. Amer. Statist. Assoc. 87 143–148. MR1158632
+Genton, M. G. and Lucas, A. (2003). Comprehensive definitions of breakdown points
+for independent and dependent observations. J. R. Stat. Soc. Ser. B Stat. Methodol. 65
+81–94. MR1959094
+Grize, Y. L. (1978). Robustheitseigenschaften von Korrelationsschätzungen. Diplomarbeit, Swiss Federal Institue of Technology (ETH), Zürich.
+Hampel, F. R. (1968). Contributions to the theory of robust estimation. Ph.D. dissertation, Univ. California, Berkeley.
+Hampel, F. R. (1975). Beyond location parameters: Robust concepts and methods (with
+discussion). Bull. Inst. Internat. Statist. 46 (1) 375–391. MR483172
+Kersting, G. D. (1978). Die Geschwindigkeit der Glivenko–Cantelli–Konvergenz
+gemessen in der Prohorov-Metrik. Math. Z. 163 65–102. MR510325
+Kuhnt, S. (2000). Ausreißeridentifikation im Loglinearen Poissonmodell für Kontingenztafeln unter Einbeziehung robuster Schätzer. Ph.D. dissertation, Univ. Dortmund.
+Pollard, D. (1984). Convergence of Stochastic Processes. Springer, New York. MR762984
+Rieder, H. (2000). Neighborhoods as nuisance parameters? Robustness vs. semiparametrics. Technical Report 25/2000, SFB 373, Humboldt Univ., Berlin.
+Rocke, D. M. (1996). Robustness properties of S-estimators of multivariate location and
+shape in high dimension. Ann. Statist. 24 1327–1345. MR1401853
+Rousseeuw, P. J. and Leroy, A. M. (1987). Robust Regression and Outlier Detection.
+Wiley, New York. MR914792
+Rousseeuw, P. J. and van Driessen, K. (1999). A fast algorithm for the minimum
+covariance determinant estimator. Technometrics 41 212–223.
+Terbeck, W. and Davies, P. L. (1998). Interactions and outliers in the two-way analysis
+of variance. Ann. Statist. 26 1279–1305. MR1647657
+Wang, H. and Suter, D. (2004). Robust adaptive-scale parametric model estimation for
+computer vision. IEEE Trans. Pattern Analysis and Machine Intelligence 26 1459–1474.
+Fachbereich 06—Mathematik
+und Informatik
+Universität Duisburg–Essen
+45117 Essen
+Germany
+e-mail: davies@stat-math.uni-essen.de
+
+Fachbereich Statistik
+Universität Dortmund
+44221 Dortmund
+Germany
+e-mail: gather@statistik.uni-dortmund.de
+
+

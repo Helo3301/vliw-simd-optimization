@@ -1,0 +1,31 @@
+{
+  "current_makespan": 212,
+  "theoretical_min": 144,
+  "operations": 1046,
+  "dependencies": 1477,
+  "counts": {
+    "alu": 84,
+    "load": 288,
+    "valu": 640,
+    "store": 32,
+    "flow": 2
+  },
+  "utilization": {
+    "alu": 3.30188679245283,
+    "valu": 50.314465408805034,
+    "load": 67.9245283018868,
+    "store": 7.547169811320755,
+    "flow": 0.9433962264150944
+  },
+  "solver_status": "OPTIMAL",
+  "solve_time": 27.66774344444275,
+  "optimal_makespan": 161,
+  "improvement_cycles": 51,
+  "improvement_pct": 24.056603773584907,
+  "gap_to_theory_cycles": 17,
+  "gap_to_theory_pct": 11.805555555555555,
+  "total_h54": 3462,
+  "projected_optimal_total": 2646,
+  "total_improvement_cycles": 816,
+  "total_improvement_pct": 23.570190641247834
+}

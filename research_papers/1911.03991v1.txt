@@ -1,0 +1,231 @@
+Using Deep Neural Networks for Estimating Loop
+Unrolling Factor
+
+arXiv:1911.03991v1 [cs.DC] 10 Nov 2019
+
+Asma Balamane
+LMCS (ESI)
+Algiers, Algeria
+ea balamane@esi.dz
+
+Zina Taklit
+LMCS (ESI)
+Algiers, Algeria
+ez taklit@esi.dz
+
+Riyadh Baghdadi
+CSAIL (MIT)
+Massachusetts, USA
+baghdadi@mit.edu
+
+Abstract To achieve high performance in modern
+processors, compilers should optimize programs. We
+address in this paper Loop Unrolling optimization,
+proposing a novel approach based on deep neural networks to automatically optimize loops in TIRAMISU.
+TIRAMISU is a new language to create a code of high
+performance. It allows to separate between the algorithm
+and its optimizations [1].
+Key words
+Loop Unrolling, Deep Neural Network,
+Feature Extraction, TIRAMISU compiler.
+
+1
+
+Introduction
+
+Optimizing programs requires deep expertise. On one
+hand, it is a tedious task, because it requires a lot of tests to
+find out the best combination of optimizations to apply with
+their best factors. On the other hand, this task is critical,
+because it may degrade the program performance instead of
+improving it. The automatization of this task can deal with
+this problem and permit to obtain good results. Optimizing
+loops that take the most significant part of the program execution time plays a crucial role to achieve best performance.
+In this paper, we address Loop unrolling optimization, by
+proposing a deep Neural Network model to predict the optimal unrolling factor for TIRAMISUs programs.
+TIRAMISU is a polyhedral framework [2] designed
+to generate high performance code for multiple platforms
+including multicores, GPUs, and distributed machines.
+TIRAMISU introduces a scheduling language with novel
+commands to explicitly manage the complexities that arise
+when targeting these systems [1].
+
+2
+
+Loop unrolling
+Loop unrolling is the transformation in which the loop
+body is replicated k times where k is a given unrolling factor.
+It is used to reduce overhead by decreasing the number of
+iterations and hence the number of branch operations. Loop
+unrolling enables other optimizations, many of which target
+the memory system. The main important advantage of loop
+unrolling is that it exposes instruction level parallelism (ILP)
+to the compiler [3]. Unrolling improves performance almost
+in all cases where it is applied in a significant way [4]. However, if the loop unrolling is not carefully applied, it may
+negatively affect other important optimizations and reduce
+overall performance. Choosing the right factor of unrolling
+is also very important. The best unrolling factor reduces execution time and improves global performance. Therefore,
+through this research, we aim to design a model that predict
+the best unrolling factor.
+
+3
+
+Learning Loop Unrolling Factor Models
+In this section, we present our model design that predicts
+the best loop unrolling factor. We use TIRAMISU compiler
+[1] as execution platform, a polyhedral compiler that allows
+flexible application of different loop optimizations.
+3.1 Input program features
+For any machine learning technique, selecting the best input features is a crucial step. Since our contribution focus on
+the loop unrolling optimization which is a local optimization,
+we implement a method to extract features automatically for
+each loop nest (TIRAMISU computation). This loop nests
+abstraction summarizes the characteristics that influence the
+execution efficiency on modern processors and gives a highlevel representation independently on the execution architecture platforms.
+
+Table 1.
+
+Figure and table captions do not end with a period
+
+Loop levels characteristics
+Number of the loop nest levels
+Number of dependencies between loop nest levels
+List of dependent levels for each loop nest level
+Loop span for each level
+Whether there is a predicate before each loop level
+Operations characteristics
+Operation loop level / operation rank in the loop level
+Fig. 1.
+
+Number of variables/invariants used in the operation
+Operation histogram per operands type
+
+DNN model for estimating the best unrolling factor.
+
+Table 2.
+
+Loads/stores histogram per operands type
+Number of library calls for each loop nest level
+Schedule (Optimizations) characteristics
+Whether the optimization is applied
+The loop nest levels the optimization is applied
+
+subset of the model hyperparameters.
+
+Activation function
+
+ReLu
+
+Optimization algorithm
+
+ADAM [6]
+
+Learning rate
+
+10−3
+
+Initialisation algorithm
+
+Random uniform
+
+Number of iterations
+
+Early stopping technique
+
+Factors used for each applied optimization
+List of dependent loop nest (global optimizations case)
+
+The features vector contains the most important nest loop
+characteristics such as the number of loop nest levels, dependencies between loop nest levels and the loop operations
+characteristic, etc.. In the other hand, other loop optimizations can be already applied on the loop nests, we associate
+for each loop nest the features list of schedule optimizations.
+The table 1 presents a subset of features given by the automatic extraction method.
+Collecting training data must be carefully done. We use
+TIRAMISU code generator tool to generate parameterized
+unrolled code with different other optimizations cases. We
+exhaustively search for the optimal unrolling factor of the
+generated programs to create the training data set.
+
+3.2
+
+Using Deep Neural Networks (DNN) to Learn Loop
+Unrolling factor model
+We used a deep neural network to construct a supervised
+classification model. It allows the prediction of the best unrolling factor. In a classification model, outputs (classes) are
+predefined. It receives as input a set of labeled learning data
+to learn how to classify new programs. The architecture of
+the neural network is based on the typical architecture of
+multilayer perceptron (MLP) [5]. The model must predict
+the output among the defined classes that represent the range
+of possible values of the unrolling factor.
+
+We adopted an empirical strategy to define the hyperparameters of the DNN. We found that four hidden layers with
+500, 400, 250 and 100 neurons in each layer respectively,
+gives the best accuracy. For each layer we dichotomically
+tested the cases of neurons number. Concerning the other
+model hyperparameters, we summarized tests results in the
+table 2
+4
+
+Experimental results
+The system is evaluated thanks to a set of benchmarks1 .
+We have first implemented the exhaustive exploration of unrolling factors technique. It represents a reference for comparing the prediction model results. For each benchmark, we
+have launched an exhaustive exploration of the unrolling factors in order to define the best factor and to compare it with
+the factor predicted by the implemented model. We consider
+for each benchmark three test cases (depending on the data
+size or the applied optimizations).
+for each test case we evaluate the PC and SP metrics that
+represent ratios between programs execution time with the
+optimal and predicted unrolling factors and without applying
+unrolling optimization
+PC = optimal exec/predit exec
+SP = without exec/predit exec
+We note in Figure2 that PC and SP rates vary from one
+benchmark to another. In fact, for the MM × M and Blur
+benchmark, we recorded fairly positive rates.
+
+1 find benchmarks implementation in https://github.com/
+AsmaBALAMANE/tiramisu/tree/master/benchmarks/
+Automatic_unroll
+
+[6] Bock, S., Goppold, J., and Weiss, M., 2018. “An improvement of the convergence proof of the adam optimizer”. CoRR.
+
+Fig. 2.
+
+Test results with the different benchmarks test cases.
+
+This means that the model is able to learn good predictions
+for dealing with the data locality problem that is required in
+both benchmarks.To synthesize, the model learns highlevel
+featuresfrom low level features. It gives predictions of the
+best unrolling factor for new programs with a precision of up
+to 20%. This shows that the model learns and it exceeds the
+random prediction (whose precision is 14%)
+
+5
+
+Future work
+The accuracy of our model is influenced by the lack of
+data. Thereby, we are generating more data to improve
+model accuracy.
+In this paper, we presented the general design of based
+Deep learning predictor for unrolling optimization. In order to develop a complete automatic optimization method for
+TIRAMISU compiler, the final stage of our work will refine
+the presented method by adding the loop optimizations selection method.
+
+References
+[1] Baghdadi, R., Ray, J., Ben Romdhane, M., Del Sozzo,
+E., Akkas, A., Zhang, Y., Suriana, P., Kamil, S., and
+Amarasinghe, S., 2019. “Tiramisu: A polyhedral compiler for expressing fast and portable code”. Proceedings
+of the 2019 International Symposium on Code Generation and Optimization (CGO 2019), Feb.
+[2] PRADELLE, B., 2011. “Mthodes statiques et dynamiques de compilation polydrique pour lexcution en
+environnement multicoeurs”. PhD thesis, Universit de
+Strasbourg.
+[3] Stephenson, M., and Amarasinghe, S., 2005. “Predicting
+unroll factors using supervised classification”.
+[4] Bacon, D. F., Graham, S. L., and Sharp, O. J., 1994.
+“Compiler transformations for high-performance computing”. pp. 345–420.
+[5] Gardner, M., and Dorling, S., 1998. “Artificial neural
+networks (the multilayer perceptron) a review of applications in the atmospheric sciences”. Atmospheric Environment.
+
+

@@ -1,0 +1,1459 @@
+NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO
+PRIMES
+
+arXiv:2308.04752v3 [math.NT] 22 Sep 2023
+
+QI-YANG ZHENG
+Abstract. The main result of the paper is the existence of an infinitely many families
+of Ramanujan-type congruences for b4 (n) and b6 (n) modulo primes m ≥ 2 and m ≥ 5,
+respectively. We provide new examples of congruences for b4 (n) and b6 (n). Moreover,
+we find two infinite explicit infinite families of congruences for b4 (n) modulo 3.
+
+1. Introduction
+The number of partitions of n in which no parts are multiples of k is denoted by
+bk (n) and referred to as k-regular partitions.
+We agree that bk (0) = 1 for convenience. Moreover, let bk (n) = 0 if n ∈
+6 Z≥0 . The
+generating function for the k-regular partitions is as follows:
+∞
+X
+
+n
+
+bk (n)q =
+
+n=0
+
+∞
+Y
+1 − q kn
+
+n=1
+
+1 − qn
+
+.
+
+In 1919, Ramanujan discovered three remarkable congruences for the unrestricted
+partition function p(n), as shown below:
+p(5n + 4) ≡ 0 (mod 5),
+p(7n + 5) ≡ 0 (mod 7),
+p(11n + 6) ≡ 0 (mod 11).
+We refer to such congruences as Ramanujan-type congruences. Lovejoy [7] studied
+the distribution of b2 (n) and proved the existence of Ramanujan-type congruences for
+b2 (n) modulo every prime m ≥ 5. In a previous work, the author [15] demonstrated
+similar results for b3 (n) and b5 (n).
+The primary result of this paper is as follows:
+Theorem 1.1.
+(1) For every prime m ≥ 2, there exist infinitely many Ramanujan-type congruences
+of b4 (n) modulo m.
+(2) For every prime m ≥ 5, there exist infinitely many Ramanujan-type congruences
+of b6 (n) modulo m.
+Specifically, we find two infinite explicit families of congruences for b4 (n) modulo 3.
+1
+
+2
+
+QI-YANG ZHENG
+
+Theorem 1.2. If l is a prime with l ≡ 13, 17, 19, 23 (mod 24), then
+
+
+l2 − 1
+≡ 0 (mod 3),
+b4 3l(ln + j) +
+8
+and
+
+
+9l2 − 1
+b4 3l(ln + j) +
+≡ 0 (mod 3),
+8
+
+for every n and 1 ≤ j ≤ l − 1.
+
+Remark. If l is a prime with l ≡ 13, 17, 19, 23 (mod 24), then
+
+
+17l2 − 1
+b4 3l(ln + j) +
+≡ 0 (mod 3)
+8
+may not always hold. For example, let l = 13, n = 0, and j = 1, we have b4 (398) ≡
+1 (mod 3).
+We will now present the results that have been established for these regular partitions up to the present moment. Notably, a surprising finding is that [2]
+∞
+X
+n=0
+
+b4 (9n + 7)q n = 12
+
+(q 2; q 2 )4∞ (q 3 ; q 3 )6∞ (q 4 ; q 4 )∞
+,
+(q; q)11
+∞
+
+Q∞
+
+where (a; q)∞ = n=0 (1−aq n ). A surprising finding is that it provides Ramanujan-type
+congruences of b4 (n) modulo 2 and 3.
+In the case of b6 (n), the only known instances pertain to congruences modulo 3,
+as shown in [1, Theorem 1.6]. For instance, we have
+b6 (169n + 48) ≡ 0 (mod 3) .
+Remark. N. D. Baruah, one of the authors of [1], has notified me that the exponent of
+p in the second term of the sum (1.7) in [1] should be adjusted to 2α + 2.
+Our findings yield new congruences for b4 (n) and b6 (n); for instance,
+b4 (507n + 34) ≡ 0 (mod 3) ,
+b4 (3272405n + 2528) ≡ 0 (mod 5) ,
+b4 (24978247n + 11570) ≡ 0 (mod 7) ,
+b6 (973182225n + 2055) ≡ 0 (mod 5) .
+More examples will be provided in Section 4.
+Remark. The existence of such congruences are guaranteed by the work of Treneer [14].
+However, the method he provided is difficult to obtain such congruences. We present
+an explicit method for obtaining congruences.
+
+NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO PRIMES
+
+3
+
+2. Preliminaries on modular forms
+First, we will introduce the U operator. If j is a positive integer,
+!
+∞
+∞
+X
+X
+n
+| U(j) :=
+a(jn)q n .
+a(n)q
+n=0
+
+n=0
+
+If
+
+P∞
+
+n=0
+
+a(n)q n ∈ Mk (Γ0 (N), χ) represents a modular form and m is a prime,
+!
+∞
+∞
+X
+X
+n
+| T (m) :=
+(a(mn) + χ(m)mk−1 a(n/m))q n ,
+a(n)q
+n=0
+
+n=0
+
+where a(n/m) = 0 if m ∤ n. The T (m) operator corresponds to the standard Hecke
+operator. It’s worth recalling that Dedekind’s eta function is defined by
+η(z) = q
+
+1
+24
+
+∞
+Y
+
+(1 − q n ),
+
+n=1
+
+where q = e2πiz .
+If m is a prime, we denote by Mk (Γ0 (N), χ)m (respectively, Sk (Γ0 (N), χ)m ) the
+Fm -vector space obtained by reducing the q-expansions of modular forms (resp. cusp
+forms) in Mk (Γ0 (N), χ) (resp. Sk (Γ0 (N), χ)) with integer coefficients modulo m.
+At times, for convenience, we will use the notation a ≡m b instead of a ≡ b (mod m).
+The construction of modular forms requires the utilization of the following theorem
+[6, Theorem 3]:
+Theorem 2.1 (B. Gordon, K. Hughes). Let
+Y
+f (z) =
+η rδ (δz)
+δ|N
+
+be a η-quotient provided
+(i)
+X
+
+δrδ ≡ 0 (mod 24);
+
+δ|N
+
+(ii)
+
+X Nrδ
+δ|N
+
+(iii)
+
+δ
+
+k :=
+
+≡ 0 (mod 24);
+
+1X
+rδ ∈ Z,
+2
+δ|N
+
+then
+
+4
+
+QI-YANG ZHENG
+
+f
+for each
+
+
+
+az + b
+cz + d
+
+
+
+= χ(d)(cz + d)k f (z),
+
+!
+a b
+∈ Γ0 (N) and χ is a Dirichlet character (mod N) defined by
+c d
+!
+Q
+(−1)k δ|N δ rδ
+, if n > 0 and (n, 6) = 1.
+χ(n) :=
+n
+
+If f (z) is holomorphic (resp. vanishes) at all cusps of Γ0 (N), then f (z) ∈ Mk (Γ0 (N)
+, χ) (resp. Sk (Γ0 (N), χ)), as η(z) never vanishes on H. The following theorem (cf. [8])
+provides a useful criterion for computing the orders of an η-quotient at all cusps of
+Γ0 (N).
+Theorem 2.2 (Y. Martin). Let c, d, and N be positive integers with d | N and (c, d) =
+1. If f (z) is an η-quotient that satisfies the conditions of Theorem 2.1, then the order
+of vanishing of f (z) at the cusp c/d is
+N X rδ (d2 , δ 2 )
+.
+24
+δ(d2 , N)
+δ|N
+
+3. Ramanujan-type congruences
+In this section, we will establish the proof of Theorem 1.1 using the theory of modular
+forms. However, it’s important to note that the generating function of the regular
+partition function is not a modular form. Nonetheless, for primes m ≥ 5, it turns out
+that through the careful selection of a function hm (n), we have
+∞
+X
+
+bk (hm (n))q n ,
+
+n=0
+
+which, in fact, represents the Fourier expansion of a modular form modulo m. In fact,
+we have
+
+Theorem 3.1. Let m ≥ 3 be a prime, then
+∞
+X
+
+b4
+
+n=0
+
+
+
+mn − 1
+8
+
+
+
+q n ∈ M3m−3 (Γ0 (256))m .
+
+The case m = 2 will be discussed in Section 4.
+
+Theorem 3.2. Let m ≥ 7 be a prime, then
+∞
+X
+n=0
+
+b6
+
+
+
+
+mn − 5 n
+q ∈ S2m−2 (Γ0 (3456), χ6)m ,
+24
+
+NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO PRIMES
+
+where χ6 (n) =
+
+6
+n
+
+
+
+5
+
+. In addition,
+∞
+X
+
+b6
+
+n=0
+
+
+
+25n − 5
+24
+
+
+
+q n ∈ S48 (Γ0 (3456), χ6)5 .
+
+Proof of Theorem 3.1. We begin with an η-quotient
+f (m; z) :=
+
+η(4z) η a (4mz) 6
+η (2mz),
+η(z) η a (mz)
+
+where m′ := (m mod 8) and a := 4 − m′ .
+It is straightforward to verify that f (m; z) ≡m η am+1 (4z)η 6m (2z)η −am−1 (z) satisfies
+the conditions of Theorem 2.1. Furthermore, by applying Theorem 2.2, one can compute
+that it attains the minimal order of vanishing of ((8 − m′ )m + 1)/8 at the cusp ∞,
+(mm′ − 1)/8 at the cusp 0, and m/2 at the cusp 1/2.
+The order is a half-integer due to the potential presence of an irregular cusp at 1/2.
+Indeed, an irregular cusp of Γ0 (4) exclusively occurs at the cusp 1/2 with nontrivial
+nebentypus (see [5, Chapter 3]).
+To sum up, we have
+ 
+−1
+η am+1 (4z) 6m
+.
+η
+(2z)
+∈
+S
+(Γ
+(4),
+χ
+),
+where
+χ
+(n)
+=
+3m
+0
+4
+4
+η am+1 (z)
+n
+On the other hand,
+f (m; z) =
+
+∞
+X
+
+b4 (n)q
+
+n+
+
+n=0
+
+m(a+4)+1
+8
+
+·
+
+∞
+Y
+(1 − q 4mn )a
+
+n=1
+
+(1 − q mn )a
+
+(1 − q 2mn )6 .
+
+Thus,
+η am+1 (4z) 6m
+η (2z) | U(m)
+η am+1 (z)
+! ∞
+∞
+X
+Y (1 − q 4n )a
+m(a+4)+1
+n+
+8
+≡m
+b4 (n)q
+(1 − q 2n )6 .
+| U(m) ·
+n
+a
+(1 − q )
+n=0
+n=1
+
+(3.1)
+
+As for the right-hand side of (3.1),
+∞
+X
+n=0
+
+where
+
+P∗
+
+b4 (n)q n+
+
+m(a+4)+1
+8
+
+| U(m) =
+
+X∗
+
+b4 (n)q
+
+8n+m(a+4)+1
+8m
+
+,
+
+n≥0
+
+indicates taking integral power coefficients of q, i.e.,
+8n + m(a + 4) + 1 ≡ 0 (mod 8m).
+
+Verifying the condition is straightforward and reveals its equivalence to m | 8n + 1.
+
+6
+
+QI-YANG ZHENG
+
+As for the left-hand side of (3.1), we have
+η am+1 (4z) 6m
+η am+1 (4z) 6m
+η
+(2z)
+|
+U(m)
+≡
+η (2z) | T (m),
+m
+η am+1 (z)
+η am+1 (z)
+where T (m) denotes the usual Hecke operator acting on S3m (Γ0 (4), χ4 ).
+We now analyze the η-product η 4 (z)η 2 (2z)η 4 (4z). According to Theorem 2.1 and
+Theorem 2.2, it qualifies as a cusp form of weight 5 and level 4 with nebentypus χ4 .
+It possesses the minimal order of vanishing of 1/2 at the cusp 1/2 and 1 at the other
+cusps. Since η(z) never vanishes on H, we can write
+η am+1 (4z) 6m
+η (2z) | T (m) = η 4 (z)η 2 (2z)η 4 (4z)g(m; z),
+η am+1 (z)
+where g(m; z) ∈ M3m−5 (Γ0 (4)).
+To summarize, we have established
+(3.2)
+
+X
+
+b4 (n)q
+
+8n+m(a+4)+1
+8m
+
+≡m η 4 (z)η 2 (2z)η 4 (4z)g(m; z) ·
+
+n≥0
+m|8n+1
+
+∞
+Y
+
+(1 − q n )a
+.
+2n )6 (1 − q 4n )a
+(1
+−
+q
+n=1
+
+By substituting q with q 8 and then multiplying both sides of (3.2) by q −(a+4) , we obtain
+X
+
+b4 (n)q
+
+n≥0
+m|8n+1
+
+8n+1
+m
+
+≡m
+
+η 4+a (8z)η 4−a (32z)
+g(m; 8z),
+η 4 (16z)
+
+which can be written as
+
+
+∞
+X
+mn − 1 n
+η 4+a (8z)η 4−a (32z)
+(3.3)
+b4
+q ≡m
+g(m; 8z).
+4 (16z)
+8
+η
+n=0
+Employing Theorem 2.1 and Theorem 2.2 again, one can confirm that the first term on
+the right-hand side of (3.3) lies within M2 (Γ0 (256)). In fact, it possesses the minimal
+order of vanishing of 8 − m′ at the cusps c/d for d = 1, 2, 4, 8; m′ for d = 32, 64, 128, 256;
+and 0 for d = 16.
+Therefore we obtain
+
+
+∞
+X
+mn − 1 n
+q ∈ M3m−3 (Γ0 (256))m .
+b4
+8
+n=0
+
+Proof of Theorem 3.2. For a fixed prime m ≥ 7, let
+f (m; z) :=
+
+η(6z) a
+η (mz)η b (2mz)η c (3mz)η d (6mz),
+η(z)
+
+NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO PRIMES
+
+7
+
+where m′ := (m mod 24) and a := (m′ mod 5) − 1, b := ⌊m′ /5⌋ − 1, c := 3 − ⌊m′ /5⌋,
+d := 3 − (m′ mod 5). It is easy to show that
+f (m; z) ≡m η am−1 (z)η bm (2z)η cm (3z)η dm+1 (6z) ∈ S2m (Γ0 (6)).
+In fact, the order of vanishing at the cusp s/t are
+
+m(5m mod 24)−5
+
+if t = 1,
+
+24
+
+
+
+′
+ mm −1
+if t = 2,
+24
+′
+m(24−m )+1
+
+if t = 3,
+
+
+24
+
+
+ m(24−(5m mod 24))+5 if t = 6.
+24
+On the other hand,
+f (m; z) =
+
+∞
+X
+
+b6 (n)q
+
+24n+m(a+2b+3c+6d)+5
+24
+
+·
+
+∞
+Y
+
+(1 − q mn )a (1 − q 2mn )b (1 − q 3mn )c (1 − q 6mn )d .
+
+n=1
+
+n=0
+
+By applying the U(m) operator to f (z) and recognizing that U(m) ≡ T (m) (mod m),
+we arrive at
+∞
+X
+
+b6 (n)q
+
+24n+m(a+2b+3c+6d)+5
+24
+
+| U(m)
+
+n=0
+
+(3.4)
+
+η am−1 (z)η bm (2z)η cm (3z)η dm+1 (6z) | T (m)
+≡m Q∞
+,
+n a
+2n b
+3n c
+6n d
+n=1 (1 − q ) (1 − q ) (1 − q ) (1 − q )
+
+where T (m) denotes usual Hecke operator acting on S2m (Γ0 (6)). As for the left-hand
+side of (3.4), we have
+∞
+X
+
+b6 (n)q
+
+24n+m(a+2b+3c+6d)+5
+24
+
+| U(m) =
+
+n=0
+
+∞
+X
+
+b6 (n)q
+
+24n+m(a+2b+3c+6d)+5
+24m
+
+.
+
+n=0
+m|24n+5
+
+By utilizing Theorem 2.1 and Theorem 2.2, one can confirm that η 2 (z)η 2 (2z)η 2 (3z)
+η 2 (6z) ∈ S4 (Γ0 (6)) and holds an order of 1 at all cusps. Consequently, we can write
+
+η am−1 (z)η bm (2z)η cm (3z)η dm+1 (6z) | T (m) = η 2 (z)η 2 (2z)η 2 (3z)η 2 (6z)g(m; z),
+
+where g(m; z) ∈ M2m−4 (Γ0 (6)). Hence
+∞
+X
+
+n=0
+m|24n+5
+
+b6 (n)q
+
+24n+5
+24m
+
+≡ η 2−a (z)η 2−b (2z)η 2−c (3z)η 2−d (6z)g(m; z) (mod m) .
+
+8
+
+QI-YANG ZHENG
+
+Substituting q with q 24 reveals that
+∞
+X
+
+b6 (n)q
+
+24n+5
+m
+
+≡ η 2−a (24z)η 2−b (48z)η 2−c (72z)η 2−d (144z)g(m; 24z) (mod m) .
+
+n=0
+m|24n+5
+
+As b6 (n) vanishes for non-integer n, thus
+∞
+X
+n=0
+
+b6
+
+
+
+
+mn − 5 n
+q ≡ η 2−a (24z)η 2−b (48z)η 2−c (72z)η 2−d (144z)g(m; 24z) (mod m) .
+24
+
+Furthermore, it can be verified that
+η 2−a (24z)η 2−b (48z)η 2−c (72z)η 2−d (144z) ∈ S2 (Γ0 (3456), χ6).
+In fact, the order of vanishing at the cusp s/t is
+
+
+24 − (5m mod 24) if t = 1, 2, 3, 4, 6, 8, 12, 24,
+
+
+
+
+m′
+if t = 9, 18, 27, 36, 54, 72, 108, 216,
+
+24 − m′
+if t = 16, 32, 48, 64, 96, 128, 192, 384,
+
+
+
+
+(5m mod 24)
+if t = 144, 288, 432, 576, 864, 1152, 1728, 3456.
+Combining this with g(m; 24z) ∈ M2m−4 (Γ0 (144)), we obtain
+∞
+X
+
+b6
+
+n=0
+
+
+
+
+mn − 5 n
+q ∈ S2m−2 (Γ0 (3456), χ6)m .
+24
+
+Remark. The proof is not suitable for m = 5 because
+f (m; z) ≡m η am−1 (z)η bm (2z)η cm (3z)η dm+1 (6z) ∈
+/ S2m (Γ0 (6)).
+
+Now we turn to the case m = 5. Let
+f (z) :=
+
+η(6z) η 3 (75z)η 2 (150z)
+.
+η(z)
+η(50z)
+
+Note that f (z) ≡5 η −1 (z)η −25 (2z)η 75 (3z)η 51 (6z) ∈ S50 (Γ0 (6)). On the other hand,
+f (z) =
+
+∞
+X
+
+b6 (n)q
+
+n=0
+
+n+20
+
+·
+
+∞
+Y
+
+(1 − q 50n )−1 (1 − q 75n )3 (1 − q 150n )2 .
+
+n=1
+
+Now we use the fact that U(25) ≡5 T (25) to obtain that
+(3.5)
+
+∞
+X
+n=0
+
+b6 (n)q
+
+n+20
+
+η −1 (z)η −25 (2z)η 75 (3z)η 51 (6z) | T (25)
+| U(25) ≡5 Q∞
+,
+2n −1
+3n 3
+6n 2
+n=1 (1 − q ) (1 − q ) (1 − q )
+
+NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO PRIMES
+
+Hence
+
+∞
+X
+
+b6 (n)q
+
+n+20
+25
+
+n=0
+n≡5 (mod 25)
+
+9
+
+η 2 (z)η 2 (2z)η 2 (3z)η 2 (6z)g(z)
+,
+2n −1
+3n 3
+6n 2
+n=1 (1 − q ) (1 − q ) (1 − q )
+
+≡5 Q∞
+
+where g(z) ∈ M46 (Γ0 (6)). Substituting q with q 24 , obtaining
+∞
+X
+
+b6 (n)q
+
+24n+5
+25
+
+≡5 η 2 (24z)η 3 (48z)η −1 (72z)g(24z),
+
+n=0
+n≡5 (mod 25)
+
+where η 2 (24z)η 3 (48z)η −1 (72z) ∈ S2 (Γ0 (3456), χ6) and g(24z) ∈ M46 (Γ0 (144)). Finally
+we obtain
+
+
+∞
+X
+25n − 5 n
+q ∈ S48 (Γ0 (3456), χ6)5 .
+b6
+24
+n=0
+
+
+
+We require a crucial result by Serre (see [12, (6.4)], [11, Lemma 2.63]), which play a
+pivotal role in establishing the existence of Ramanujan-type congruences.
+Theorem 3.3 (J.-P. Serre). The set of primes l ≡ −1 (mod Nm) such that
+f | T (l) ≡ 0 (mod m)
+for each f (z) ∈ Mk (Γ0 (N), ψ)m has positive density, where T (l) denotes the usual Hecke
+operator acting on Mk (Γ0 (N), ψ).
+Now, Theorem 1.1 follows immediately as a corollary of the next two theorems.
+Theorem 3.4. Let m ≥ 3 be a prime. A positive density of the primes l possess the
+property that
+
+
+mln − 1
+b4
+≡ 0 (mod m)
+8
+for every nonnegative integer n coprime to l.
+
+Theorem 3.5. Let m ≥ 7 be a prime. A positive density of the primes l possess the
+property that
+
+
+mln − 5
+b6
+≡ 0 (mod m)
+24
+
+for every nonnegative integer n coprime to l. In addition, A positive density of the
+primes l possess the property that
+
+
+25ln − 5
+b6
+≡ 0 (mod 5)
+24
+
+for every nonnegative integer n coprime to l.
+
+10
+
+QI-YANG ZHENG
+
+Proof of Theorem 3.4. Let
+F (m; z) =
+
+∞
+X
+
+b4
+
+n=0
+
+
+
+mn − 1
+8
+
+
+
+qn,
+
+then F (m; z) ∈ M3m−3 (Γ0 (256))m.
+For a fixed prime m ≥ 5, let S(m) denote the set of primes l such that
+f | T (l) ≡ 0 (mod m)
+for every f ∈ M3m−3 (Γ0 (256)). According to Theorem 3.3, the set S(m) includes a
+positive density of primes. Therefore, for l ∈ S(m), we have
+F (m; z) | T (l) ≡ 0 (mod m).
+Subsequently, employing the theory of Hecke operators, we obtain
+
+
+
+∞  
+X
+mn/l − 1
+mln − 1
+3m−4
++l
+b4
+q n ≡ 0 (mod m).
+F (m; z) | T (l) =
+b4
+8
+8
+n=0
+Since b4 (n) vanishes when n is not an integer, we have
+
+
+mn/l − 1
+b4
+=0
+8
+
+for each n coprime to l. Consequently,
+
+
+mln − 1
+≡ 0 (mod m)
+b4
+8
+
+holds for every integer n coprime to l. Moreover, the set of such primes l possesses a
+positive density.
+
+Proof of Theorem 3.5. Let
+F (m; z) =
+
+∞
+X
+n=0
+
+b6
+
+
+
+mn − 5
+24
+
+
+
+q n ∈ S2m−2 (Γ0 (3456), χ6 )m .
+
+According to Theorem 3.3, the set of primes l for which
+F (m; z) | T (l) ≡ 0 (mod m)
+has positive density. Here, T (l) denotes the Hecke operator acting on S2m−2 (Γ0 (3456),
+χ6 ). Furthermore, applying the theory of Hecke operators, we obtain
+  
+
+
+∞  
+X
+6 2m−3
+mn/l − 5
+mln − 5
++
+l
+b6
+qn.
+b6
+F (m; z) | T (l) =
+24
+l
+24
+n=0
+n=0
+
+∞
+X
+
+Since b6 (n) vanishes for non-integer n, we have
+
+
+mn/l − 5
+=0
+b6
+24
+
+NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO PRIMES
+
+11
+
+when (n, l) = 1. As a result,
+b6
+
+
+
+mln − 5
+24
+
+
+
+≡ 0 (mod m)
+
+holds for every integer n with (n, l) = 1. Moreover, the set of such primes l possesses a
+positive density.
+The proof for m = 5 is similar.
+
+Considering that the number of choices for l is infinite, let us select l > 3. After replacing
+n with 12nl + ml + 12, we observe that b4 (ml2 n + ml + (m2 l2 − 1)/12) ≡ 0 (mod m)
+holds for every nonnegative integer n. A similar approach can be employed for b6 (n).
+Consequently, we establish Theorem 1.1. Moreover, since the options for l are unlimited,
+in conjunction with the Chinese Remainder Theorem and previous results, we derive
+
+Corollary 3.6. If m is a squarefree integer, then there exist infinitely many Ramanujantype congruences of b4 (n) modulo m. Similarly, if k is a squarefree integer coprime to
+10, then there exist infinitely many Ramanujan-type congruences of b6 (n) modulo k.
+While we can derive results about the distribution of nonzero residues similar to
+the previous paper, it is important to note that this is not the main focus of our current
+work.
+
+4. Examples of Ramanujan-type congruences
+Here, we introduce a theorem by Sturm [13, Theorem 1], which offers a useful criterion for determining when modular forms with integer coefficients become congruent
+to zero modulo a prime through finite computation.
+P
+n
+Theorem 4.1 (J. Sturm). Suppose f (z) = ∞
+n=0 a(n)q ∈ Mk (Γ0 (N), χ)m such that
+for all n ≤
+
+kN
+12
+
+Q
+
+p|N
+
+
+
+a(n) ≡ 0 (mod m)
+
+1 + p1 . Then a(n) ≡ 0 (mod m) for all n ∈ Z.
+
+According to Theorem 4.1, we discover that
+
+
+∞
+X
+mn − 1 n
+b4
+q | T (l) ≡ 0 (mod m)
+8
+n=0
+
+is satisfied for the following combinations of m and l:
+
+(1) m = 5 and l = 809, 839, 1249, 1279, 1319, 1489, 1811;
+(2) m = 7 and l = 1889, 1901.
+
+12
+
+QI-YANG ZHENG
+
+A straightforward computation shows that
+
+Proposition 4.2. For the given values of m and l, the congruence
+
+
+m2 l2 − 1
+b4 ml(ln + j) +
+≡ 0 (mod m)
+8
+satisfied for each n and 1 ≤ j ≤ l − 1.
+
+In fact, we have a full characterization of b4 (n) modulo 2. Since
+∞
+X
+n=0
+
+b4
+
+
+
+n−1
+8
+
+
+
+qn =
+
+∞
+X
+
+∞
+
+b4 (n)q 8n+1 =
+
+n=0
+
+X
+η(32z)
+τ (n)q n ,
+≡2 η 24 (z) =
+η(8z)
+n=1
+
+where τ (n) is the Ramanujan tau function and τ (n) is odd if and only if n is an odd
+square (see for example [3, Proof of Theorem 2.2.1]). Thus b4 (n) is odd if and only if
+8n + 1 is an odd square, or equivalently, b4 (n) is odd if and only if n is a triangular
+number. (Full characterization of b4 (n) modulo 2 is already proved by Cherubini and
+Mercuri [4, Theorem 1.3], but the argument here is simpler.) So we have
+
+Proposition 4.3. For each odd prime m, the congruence
+b4 (m2 n + j) ≡ 0 (mod 2)
+satisfied for each n, where j satisfies m || 8j + 1.
+Now we are going to prove Theorem 1.2.
+Proof of Theorem 1.2. We first observe that l ≡ 13, 17, 19, 23 (mod 24) is equivalent to
+
+−6
+= −1.
+l
+By Theorem 3.1 of [2], we have
+∞
+X
+
+b4 (3n)q n =
+
+n=0
+
+(q 4 ; q 4 )∞ (q 6 ; q 6 )4∞
+(q; q)3∞ (q 12 ; q 12 )2∞
+
+(q 2 ; q 2 )12
+∞
+(q; q)3∞ (q 4 ; q 4 )5∞
+(q 2 ; q 2 )13
+(q; q)2∞
+∞
+=
+·
+.
+(q; q)5∞ (q 4 ; q 4)5∞ (q 2 ; q 2 )∞
+
+≡3
+
+By the fourth identity of Theorem 1.1 (2) of [9], we have
+
+∞ 
+X
+−6
+(q 2 ; q 2 )13
+2
+∞
+=
+mq (m −1)/24 .
+5
+4
+4
+5
+(q; q)∞ (q ; q )∞ m=1 m
+
+NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO PRIMES
+
+13
+
+By the first identity of Theorem 1.2 of [9], we have
+∞
+X
+(q; q)2∞
+2
+(−1)k q k .
+=
+2
+2
+(q ; q )∞ k=−∞
+
+Thus
+∞
+X
+
+(4.1)
+
+∞ X
+∞
+X
+
+n
+
+b4 (3n)q ≡3
+
+n=0
+
+(−1)
+
+m=1 k=−∞
+
+k
+
+
+
+−6
+m
+
+
+
+mq k
+
+2 +(m2 −1)/24
+
+.
+
+Let n0 = ln + (l2 − 1)/24 with (n, l) = 1. Now, we analyze the coefficient of q n0 on both
+sides of (4.1). As for the left-hand side, the coefficient is
+
+
+l2 − 1
+b4 3ln +
+.
+8
+As for the right-hand side, we solve n0 = k 2 + (m2 − 1)/24 for n, which is equivalent to
+24ln+l2 = 24k 2 +m2 . First, assuming that l | k, we would have l | m, and consequently,
+l2 | 24ln, which contradicts the condition (n, l) = 1. Now, let us assume that l ∤ k, we
+have
+−24k 2 ≡ m2 (mod l) ,
+i.e.
+
+ m 2
+
+(mod l) ,
+2k
+which contradicts l = −1. Therefore, there is no such n, and the coefficient of q n0
+on the right-hand side of (4.1) is 0. Consequently, we obtain
+
+
+l2 − 1
+b4 3ln +
+≡ 0 (mod 3)
+8
+
+for each n coprime to l and −6
+= −1.
+l
+Again by Theorem 3.1 of [2], we have
+−6 ≡
+
+
+−6
+
+∞
+X
+
+(−1)n b4 (3n + 1)q n =
+
+n=0
+
+where
+φ(q) =
+
+∞
+X
+
+q
+
+n2
+
+φ(q 3 )ψ(q 3 )
+,
+φ2 (q)
+
+and ψ(q) =
+
+n=−∞
+
+Note that
+
+φ(q 3)ψ(q 3 )
+≡ φ(q)ψ(q 3 )
+φ2 (q)
+
+∞
+X
+
+q n(n+1)/2 .
+
+n=0
+
+(mod 3).
+
+Thus
+(4.2)
+
+∞
+X
+n=0
+
+(−1)n b4 (3n + 1)q n ≡3 φ(q)ψ(q 3 ) =
+
+∞ X
+∞
+X
+
+m=1 k=−∞
+
+2 +3k(k+1)/2
+
+qm
+
+.
+
+14
+
+QI-YANG ZHENG
+
+Let n0 = ln + (3l2 − 3)/8 with (n, l) = 1. Now, we analyze the coefficient of q n0 on both
+sides of (4.2). As for the left-hand side, the coefficient is
+
+
+9l2 − 1
+n0
+(−1) b4 3ln +
+.
+8
+As for the right-hand side, we solve n0 = 3k(k + 1)/2 + m2 for n, which is equivalent to
+8ln + 3l2 = 3(2k + 1)2 + 8m2 . First, assuming that l | 2k + 1, we would have l | m, and
+consequently, l2 | 8ln, which contradicts the condition (n, l) = 1. Now, let us assume
+that l ∤ 2k + 1, we have
+−6(2k + 1)2 ≡ (4m)2 (mod l) ,
+i.e.
+−6 ≡
+
+
+
+4m
+2k + 1
+
+2
+
+(mod l) ,
+
+
+which contradicts −6
+= −1. Therefore, there is no such n, and the coefficient of q n0
+l
+on the right-hand side of (4.2) is 0. Consequently, we obtain
+
+
+9l2 − 1
+b4 3ln +
+≡ 0 (mod 3)
+8
+
+for each n coprime to l and −6
+= −1.
+
+l
+We also obtain congruences of b6 (n) modulo 5.
+
+Proposition 4.4. For l = 1973, 2711, the congruence
+
+
+125l2 − 5
+≡ 0 (mod 5)
+b6 25l(ln + j) +
+24
+satisfied for each n and 1 ≤ j ≤ l − 1.
+Proof. For l = 1973, 2711, by Sturm’s Theorem 4.1, we have
+
+
+∞
+X
+25n − 5 n
+b6
+q | T (l) ≡ 0 (mod 5).
+24
+n=0
+The desired result is now immediate after some elementary computation.
+
+
+
+For m ≥ 7, we are unable to provide a specific example of b6 (n), although such examples
+do exist. In cases where m = 7 or m = 11, our computations show that for primes
+l ≤ 25000,
+
+
+∞
+X
+mn − 5 n
+q | T (l) 6≡ 0 (mod m).
+b6
+24
+n=0
+
+NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO PRIMES
+
+15
+
+5. Open problems
+In this paper, we establish the existence of infinitely many Ramanujan-type congruences modulo m for b6 (n), where m ≥ 5. Additionally, congruences modulo 3 have
+been explored (see [1]). However, the question arises: what occurs when m = 2?
+Problem. For b6 (n), either discover a Ramanujan-type congruence modulo 2 or prove
+that no such congruence exists.
+While Ramanujan-type congruences modulo nearly all primes m do exist, it is
+important to note that discovering them may require extensive computations. We
+encourage readers who are interested to explore and seek examples of congruences
+modulo different primes.
+Acknowledgement
+We would like to acknowledge the inspiration that arose from reading the papers
+of Ono [10] and Lovejoy [7], which sparked the ideas behind this work.
+References
+[1] Ahmed Z, Baruah N D. New congruences for ℓ-regular partitions for ℓ ∈ {5, 6, 7, 49}[J]. The
+Ramanujan Journal, 2016, 40: 649-668.
+[2] Andrews G E, Hirschhorn M D, Sellers J A. Arithmetic properties of partitions with even parts
+distinct[J]. The Ramanujan Journal, 2010, 23(1-3): 169-181.
+[3] Berndt B C. Number theory in the spirit of Ramanujan[M]. American Mathematical Soc., 2006.
+[4] Cherubini G, Mercuri P. Parity of 4-regular and 8-regular partition functions[J]. arXiv preprint
+arXiv:2212.11356, 2022.
+[5] Diamond F, Shurman J M. A first course in modular forms[M]. New York: Springer, 2005.
+[6] Gordon B, Hughes K. Multiplicative properties of eta-products II[J]. Contemporary Mathematics,
+1993, 143: 415-415.
+[7] Lovejoy J. Divisibility and distribution of partitions into distinct parts[J]. Advances in Mathematics, 2001, 158(2): 253-263.
+[8] Martin Y. Multiplicative η-quotients[J]. Transactions of the American Mathematical Society, 1996,
+348(12): 4825-4856.
+[9] Oliver R J L. Eta-quotients and theta functions[J]. Advances in Mathematics, 2013, 241: 1-17.
+[10] Ono K. Distribution of the partition function modulo m[J]. Annals of Mathematics, 2000: 293-307.
+[11] Ono K. The Web of Modularity: Arithmetic of the Coefficients of Modular Forms and q-series:
+Arithmetic of the Coefficients of Modular Forms and Q-series[M]. American Mathematical Soc.,
+2004.
+[12] Serre J P. Divisibilité de certaines fonctions arithmétiques[J]. Séminaire Delange-Pisot-Poitou.
+Théorie des nombres, 1974, 16(1): 1-28.
+[13] Sturm J. On the congruence of modular forms[M]//Number theory. Springer, Berlin, Heidelberg,
+1987: 275-280.
+[14] Treneer S. Congruences for the coefficients of weakly holomorphic modular forms[J]. Proceedings
+of the London Mathematical Society, 2006, 93(2): 304-324.
+[15] Zheng Q Y. Distribution of 3-regular and 5-regular partitions[J]. arXiv preprint arXiv:2205.03191,
+2022.
+
+16
+
+QI-YANG ZHENG
+
+Department of Mathematics, Sun Yat-sen University(Zhuhai Campus), China
+Email address: zhengqy29@mail2.sysu.edu.cn
+
+

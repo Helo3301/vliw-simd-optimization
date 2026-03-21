@@ -1,0 +1,999 @@
+arXiv:2207.03987v3 [cs.CR] 22 Aug 2024
+
+Post-quantum hash functions using SLn (Fp)
+Corentin Le Coz∗, Christopher Battarbee, Ramón Flores†,
+Thomas Koberda‡, and Delaram Kahrobaei§
+Oppida, France, corentinlecoz@outlook.com
+Department of Computer Science, University of York, UK,
+cb2036@york.ac.uk
+Department of Geometry and Topology, University of Seville,
+Spain, ramonjflores@us.es
+Department of Mathematics, University of Virginia,
+thomas.koberda@gmail.com
+Computer Science and Mathematics Departments, Queens College
+CUNY; Department of Computer Science, University of York, UK;
+Initiatives for the Theoretical Sciences (ITS), CUNY Graduate
+Center, dkahrobaei@gc.cuny.edu
+August 26, 2024
+Abstract
+We define new families of Tillich-Zémor hash functions, using higher
+dimensional special linear groups over finite fields as platforms. The Cayley graphs of these groups combine fast mixing properties and high girth,
+which together give rise to good preimage and collision resistance of the
+corresponding hash functions. We justify the claim that the resulting hash
+functions are post-quantum secure.
+
+1
+
+Introduction
+
+Hash functions obtained from families of expander graphs were introduced
+by Charles-Lauter-Goren in [CLG08], where they were in turn inspired by a
+∗ Supported by the Israel Science Foundation (grant no. 2919/19), the FWO and the FNRS
+under the Excellence of Science (EOS) program (project ID 40007542)
+† Partially supported by grant PID2020-117971GB-C21 of the Spanish Ministry of Science
+and Innovation, and grant FQM-213 of the Junta de Andalucı́a.
+‡ Partially supported by NSF grant DMS-2002596
+§ Partially supported by a Canada’s New Frontiers in Research Fund, under the Exploration
+grant entitled “Algebraic Techniques for Quantum Security” as well as a grant from CUNY.
+DK also has been partially supported by an ONR grant, 62909-24-1-2002
+
+1
+
+scheme of Tillich-Zémor [TZ94a]. Charles-Lauter-Goren considered specific families of expander graphs discovered by Lubotzky-Phillips-Sarnak [LPS88] and
+Pizer [Piz90]. The Charles-Lauter-Goren construction is quite general, and can
+be applied to any expander family in which finding cycles is hard, and thereby
+furnishes collision resistant hash functions. Similar schemes have been proposed
+by several authors; see [SS16, BSV17, GM18], and [Sos18] for a survey of this
+topic.
+Interest in hash functions based on novel platforms fits into the context of
+recent efforts to modernize existing hash functions, and to adapt them to the
+design and security of hash-based consensus mechanisms, most notably with
+respect to blockchains [Bor20], and especially in light of the recently proved
+practicality of finding collisions in the SHA-1 hashing algorithm [SBK+ 17].
+The general idea behind Tillich-Zémor hash functions is the following. Fixing
+a base vertex, the input of the hash function is interpreted as a sequence of
+instructions, resulting in a non-backtracking path in a d-regular graph. The
+output of the hash function is the endpoint vertex of the path. More precisely,
+the input is a string of numbers in
+[d − 1] := {1, 2, . . . , d − 1}
+of arbitrary length, and the output is the vertex obtained by performing a simple
+walk starting at a base vertex, using the elements of [d − 1] as transition data
+for subsequent steps in the walk. See Definition 2.4 below for details.
+A well-constructed hash function is an efficiently computable function which
+enjoys two main features. The first is preimage resistance, which means that
+given a point in the hash value, it is computationally hard to find an input that
+maps to that hash value. The second, is collision resistance, which requires the
+problem of finding distinct inputs with the same output to be computationally
+difficult.
+The main goal of this paper is to propose a new Goren-Lauter-Charles–type
+scheme, where the hash functions use Cayley graphs of the special linear groups
+SLn (Fp ) as platforms, where here p is prime and n ≥ 3. The restriction to the
+fields Fp comes from the fact that the corresponding groups will be obtained as
+quotients of SLn (Z). A crucial observation is that, in schemes using these groups
+as a platform, the problem of finding a preimage or a collision corresponds to
+finding factorizations of the identity matrix with prescribed factors. With this
+observation in hand, and by taking into account recent work of ArzhantsevaBiswas [AB22] concerning the expanding properties of the Cayley graphs of these
+groups, we offer a detailed study of the security of our protocol. In particular,
+we have the following:
+• Preimage resistance. In Proposition 2.3, we collect the expansion properties the family of Cayley graphs {Gn,p }p of the groups SLn (Fp ), where
+n ≥ 3 is fixed and where p tends to infinity. Expansion in this family of
+graphs guarantees good mixing properties, because under these conditions
+the random walk gives a good approximation to the uniform distribution
+after O(log p) steps.
+2
+
+• Collision resistance. The strength of our hash function with respect to
+collision resistance is mainly based on the absence of small cycles in the
+Cayley graphs of the underlying groups. In fact, Proposition 3.1 provides
+a lower bound on the girth of the graphs {Gn,p }p on the order of log p.
+It follows that a factorization of the identity, which is easily seen to be
+equivalent to finding a collision for the hash function, is in turn equivalent
+to solving over a system of n2 equations in a number of variables that
+is O(log p), over the field Fp . In full generality, solving such systems of
+equations is NP-hard.
+Replacing the problem of factoring the identity with the problem of factoring an arbitrary group element yields a similar system of equations, lending
+further evidence of resistance of the hash function to finding preimages;
+see Section 3.2.
+For n = 2, certain Cayley graphs of the groups PSL2 (Fp ) give rise to the celebrated Lubotzky–Phillips–Sarnak expander graphs [LPS88], which were then
+used to build hash functions in [CLG08]. A successful collision attack (i.e. an
+efficient computation of a collision) was found in [TZ08], by taking coefficients
+in Z[i] and then reducing to a system of equations of degree two. More recently,
+Sardari [Sar21] attacked preimage resistance by designing a polynomial-time algorithm that represents a number as a sum of four squares with some restricted
+congruence conditions. The essentially different nature of higher dimensional
+special linear groups gives evidence of additional security, and makes it likely
+that these attacks are far more difficult to execute for the hash functions proposed here.
+Considering symmetric generating sets enables us to employ results from
+the theory of simple random walks in simplicial graphs. Nevertheless, the fact
+that we restrict ourselves to non backtracking random walks precludes the use of
+multiplicativity of the hash function, and thus complicates parallel computation.
+We discuss these issues in Section 3.4.
+Structure of the paper: In Section 2 we give the relevant group theoretic background, define the hash functions, prove the expansion property of the Cayley
+graphs, and exhibit concrete examples. In Section 3, we describe the various
+properties of our scheme: namely, we relate free generation with a lower bound
+on the girth; we then describe the role of polynomial equations in preimage finding and in collision resistance. Finally, we discuss multiplicativity and parallel
+computing, showing that the collision attack from Grassl et. al. [GIMS11] using
+palindromes does not break the scheme presented here. Section 4 concludes the
+paper.
+In Appendix A we provide a Python/Sage implementation of an instance of
+the hash functions considered in the paper.
+
+3
+
+2
+
+Definition of the hash functions
+
+This section defines our hash functions and exhibits concrete instances. We
+start by recalling some relevant background material which will be essential in
+our construction and in the sequel.
+
+2.1
+
+Background about special linear groups
+
+For general results about special linear groups over finite fields, we refer the
+reader to Hall’s book [Hal15]. In this section we concentrate on a number
+of properties established by Arzhantseva-Biswas in their article [AB22]. We
+summarize their results in the following theorem:
+Theorem 2.1 (Arzhantseva-Biswas [AB22]). Let n ≥ 2 and let p a prime.
+Write πp : SLn (Z) → SLn (Fp ) for the canonical projection given by reduction
+modulo p. There exist matrices Ã, B̃ ∈ SLn (Z) such that:
+(i) There exists a prime p0 such that for all p ≥ p0 , the matrices Ãp := πp (Ã)
+and B̃p := πp (B̃) generate SLn (Fp ).
+(ii) If hÃ, B̃i is the subgroup generated by Ã and B̃ inside of SLn (Z), then
+hÃ, B̃i is isomorphic to F2 , the free group of rank two.
+±1
+(iii) The diameter of the Cayley graph Gn,p of SLn (Fp ) with respect to {Ã±1
+p , B̃p }
+is O(log p).
+
+Observe that for n ≥ 3, items (i) and (ii) reflect the fact that the subgroup
+of SLn (Z) generated by Ã and B̃ is usually a thin subgroup of SLn (R). The fact
+that Ãp and B̃p generated the corresponding finite quotients for all but finitely
+many values of p is a reflection of strong/superstrong approximation. In turn,
+item (iii) implies that the girth of Gn,p is optimal, because the graphs {Gn,p }p
+form a family of expander graphs (see Proposition 2.3 below).
+Remark 2.2. When using the Cayley graphs Gn,p as a platform, we think of n
+as being fixed and p as modulating the level of security, with the trade-off being
+that the hash functions become more expensive to compute for large p.
+Possible choices for Ã and B̃ are given by:
+
+
+
+1 a 0 0 ... 0
+1 0
+0 1 a 0 . . . 0
+b 1
+
+
+
+0 0 1 a . . . 0
+0 b
+
+
+
+Ã =  .
+,
+B̃
+=
+
+0 0
+..
+ ..
+
+
+.
+
+ ..
+
+
+.
+... a
+0 0 0 0 ... 1
+0 0
+
+
+0
+0
+
+0
+
+∈ SLn (Z),
+0
+
+
+..
+.
+
+0
+0
+1
+b
+
+...
+...
+...
+...
+
+0
+
+..
+.
+... b 1
+
+with a, b ≥ 2. These matrices will be crucial in the description of our hash
+function.
+4
+
+2.2
+
+Expansion
+
+For us to implement the Charles-Lauter-Goren approach, we must take advantage of the good mixing properties of the expander graphs.
+Proposition 2.3. For n ≥ 3 fixed and p → ∞, the sequence {Gn,p }p is a family
+of expander graphs.
+Sketch of proof. By item (i) of Theorem2.1, there exists a prime p0 such that for
+all p ≥ p0 , the matrices Ãp := πp (Ã) and B̃p := πp (B̃) generate SLn (Fp ). Now,
+since SLn (Z) has property (T) for n ≥ 3 [BdlHV08], and SL2 (Z) has property
+(τ ) with respect to the family of congruence subgroups [Lub05], the proposition
+follows.
+An immediate consequence of this proposition is that the random walk approximates the uniform distribution after O(log p) steps in the corresponding
+graph Gn,p , as we will elaborate in Section 3.3. We note that in [BSV17], random
+walks are conducted on Cayley graphs with respect to non-symmetric generating sets, and thus their asymptotic behavior is less clear. Similar issues arise
+in [TNS20], since then hash values could be restricted to a proper subgroup. As
+stated in [AB22], we note that one can effectively compute the lower bound p0 .
+No explicit bound on p0 has been given, though by combining existing results
+one can probably prove that p need not be very large, likely on the order of
+magnitude of n; see for instance [GV12, Appendix] and [Gur99, Theorem D].
+Note that the larger the value of the prime p, the more secure the hash function.
+
+2.3
+
+The general construction
+
+We now use matrices given in [AB22] to define an explicit family of hash functions.
+Definition 2.4 (Special linear group based hash functions). Let n ≥ 3 and let
+p be a prime number. Let a, b, ℓ ≥ 2 that satisfy:
+• If n = 3, a ≡ 1(mod 3), b ≡ −1(mod 3) and ℓ = 4k for some positive
+integer k.
+• If n ≥ 4, there exists a prime q such that n ≡ a ≡ b ≡ 1(mod q) and ℓ is
+at least 3(n − 1) and is of the form q k+1 + 1 for some integer k.
+Consider the matrices Ã and B̃ from the previous section. In the following
+we will denote A ≡ Ãℓ and B ≡ B̃ ℓ .
+We use the notation [k] to denote the set of integers from 1 to k, and [k]∗
+to denote the set of finite strings of integers in [k]. We now define the hash
+function ϕ : [3]∗ → SLn (Fp ). We start by choosing bijections
+s : [4] → {A±1 , B ±1 },
+
+sλ : [3] → {A±1 , B ±1 } \ s(λ)
+
+for each λ ∈ [4].
+5
+
+Then, given
+x = (xi )1≤i≤k ∈ [3]k ,
+we have the following inductive definition:
+• B1 = s1 (x1 ),
+−1
+• Bi = sλ (xi ) with λ = s−1 (Bi−1
+), for 2 ≤ i ≤ k.
+
+Finally, we set ϕ(x) := B1 · · · Bk ∈ SLn (Fp ).
+Remark 2.5. Note that Gn,p is 4–regular, so that after the first digit x1 of the
+input x, there are exactly three non-backtracking edges in the graph by which
+to proceed. The input x can thus be viewed as encoding a reduced word in the
+free group F2 . The lack of backtracking in the resulting walk on Gn,p is crucial
+for the avoidance of collisions, as well as for the reduction of mixing time.
+As stated in [AB22], the elements {A, B} generate a free subgroup of SLn (Z)
+and generate SLn (Fp ) for all but finitely many values of p, and these facts give
+rise to strong preimage and collision resistance of the resulting hash functions.
+
+2.4
+
+A concrete example
+
+We finish this section by describing a family of concrete examples of hash functions, which are constructed for the specific values a = 4, b = 2 and ℓ = 4. We
+do not know what minimal value of n would ensure security.
+Definition 2.6. Let p be a prime, and let
+
+
+1
+0
+
+0
+
+A = .
+ ..
+
+
+0
+
+4 0
+1 4
+0 1
+
+0 0
+
+
+4
+0 ... 0
+1
+2
+0 . . . 0
+
+
+0
+4 . . . 0
+
+
+..  , B = 0
+
+
+.
+ ..
+.
+
+... 4
+0 ... 1
+0
+
+0
+1
+2
+0
+0
+
+4
+0
+0
+
+0
+
+∈ SLn (Fp ),
+0
+
+.. .. 
+. .
+0 ... 2 1
+0
+0
+1
+2
+
+...
+...
+...
+...
+
+Let s(1) = A, s(2) = B, s(3) = A−1 , s(4) = B −1 . We define the functions
+{sλ }λ∈[4] as follows:
+• s1 (1) = B, s1 (2) = A−1 , s1 (3) = B −1 ,
+• s2 (1) = A, s2 (2) = A−1 , s2 (3) = B −1 ,
+• s3 (1) = A, s3 (2) = B −1 , s3 (3) = B,
+• s4 (1) = A, s4 (2) = A−1 , s4 (3) = B,
+Given an input sequence x = {xi }i∈[1,k] ∈ [3]k , we inductively define:
+• B1 = s1 (x1 )
+6
+
+−1
+• Bi = sλ (xi ), with λ = s−1 (Bi−1
+), for each k ∈ [2, k].
+
+Then, the sequence x is hashed to the matrix:
+ϕ(x) = B1 · · · Bk .
+Thus, we obtain a hash function for every n ≥ 3.
+Example 2.7. With n = 3
+
+1 16
+A = 0 1
+0 0
+
+we have:
+
+
+96
+1 0
+16 , B =  8 1
+1
+24 8
+
+
+0
+0 ∈ SL3 (Fp ),
+1
+
+For example, if we consider the sequence x = 2232221, following the procedure above we obtain the sequence:
+• B1 = s1 (2) = A−1
+• B2 = s1 (2) = A−1 , where we use the map s1 because B1−1 = s(1),
+• B3 = s1 (3) = B −1 , where we use the map s1 because B2−1 = s(1),
+• B4 = s2 (2) = A−1 , where we use the map s2 because B3−1 = s(2),
+• B5 = s1 (2) = A−1 , where we use the map s1 because B4−1 = s(1),
+• B6 = s1 (2) = A−1 , where we use the map s1 because B5−1 = s(1),
+• B7 = s1 (1) = B, where we use the map s1 because B6−1 = s(1),
+Finally, x is mapped to B1 B2 . . . B7 :
+
+
+694190977 233260720 29297952
+ϕ(x) = A−2 B −1 A−3 B = −38379648 −12896255 −1619792 ∈ SL3 (Fp ).
+1191936
+400512
+50305
+We refer to Appendix A for a Python/Sage implementation of this example.
+
+3
+
+Properties of the constructed hash functions
+
+In this section we use graph and group-theoretic machinery to describe the security of the hash functions defined above. We center our analysis on resistance
+to preimage and collision breaking. The exposition is divided into five parts:
+first, we establish a lower bound in the girth of the Cayley graphs of the group
+±1
+SLn (Fp ) with respect to the generating system {A±1
+p , Bp }; second, we describe
+the consequences of girth bounds for collision resistance; third, we investigate
+mixing properties of the suggested platform. Two last subsections are devoted to
+multiplicativity properties of the hash function, and showing that the so-called
+palindromic attack from [GIMS11] is inapplicable.
+7
+
+3.1
+
+Free groups and girth
+
+The following proposition is in the spirit of [BSV17].
+Proposition 3.1. Let A, B ∈ SLn (Z) such that the entries of A±1 and B ±1 are
+bounded in absolute value by a positive constant c. If A and B generate a free
+subgroup of SLn (Z), then the girth of the Cayley graph of hAp , Bp i ≤ SLn (Fp ),
+±1
+with respect to {A±1
+p , Bp } is at least
+
+
+
+log(p − 1)
+.
+log nc
+
+Proof. For any reduced word w in A±1 and B ±1 , we write wZ (resp. wFp ) for
+the projection of w to SLn (Z) (resp. SLn (Fp )). It follows by a straightforward
+induction on k that, if w has length k, then the entries of wZ cannot exceed (nc)k
+in absolute value. Now, let ℓ be the girth of the corresponding Cayley graph.
+Then, there exists a nontrivial reduced word w of length ℓ such that wFp = 1.
+It follows that wZ is of the form 1 + pM , where M is an integer matrix. Since
+w is nontrivial and since {A, B} generate a rank two free subgroup of SLn (Z),
+the matrix M is nonzero. We conclude that wZ has an entry of absolute value
+at least p − 1. Since the entries of wZ cannot exceed (nc)k in absolute value,
+we have that the length ℓ of w is bounded below by ⌊ log(p−1)
+log nc ⌋, and the desired
+conclusion holds.
+
+3.2
+
+Preimage and collision resistance, and post-quantum
+heuristics
+
+We now analyze the resistance of our model to finding preimages and to collisions. Observe that finding a preimage of a particular hash value (resp. finding
+a collision of hash values) is equivalent to finding a factorization of a given group
+element (resp. of the identity) in SLn (Fp ) with respect to the generating set. We
+note that in general, Tillich–Zémor hash functions seem to have robust collision
+resistance; see [Tin23].
+The matrices Ap , Bp involved have order p, so a factorization can be seen as
+a family of equations {(Em )}m≥0 with variables
+k1 , . . . , km , ℓ1 , . . . , ℓm ∈ Fp
+satisfying:
+(Em )
+
+Ak1 B ℓ1 . . . Akm B ℓm = M,
+
+for a given challenge M ∈ SLn (Fp ). This problem is equivalent to attacking the
+preimage resistance of the hash function. In the case where M is the identity
+matrix, this is equivalent to attacking the collision resistance. Note that there
+are trivial solutions to preimage and collision breaking of the hash function,
+
+8
+
+given that App is the identity. Since the girth of Gn,p is O(log p), we consider
+nontrivial solutions to preimage or collision breaking to be ones where
+C1 log p ≤
+
+m
+X
+
+(ki + ℓi ) ≤ C2 log p,
+
+i=1
+
+where C1 and C2 are positive constants depending on n but not on p. Note that
+estimates for C1 and C2 can be produced, and that Proposition 3.1 furnishes
+an estimate for C1 , for instance. Sharp values for C1 and C2 are of relatively
+minor consequence for us.
+Each entry of the left-hand side matrix in equation (Em ) is polynomial in
+k1 , . . . , km , ℓ1 , . . . , ℓm .
+Thus, the equation (Em ), equivalent to attacking preimage of the hash function, corresponds to a system of n2 multivariate polynomial equations over Fp .
+Solving multivariate polynomial equations over a finite field is known to be
+NP-hard [GJ79], which suggests a good level of security. Moreover, the reduction
+to solving multivariate polynomials, a class of hardness problems considered for
+standardization by the NIST, provides a certain degree of confidence that the
+hash function is post-quantum. We contrast this approach with schemes based
+on isogeny graphs, which reduce to a more well-defined problem, albeit one not
+known to be NP-hard.
+NP-hardness of a class of problems is a worst case complexity property, and
+for certain NP-hard classes of problems, relatively simple and efficient algorithms can find solutions in the vast majority of cases. Thus, NP-hardness of
+the underlying problem is not a guarantee of post-quantum behavior of the hash
+function.
+A more compelling case for the hash function to be post-quantum arises
+from empirical difficulty of factoring in special linear groups over finite fields.
+For instance, in [FPPR11], subexponential factorization algorithms were found
+for SL2 (F2k ), and these were only found in 2011. These algorithms rely essentially on the fact that the matrices are 2 × 2, and on the fact that the underlying
+field has characteristic two. Thus, the methods do not generalize in any straightforward way to larger dimensional special linear groups nor to fields with odd
+characteristic. In practice, factoring matrices over finite fields is quite difficult,
+and implemented algorithms are inefficient. Hardness appears to be optimized
+when the system of equations resulting from (Em ) is neither underdetermined
+nor overdetermined, i.e. when the number of equations and variables is comparable. Thus, the larger the value of p the more secure the hash function, at the
+expense of computational time and space, and the balance of degrees of freedom
+and constraints occurs when n2 ∼ log p, or in other words when n is approximately the square root of the logarithm of p. This is precisely the balance to
+required so that the number of equations and number of variables are comparable, as per the foregoing discussion. We may then expect the factorization
+problem to take exponential time in the number of variables in this case.
+9
+
+3.3
+
+The mixing property
+
+By the mixing property, we mean that the output vertex of a random input —
+in our case a random walk — approaches the uniform distribution on the hash
+space. When the random walk approaches the uniform distribution quickly,
+mixing is observed even when the input messages have relatively small length,
+say polynomial in log p. More precisely, we have the following corollary of result
+of Alon-Benjamini-Lubetzky-Sodin [ABLS07], which characterizes the rate at
+which a random walk on a graph converges to the uniform distribution in terms
+of the spectral properties of its adjacency matrix:
+Theorem 3.2. [ABLS07, Theorem 1.1, cf. proof of Theorem 1.3] Suppose
+d > 2. Let X0 , X1 , . . . , Xℓ be a non backtracking random walk on a d–regular
+connected graph G with N vertices. There is a constant C > 0 such that whenever ℓ ≥ C · log N we have
+|Pr(Xℓ = v) − 1/N | ≤ 1/N 2 ,
+for every vertex v of G.
+Examining the proof given in [ABLS07], one finds that the rate of mixing
+depends not so much on the graph G, but rather on the eigenvalues of the
+adjacency matrix of G. Thus, if G is a member of a sequence {Gi }i∈N of
+expander graphs, we may take the constant C in Theorem 3.2 to depend only
+on the expansion constant of the family.
+It is well-known that mixing properties are desirable in Tillich-Zémor hashing
+schemes; see [CLG08, TZ08]. As explained in [TZ08], mixing is particularly
+relevant when the hash functions are used in protocols whose security relies on
+the random oracle model; see [BR93] for example of such protocols.
+The probability that an attacker finds a collision is at least the probability
+given by the birthday paradox, taking samples at random, which is minimized
+with the uniform probability [Ste04, Exercise 13.7].
+The relevance of this approach depends on the distribution of possible messages and in particular on how they are encoded, a question we do not address
+in the present paper.
+Surprisingly few mathematical statements addressing the relationship between mixing and attacks are present in the literature; an example can be found
+in [Ste21, Theorem 3], in the context of commitment schemes. The following
+proposition is an immediate consequence of the previous theorem and the discussion above:
+Proposition 3.3. Let ϕ : [3]k → SLn (Fp ) be the hash function of Definition
+2.4, and let N = | SLn (Fp )|. Then, there is a positive constant C such that, if
+k ≥ C · log N , and m is taken uniformly at random in [3]k , then we have
+|Pr(ϕ(m) = M ) − 1/N | ≤ 1/N 2 ,
+for every M ∈ SLn (Fp ).
+10
+
+3.4
+
+Multiplicativity and parallel computing
+
+The hash functions considered in this article take as input a string of integers
+in [3], convert each integer into a matrix of the form {A±1 , B ±1 }, and finally
+output the product of these matrices.
+The fact that we require the underlying walk to be non-backtracking implies that this mapping is not locally determined: a given digit in the string is
+mapped to a matrix that depends on the previous digits. This dependency can
+be dramatic: for example, according to Definition 2.6 a sequence of the form
+133 · · · 3 will be mapped to the product B · B · B · · · B, while a sequence of the
+form 333 . . . 3 will be mapped to the product B −1 · B −1 · B −1 · · · B −1 . In particular, the last digit 3 of these two strings can be mapped to different matrices,
+depending on the first digit in the string. The endpoints of the corresponding
+walk in the Cayley graph may be far away from each other.
+As a consequence, the function ϕ need not be multiplicative under concatenation of strings, which is generally a desirable feature for hash function. This
+lack of multiplicativity makes it difficult to perform parallel computations with
+the given hash functions, as we now investigate in more detail.
+3.4.1
+
+Good and bad tails
+
+Recall that for a finite set X, the notation X ∗ is used for the set of finite length
+strings of elements of X. As before, the notation [3] denotes the set {1, 2, 3}.
+Definition 3.4. Let G be a finite group, generated by two elements A and B.
+Let ϕ̃ : [3]∗ → {A±1 , B ±1 }∗ .
+A string s ∈ [3]∗ is called a good tail with respect to ϕ̃ if there exists S ∈
+±1
+{A , B ±1 } such that for every s′ ∈ [3]∗ , the last letter of ϕ̃(s′ s) is S, where
+here s′ s is the string obtained from the concatenation of s′ and s. A string
+which is not a good tail is called a bad tail.
+Local constraints in Definition 2.6, can be obtained by the following fact:
+Fact 3.5. The function
+ϕ̃ : {xi } ∈ [3]∗ 7→ {Bi } ∈ {A±1 , B ±1 }∗
+constructed in Definition 2.6 has the following good tails: 11, 31, 22, 32, 13 and
+23.
+Proof. It is straightforward to check that:
+• any string ending in 11 or 31 outputs a string ending in A;
+• any string ending in 22 or 32 outputs a string ending in A−1 ;
+• any string ending in 13 outputs a string ending in B;
+• any string ending in 23 outputs a string ending in B −1 .
+
+11
+
+Figure 1: Description of the maps si in Definition 2.6
+last step matrix
+A−1
+B −1
+A
+B
+
+1
+B
+A
+A
+A
+
+2
+A−1
+A−1
+B −1
+A−1
+
+3
+B −1
+B −1
+B
+B
+
+The following proposition shows that the mapping above is optimal.
+Proposition 3.6. Special linear group based hash functions (Definition 2.4)
+admit at most six good tails of length two.
+The bound in Proposition 3.6 is sharp, as shown via the mappings from
+Definition 2.6. The proof of Proposition 3.6 will follow from the following lemma:
+Lemma 3.7. Let
+ϕ̃ : {xi } ∈ [3]∗ 7→ {Bi } ∈ {A±1 , B ±1 }∗
+be a special linear group based hash function (Definition 2.4), and let b ∈ [3].
+Then, there exists b′ ∈ [3] such that b′ b is a bad tail with respect to ϕ̃.
+Proof. The only freedom that we have in the construction of Definition 2.4 is
+how we define the maps si . We call elements of {A±1 , B ±1 } step matrices. Using
+ϕ̃, we say that the elements of [3] are encoded by step matrices. We summarize
+the definitions of the maps si in a table, with one row for each step matrix, and
+one column for each element of [3]. Each cell from this tabular contains a step
+matrix.
+To use this table, start from a string {xi } ∈ [3]∗ . Say that for some i > 1,
+we want to find the step matrix associated with xi . Let S be the step matrix
+encoding xi−1 . Then, the step matrix encoding xi is the step matrix in the cell
+located in the row labelled by S and in the column labelled by xi .
+It follows from the definition of the maps si that for each step matrix S, the
+row labelled by S contains exactly the three matrices in the set {A±1 , B ±1 }\S −1.
+The mapping from Definition 2.6 can be described as in Figure 1.
+Moreover, since each matrix can actually be the last step matrix used, every
+cell of the table can potentially be used. Fix an element b ∈ [3], and assume for
+a contradiction that every integer b′ ∈ [3] has the property that b′ b is a good
+tail. The column corresponding to each b′ has to contain at least two different
+step matrices. This implies that, in the row labelled by b, at least two cells
+contain the same step matrix. Since this is true for each b′ ∈ [3], this implies
+in particular that there is a step matrix S that is contained three times in the
+column labelled by b. The fourth cell of this column cannot be part of the
+row labelled by S since this would give rise to another S in a different column.
+This implies that the label S ′ of this row appears in a cell of another column.
+12
+
+Additionally, this column contains a cell with step matrix not equal to S ′ . Then,
+the label b′ ∈ [3] of this column gives us an integer having the property that
+inputs ending by b′ b can have either S or another matrix as a final matrix. This
+is a contradiction and concludes the proof of the lemma.
+Proof of Proposition 3.6. From Lemma 3.7, to each integer of [3] corresponds
+at least one bad tail, giving three different bad tails.
+As remarked previously, Definition 2.6 shows that the estimate in Proposition 3.6 is sharp, and so that in some sense, we have found an optimal way of
+defining the maps si .
+3.4.2
+
+Multiplicativity
+
+It follows from the discussion of good and bad tails above that multiplicativity
+of the hash function can be obtained by restricting to sequences whose product
+ends with the matrix s(1)−1 .
+Fact 3.8. In Definition 2.6, we have ϕ(s1 ∗ s2 ) = ϕ(s1 ) · ϕ(s2 ), provided s1 ends
+with 22 or 32.
+3.4.3
+
+Parallel computing
+
+Multiplicativity of the hash function under suitable conditions can be leveraged to compute its values by parallel computation. First, look for good tail
+substrings, namely: 11, 31, 22, 32, 13 or 23. For generic messages, one would
+expect such substrings to be quite common. Next, split the input immediately following one of these strings, and apply a slightly modified hash function
+(i.e. using the relevant si instead of s1 in the first matrix mapping). Finally,
+compute the product of the hash outputs.
+Example 3.9. Say we want to hash the string 1321321323. Observe that:
+1321321323. We thus compute: M1 = ϕ(13213) and M2 = ϕ′ (21323), where ϕ′
+is defined analogously to ϕ in Definition 2.6, apart from the fact that B1 is set
+to be s4 (x1 ) instead of s1 (x1 ), since ϕ(13213) is a product ending by B. Finally,
+ϕ(1321221323) = M1 · M2 .
+
+3.5
+
+Palindromic attacks
+
+One of several proposals of hashing by walks on Cayley graphs can be found
+in [TZ94b], wherein the Cayley graph is that of SL2 (F2n ). A method for finding
+collisions for this hash function is presented in [GIMS11] (cf. [FPPR11]); we
+argue that the attack does not apply in our case, though our evidence for this
+claim is primarily empirical.
+The idea of [GIMS11] is to find collisions on palindromes; that is, digit-string
+entries that are invariant under reversing the order. To begin, one conjugates
+generators of SL2 (F2n ) to obtain new generators which give rise to an isomorphic
+graph, but which are symmetric matrices. That is, if the original generators are
+13
+
+{A±1 , B ±1 }, one finds a matrix C such that Â = CAC −1 and B̂ = CBC −1 are
+both symmetric matrices.
+We first note that in our case, finding C is not easy; for SL3 (5) and SL3 (7),
+about 0.02% of the elements satisfy this criterion. Moreover, there is no obvious
+way to compute C; attempts to calculate the entries of such a matrix directly
+have proved resistant to equation solving methods in standard computer algebra
+systems - indeed, this approach is actually less efficient than just checking all
+possible matrices. Therefore, we do not have much data for larger primes, since
+the naive method used to find a suitable matrix C quickly becomes computationally infeasible.
+Provided one can find a matrix C, it follows that collisions in the hash
+function with respect to Â, B̂ as generators are exactly the collisions with A, B
+as generators; one can therefore rename the matrices Â, B̂ as A, B. One then
+proceeds according [GIMS11, Lemma 1]: upon input of a palindromic string v,
+the output of the product of conjugated generators in SL2 (F2n ) will always be
+a symmetric matrix.
+Since our hash function requires avoidance of backtracking in the walk, we
+are not guaranteed a palindromic matrix product from a palindromic input
+string; however, since one could reverse-engineer the necessary input to obtain a
+palindromic matrix product, we proceed to discuss palindromic matrix products
+without reference to hash function.
+It turns out, as one may check easily by induction, that a palindromic
+product in symmetric generators will itself be symmetric. The ultimate goal
+of [GIMS11] is to use this fact to demonstrate that the function
+ρ : M 7→ AM A + BM B,
+where M is a palindromic product, outputs a matrix populated with either
+zeroes or the square of a field element appearing as an entry in M . One then
+employs number theoretic tricks to force the nonzero elements to 0 in M and
+thus to obtain ρ(M ) = 0. One thus builds distinct palindromic decompositions
+of the same matrix.
+Consider the generators from Definition 2.6 over SL3 (F11 ). Transforming
+these generators with respect to the matrix
+
+
+2 6 10
+C = 5 3 10 ,
+2 3 3
+one checks that the palindrome
+
+7 4
+M = 4 0
+2 6
+
+M = ABABA is such that
+
+
+
+2
+2 1 5
+6 , ρ(M ) = 1 1 7 .
+6
+5 7 7
+
+In particular, for each i ∈ [10], the matrix ρ(M ) contains an entry that is
+not the ith power of any entry of M . This furnishes evidence that for p = 11,
+14
+
+there is little hope of extending [GIMS11, Corollary 1] to our context; we argue
+that the lack of closed form of transformed generators in general, the difficulty
+of finding them for larger parameters, and this example with a small value of p,
+conspire to provide strong evidence that the approach will fail in general.
+
+4
+
+Conclusions
+
+We have presented new Tillich-Zémor hash functions, with platforms Cayley
+graphs of SLn (Fp ) for n ≥ 3. We show that choosing appropriate generating
+matrices produces graphs without small cycles, and having a quick mixing property, both of which are highly desirable for preimage and collision resistance.
+Moreover, flexibility of choice of generating matrices and of the dimension n
+gives the option of increasing the complexity of attacks. Future work includes
+the exact computation of the spectral gap and the prime p0 (cf. item (i) of
+Theorem 2.1). Moreover, simulations should be carried out in order to compare
+with other existing schemes and determine the optimal values of p and n to be
+taken in implementations.
+
+Acknowledgments
+The authors would like to thank Ludovic Perret,
+Hadi
+Salmasian, Vladimir Shpilrain, and Bianca Sosnovski for helpful comments and
+discussions. The authors thank ITS for hosting CL, CB, and RF while this
+project has been done partially. DK thanks Institut des Hautes Études Scientifiques - IHES for providing stimulating environment while this project was
+partially done. She has conducted this work partially with the support of ONR
+Grant 62909-24-1-2002.
+The authors are also grateful to two anonymous referees who gave interesting
+suggestions on how to improve the paper.
+
+15
+
+A
+
+Implementation of the hash function
+
+In this appendix, we provide an implementation of the hash function given in
+Example 2.7.
+from sage . all import *
+# a 1024 bits random prime p
+nbits = 1024
+p = r a n d o m _ p r i m e ( 2 ** nbits , lbound = 2 ** ( nbits - 1 ) )
+assert is_prime ( p )
+# d e f i n i t i o n of the m a t r i c e s A , B and their i n v e r s e s
+A = matrix ( GF ( p ) ,[ [1 , 16 , 96 ] , [0 , 1 , 16 ] , [0 , 0 , 1 ] ] )
+Ainv = A ** ( - 1 )
+B = matrix ( GF ( p ) ,[ [1 , 0 , 0 ] , [8 , 1 , 0 ] , [ 24 , 8 , 1 ] ] )
+Binv = B ** ( - 1 )
+# i d e n t i f i c a t i o n b e t w e e n digits ( in base 4 ) and m a t r i c e s
+s = [A , B , Ainv , Binv ]
+sigma = [ [B , Ainv , Binv ] , [A , Ainv , Binv ] , [A , Binv , B ] , [ A , Ainv ,
+B]]
+# d e f i n i t i o n of the hash f u n c t i o n
+def hash ( string ) :
+# input must be a string
+# the only c h a r a c t e r s a l l o w e d are ’ 1 ’, ’2 ’ and ’3 ’
+out = i d e n t i t y _ m a t r i x ( GF ( p ) , 3 )
+inv_prec = A
+for k in range ( len ( string ) ) :
+i = s . index ( inv_prec )
+step_matri x = sigma [ i ] [ int ( string [ k ] ) - 1 ]
+inv_prec = step_matr i x ** ( - 1 )
+out = out * step_matri x
+return out
+# test of the e x a m p l e given in the paper
+string = ’ 2232221 ’
+assert hash ( string ) = = matrix ( GF ( p ) ,
+[ [ 694190977 , 233260720 , 29297952 ] ,
+[ - 38379648 , - 12896255 , - 1619792 ] ,
+[ 1191936 , 400512 , 50305 ] ] )
+
+References
+[AB22]
+
+Goulnara Arzhantseva and Arindam Biswas. Logarithmic girth expander graphs of SLn (Fp ). Journal of Algebraic Combinatorics,
+2022.
+
+[ABLS07] Noga Alon, Itai Benjamini, Eyal Lubetzky, and Sasha Sodin. Nonbacktracking random walks mix faster. Commun. Contemp. Math.,
+9(4):585–603, 2007.
+
+16
+
+[BdlHV08] Bachir Bekka, Pierre de la Harpe, and Alain Valette. Kazhdan’s
+Property (T). New Mathematical Monographs. Cambridge University Press, 2008.
+[Bor20]
+
+Tom Borthwick. Applications of homomorphic cryptographic primitives in blockchain and the internet of things, Undergraduate Thesis,
+University of York, 2020.
+
+[BR93]
+
+Mihir Bellare and Phillip Rogaway. Random oracles are practical:
+A paradigm for designing efficient protocols. In Proceedings of the
+1st ACM Conference on Computer and Communications Security,
+CCS ’93, page 62–73, New York, NY, USA, 1993. Association for
+Computing Machinery.
+
+[BSV17]
+
+Lisa Bromberg, Vladimir Shpilrain, and Alina Vdovina. Navigating in the Cayley graph of SL2 (Fp ) and applications to hashing.
+Semigroup Forum, 94(2):314–324, 2017.
+
+[CLG08]
+
+Denis Charles, Kristin Lauter, and Eyal Goren. Cryptographic hash
+functions from expander graphs. Journal of Cryptology, 22:93–113,
+12 2008.
+
+[FPPR11] Jean-Charles Faugère, Ludovic Perret, Christophe Petit, and
+Guénaël Renault. New subexponential algorithms for factoring in
+SL2 (F2n ). IACR Cryptol. ePrint Arch., page 598, 2011.
+[GIMS11] Markus Grassl, Ivana Ilić, Spyros Magliveras, and Rainer Steinwandt. Cryptanalysis of the Tillich–Zémor hash function. Journal
+of cryptology, 24(1):148–156, 2011.
+[GJ79]
+
+Michael R. Garey and David S. Johnson. Computers and intractability. A Series of Books in the Mathematical Sciences. W. H. Freeman
+and Co., San Francisco, Calif., 1979. A guide to the theory of NPcompleteness.
+
+[GM18]
+
+Mohammad Hossein Ghaffari and Zohreh Mostaghim. More secure version of a Cayley hash function. Groups Complex. Cryptol.,
+10(1):29–32, 2018.
+
+[Gur99]
+
+Robert M. Guralnick. Small representations are completely reducible. J. Algebra, 220(2):531–541, 1999.
+
+[GV12]
+
+Alireza Salehi Golsefidy and Péter P. Varjú. Expansion in perfect
+groups. Geom. Funct. Anal., 22(6):1832–1891, 2012.
+
+[Hal15]
+
+Brian Hall. Lie groups, Lie algebras, and representations, volume
+222 of Graduate Texts in Mathematics. Springer, Cham, second
+edition, 2015. An elementary introduction.
+
+17
+
+[LPS88]
+
+Alex Lubotzky, Ralph S. Phillips, and Peter C. Sarnak. Ramanujan
+graphs. Combinatorica, 8(3):261–277, 1988.
+
+[Lub05]
+
+Alex Lubotzky. What is. . . property (τ )? Notices Amer. Math. Soc.,
+52(6):626–627, 2005.
+
+[Piz90]
+
+Arnold K. Pizer. Ramanujan graphs and Hecke operators. Bull.
+Amer. Math. Soc. (N.S.), 23(1):127–137, 1990.
+
+[Sar21]
+
+Naser T. Sardari. Complexity of strong approximation on the sphere.
+Int. Math. Res. Not. IMRN, (18):13839–13866, 2021.
+
+[SBK+ 17] Marc Stevens, Elie Bursztein, Pierre Karpman, Ange Albertini, and
+Yarik Markov. The first collision for full SHA-1. In Advances in
+cryptology—CRYPTO 2017. Part I, volume 10401 of Lecture Notes
+in Comput. Sci., pages 570–596. Springer, Cham, 2017.
+[Sos18]
+
+Bianca Sosnovski. Recent developments in Cayley hash functions. In
+Mathematical software—ICMS 2018, volume 10931 of Lecture Notes
+in Comput. Sci., pages 438–447. Springer, Cham, 2018.
+
+[SS16]
+
+Vladimir Shpilrain and Bianca Sosnovski. Compositions of linear
+functions and applications to hashing. Groups Complex. Cryptol.,
+8(2):155–161, 2016.
+
+[Ste04]
+
+J. Michael Steele. The Cauchy-Schwarz Master Class: An Introduction to the Art of Mathematical Inequalities. Cambridge University
+Press, 2004.
+
+[Ste21]
+
+Bruno Sterner. Commitment schemes from supersingular elliptic
+curve isogeny graphs. Cryptology ePrint Archive, Report 2021/1031,
+2021. https://ia.cr/2021/1031.
+
+[Tin23]
+
+Simran Tinani. Methods for collisions in some algebraic hash functions. 2023.
+
+[TNS20]
+
+Hayley Tomkins, Monica Nevins, and Hadi Salmasian. New ZémorTillich type hash functions over GL2 (Fpn ). J. Math. Cryptol.,
+14(1):236–253, 2020.
+
+[TZ94a]
+
+Jean-Pierre Tillich and Gilles Zémor. Group-theoretic hash functions. In Algebraic coding (Paris, 1993), volume 781 of Lecture
+Notes in Comput. Sci., pages 90–110. Springer, Berlin, 1994.
+
+[TZ94b]
+
+Jean-Pierre Tillich and Gilles Zémor. Hashing with SL2 . In Annual
+International Cryptology Conference, pages 40–49. Springer, 1994.
+
+[TZ08]
+
+Jean-Pierre Tillich and Gilles Zémor. Collisions for the LPS expander graph hash function. In Proceedings of the Theory and Applications of Cryptographic Techniques 27th Annual International
+Conference on Advances in Cryptology, EUROCRYPT’08, page
+254–269, Berlin, Heidelberg, 2008. Springer-Verlag.
+
+18
+
+

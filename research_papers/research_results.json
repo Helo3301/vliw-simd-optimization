@@ -1,0 +1,1092 @@
+{
+  "papers": [
+    {
+      "title": "A parameterized complexity view on non-preemptively scheduling interval-constrained jobs: few machines, small looseness, and small slack",
+      "authors": [
+        "Ren\u00e9 van Bevern",
+        "Rolf Niedermeier",
+        "Ond\u0159ej Such\u00fd"
+      ],
+      "summary": "We study the problem of non-preemptively scheduling $n$ jobs, each job $j$ with a release time $t_j$, a deadline $d_j$, and a processing time $p_j$, on $m$ parallel identical machines. Cieliebak et al. (2004) considered the two constraints $|d_j-t_j|\\leq \u03bbp_j$ and $|d_j-t_j|\\leq p_j +\u03c3$ and showed the problem to be NP-hard for any $\u03bb>1$ and for any $\u03c3\\geq 2$. We complement their results by parameterized complexity studies: we show that, for any $\u03bb>1$, the problem remains weakly NP-hard even for $m=2$ and strongly W[1]-hard parameterized by $m$. We present a pseudo-polynomial-time algorithm for constant $m$ and $\u03bb$ and a fixed-parameter tractability result for the parameter $m$ combined with $\u03c3$.",
+      "pdf_url": "https://arxiv.org/pdf/1508.01657v2",
+      "arxiv_id": "1508.01657v2",
+      "published": "2015-08-07 10:52:31+00:00",
+      "techniques": [
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "meter combination m and \u03bb presumably does not give fixed-parameter tractability results for \u03bb -L OOSE I NTERVAL -C ONSTRAINED S CHEDULING. 2 Preliminaries Basic notation We assume that 0 \u2208 N. For two vectors u = (u1 , . . . , uk ) and v = (v1 , . . . , vk ), we write u \u2264 v if ui \u2264 vi for all i \u2208 {1, . . . , k}. Moreover, we write u \b v if u \u2264 v and u 6= v, that is, u and v differ in at least one c"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "d: August 7, 2015 Accepted: March 23, 2016  Abstract We study the problem of non-preemptively scheduling n jobs, each job j with a release time t j , a deadline d j , and a processing time p j , on m parallel identical machines. Cieliebak et al (2004) considered the two constraints |d j \u2212 t j | \u2264 \u03bb p j and |d j \u2212 t j | \u2264 p j + \u03c3 and showed the problem to be NP-hard for any \u03bb > 1 and for any \u03c3 \u2265 2."
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "ter algorithm. It is potentially efficient for small values of k, in contrast to an algorithm that is merely running in polynomial time for each fixed k (thus allowing the degree of the polynomial to depend on k). FPT is the complexity class of fixed-parameter tractable parameterized problems.  \fA parameterized complexity view on non-preemptively scheduling interval-constrained jobs  3  Table 1.1 "
+        }
+      ]
+    },
+    {
+      "title": "On the solution existence and stability of polynomial optimization problems",
+      "authors": [
+        "Vu Trung Hieu"
+      ],
+      "summary": "This paper introduces and investigates a regularity condition in the asymptotic sense for optimization problems whose objective functions are polynomial. Under this regularity condition, the normalization argument in asymptotic analysis enables us to see the solution existence as well as the solution stability of these problems. We prove a Frank-Wolfe type theorem for regular optimization problems and an Eaves type theorem for non-regular pseudoconvex optimization problems. Moreover, we show results on the stability such as upper semicontinuity and local upper-H\u00f6lder stability of the solution map of polynomial optimization problems. At the end of the paper, we discuss the genericity of the regularity condition.",
+      "pdf_url": "https://arxiv.org/pdf/1808.06100v6",
+      "arxiv_id": "1808.06100v6",
+      "published": "2018-08-18 16:27:40+00:00",
+      "techniques": [
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "d contains 0. The set S is bounded if and only if S\u221e is trivial. Furthermore, if S is convex then S\u221e is a closed convex cone and S\u221e = 0+ S, where 0+ S is the recession cone of S, that consists of all vectors v \u2208 Rn such that x + tv \u2208 S for any x \u2208 S and t \u2265 0. Thus, one has S = S + S\u221e when S is convex. Let d \u2265 2 be given. The dimension of the space Rd [x] is finite; its dimension is denoted by \u03c1. "
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "k \u2282 Rk be the set of points x = (x1 , . . . , xk ) such that xj \u2208 (0, 1) for all j \u2208 [k]. The dimension of U is defined by dim(U ) := max{d1 , . . . , ds }. The dimension is well-defined and does not depends on the decomposition of U . Recall that if U is nonempty and dim(U ) is zero, then U has finitely many points. Furthermore, if dim(Rm \\U ) < m, then U is generic in Rm (see, e.g. [22, Lemma 2."
+        }
+      ]
+    },
+    {
+      "title": "Realize special instructions on clustering VLIW DSP: multiplication-accumulation instruction",
+      "authors": [
+        "Binbin Liu",
+        "Qilong Zheng"
+      ],
+      "summary": "BWDSP is a 32bit static scalar digital signal processor with VLIW and SIMD features, which is designed for high-performance computing. Associated special instructions are designed for its special architecture and application scenarios. However, the existing compilation framework doesn't meet these special instructions. Therefore, in the context of traditional Open64 compiler, proposed a special instruction algorithm. Through this algorithm implements the multiplication-accumulation operation with BWDSP structure, to improve the performance of algorithms with multiply-accumulate requirements. Experimental results show that the algorithm, which can make an maximum of 8.85 speedup on BWDSP.",
+      "pdf_url": "https://arxiv.org/pdf/1902.05982v1",
+      "arxiv_id": "1902.05982v1",
+      "published": "2019-01-16 07:07:03+00:00",
+      "techniques": [
+        {
+          "technique": "SIMD",
+          "keyword": "simd",
+          "context": "\u5206\u7c07 VLIW DSP \u4e0a\u7279\u6b8a\u6307\u4ee4\u5b9e\u73b0\u4e4b\u4e58\u6cd5\u7d2f\u52a0\u6307\u4ee4  \uf02a  \uf020  \u5218\u5f6c\u5f6c 1,2, \u90d1\u542f\u9f99 1,2 1  (\u4e2d\u56fd\u79d1\u5b66\u6280\u672f\u5927\u5b66 \u8ba1\u7b97\u673a\u79d1\u5b66\u4e0e\u6280\u672f\u5b66\u9662,\u5b89\u5fbd \u5408\u80a5  2  (\u5b89\u5fbd\u7701\u9ad8\u6027\u80fd\u8ba1\u7b97\u91cd\u70b9\u5b9e\u9a8c\u5ba4,\u5b89\u5fbd \u5408\u80a5  230027)  230027)  \u901a\u8baf\u4f5c\u8005: \u5218\u5f6c\u5f6c, E-mail: robbertl@mail.ustc.edu.cn  \u6458  \u8981:  BWDSP \u662f\u4e00\u6b3e\u91c7\u7528 VLIW \u548c SIMD \u67b6\u6784,\u9488\u5bf9\u9ad8\u6027\u80fd\u8ba1\u7b97\u9886\u57df\u800c\u8bbe\u8ba1\u7684 32 \u4f4d\u9759\u6001\u6807\u91cf\u6570\u5b57\u4fe1\u53f7\u5904\u7406\u5668.  \u9488\u5bf9\u5176\u7279\u6b8a\u7684\u4f53\u7cfb\u7ed3\u6784\u548c\u7279\u5b9a\u7684\u5e94\u7528\u573a\u666f,\u8bbe\u8ba1\u4e86\u4e00\u7cfb\u5217\u76f8\u5e94\u7684\u7279\u6b8a\u6307\u4ee4.\u7136\u800c\u73b0\u6709\u7684\u7f16\u8bd1\u6846\u67b6,\u5e76\u6ca1\u6709\u5bf9\u8fd9\u4e9b\u7279\u6b8a \u6307\u4ee4\u63d0\u4f9b\u652f\u6301.\u56e0\u6b64,\u5728\u4f20\u7edf\u7684 Open64 \u7f16\u8bd1\u5668\u7684\u6846\u67b6\u4e0b,\u9488\u5bf9 BWDSP \u7ed3\u6784\u7279\u70b9,\u63d0\u51fa\u4e86\u4e00\u79cd\u5b9e\u73b0\u7279\u6b8a\u6307\u4ee4\u7684\u7b97\u6cd5,\u901a \u8fc7\u8be5\u7b97\u6cd5\u5b9e\u73b0\u4e86\u4e58\u6cd5\u7d2f\u52a0\u6307\u4ee4,\u4ee5\u63d0\u9ad8\u5177\u6709\u4e58\u6cd5\u7d2f\u52a0\u9700\u6c42\u7b97\u6cd5\u7684\u6027\u80fd.\u5b9e\u9a8c\u7ed3\u679c\u8868\u660e,\u9488\u5bf9\u76f8\u5173\u7b97\u6cd5,\u8be5\u5b9e"
+        }
+      ]
+    },
+    {
+      "title": "Rejoinder to \"Breakdown and groups\" by P. L. Davies and U. Gather",
+      "authors": [
+        "P. Laurie Davies",
+        "Ursula Gather"
+      ],
+      "summary": "Rejoinder to ``Breakdown and groups'' by P. L. Davies and U. Gather [math.ST/0508497]",
+      "pdf_url": "https://arxiv.org/pdf/math/0508505v1",
+      "arxiv_id": "0508505v1",
+      "published": "2005-08-25 12:49:44+00:00",
+      "techniques": [
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "guish between good and bad data, are too vague. One of the challenges of this paper is to obtain the factor of 1/2 or even some other factor without an equivariance structure. 10. Principal component vectors. Tyler argues that it may be possible to define a reasonable concept of breakdown for principal component vectors, although he recognizes that there are problems involved. The idea is that bre"
+        },
+        {
+          "technique": "gather",
+          "keyword": "gather",
+          "context": "2005  The Annals of Statistics 2005, Vol. 33, No. 3, 1016\u20131035 DOI: 10.1214/009053604000001138 c Institute of Mathematical Statistics, 2005  REJOINDER TO \u201cBREAKDOWN AND GROUPS\u201d BY P. L. DAVIES AND U. GATHER By P. Laurie Davies and Ursula Gather University of Duisburg\u2013Essen and Technical University Eindhoven, and University of Dortmund We thank all the discussants for their contributions and in par"
+        },
+        {
+          "technique": "scatter",
+          "keyword": "scatter",
+          "context": " tend to infinity so Theorem 3.1 is not applicable. The highest breakdown point for translation equivariant functionals is 1/2 but there are affine equivariant location functionals which are based on scatter functionals and which have a breakdown point of at least that of the scatter functional, namely (1 \u2212 \u2206(P ))/2. The gap has not been closed but Rousseeuw gives a sufficient condition for the bo"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "ions not covered by the results of our paper. They claim that at least in an intuitive sense breakdown occurs if the value of a functional is driven to the boundary or to an interior point which is independent of the uncontaminated sample. A formal definition of breakdown point is given which is intended to cover such possibilities. A first version is to be found in Genton and Lucas (2003) and is "
+        },
+        {
+          "technique": "speculative",
+          "keyword": "specul",
+          "context": " been generally accepted only in situations where there is a group structure sufficiently rich to allow the calculation of a nontrivial upper bound for the breakdown point. In his contribution Hampel speculates that this could be the reason why the breakdown point for correlation coefficients has not yet been widely accepted. In spite of this and as pointed out by an Associate Editor, we have not "
+        }
+      ]
+    },
+    {
+      "title": "Addendum to the discussion of \"Breakdown and groups\"",
+      "authors": [
+        "P. Laurie Davies",
+        "Ursula Gather"
+      ],
+      "summary": "In his discussion of Davies and Gather [Ann. Statist. 33 (2005) 977--1035] [math.ST/0508497] Tyler pointed out that the theory developed there could not be applied to the case of directional data. He related the breakdown of directional functionals to the problem of definability. In this addendum we provide a concept of breakdown defined in terms of definability and not in terms of bias. If a group of finite order $k$ acts on the sample space we show that the breakdown point can be bounded above by $(k-1)/k$. In the case of directional data there is a group of order $k=2$ giving an upper bound of 1/2.",
+      "pdf_url": "https://arxiv.org/pdf/math/0507089v2",
+      "arxiv_id": "0507089v2",
+      "published": "2005-07-05 12:55:20+00:00",
+      "techniques": [
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": " nonstable. As pointed out by Tyler in the discussion this behavior is related to the problem of definability of the functional. Tyler writes \u201cThis implies that breakdown occurs when a \u2018well-defined\u2019 vector becomes \u2018undefined\u2019 \u201d. We take up this idea and use it to define what we call the \u201cdefinability breakdown point\u201d. 2. Breakdown and invariant distributions. 2.1. Definition of breakdown. From Th"
+        },
+        {
+          "technique": "gather",
+          "keyword": "gather",
+          "context": "1214/009053606000000399 Main article DOI: 10.1214/009053604000001138 c Institute of Mathematical Statistics, 2006  ADDENDUM TO THE DISCUSSION OF \u201cBREAKDOWN AND GROUPS\u201d1 By P. Laurie Davies and Ursula Gather University of Duisburg\u2013Essen and Technical University Eindhoven, and University of Dortmund In his discussion of Davies and Gather [Ann. Statist. 33 (2005) 977\u20131035] Tyler pointed out that the "
+        }
+      ]
+    },
+    {
+      "title": "IVOA Recommendation: Simple Spectral Access Protocol Version 1.1",
+      "authors": [
+        "Doug Tody",
+        "Markus Dolensky",
+        "Jonathan McDowell",
+        "Francois Bonnarel",
+        "Tamas Budavari",
+        "Ivo Busko",
+        "Alberto Micol",
+        "Pedro Osuna",
+        "Jesus Salgado",
+        "Petr Skoda",
+        "Randy Thompson",
+        "Frank Valdes",
+        "the Data Access Layer working group"
+      ],
+      "summary": "The Simple Spectral Access (SSA) Protocol (SSAP) defines a uniform interface to remotely discover and access one dimensional spectra. SSA is a member of an integrated family of data access interfaces altogether comprising the Data Access Layer (DAL) of the IVOA. SSA is based on a more general data model capable of describing most tabular spectrophotometric data, including time series and spectral energy distributions (SEDs) as well as 1-D spectra; however the scope of the SSA interface as specified in this document is limited to simple 1-D spectra, including simple aggregations of 1-D spectra. The form of the SSA interface is simple: clients first query the global resource registry to find services of interest and then issue a data discovery query to selected services to determine what relevant data is available from each service; the candidate datasets available are described uniformly in a VOTable format document which is returned in response to the query. Finally, the client may retrieve selected datasets for analysis. Spectrum datasets returned by an SSA spectrum service may be either precomputed, archival datasets, or they may be virtual data which is computed on the fly to respond to a client request. Spectrum datasets may conform to a standard data model defined by SSA, or may be native spectra with custom project-defined content. Spectra may be returned in any of a number of standard data formats. Spectral data is generally stored externally to the VO in a format specific to each spectral data collection; currently there is no standard way to represent astronomical spectra, and virtually every project does it differently. Hence spectra may be actively mediated to the standard SSA-defined data model at access time by the service, so that client analysis programs do not have to be familiar with the idiosyncratic details of each data collection to be accessed.",
+      "pdf_url": "https://arxiv.org/pdf/1203.5725v1",
+      "arxiv_id": "1203.5725v1",
+      "published": "2012-03-26 16:36:10+00:00",
+      "techniques": [
+        {
+          "technique": "software pipelining",
+          "keyword": "pipeline",
+          "context": "lection (survey project, observatory, etc.). Datasets can have a globally unique CreatorDID assigned prior to publication of the data to the VO, for example when the data is generated by a processing pipeline, or ingested into the master archive for the data collection. This is possible since the Creator entity for a data collection (e.g., an observatory or survey project) controls its own namespa"
+        },
+        {
+          "technique": "interchange",
+          "keyword": "interchange",
+          "context": " between elements, the metadata used to describe the data elements and the overall dataset, and the concepts upon which the data model is based. In this document we refer to the underlying data model interchangeably as the SSA data model or the Spectrum or spectral data model (SDM). The data model used in SSA is described in (McDowell, Tody, et.al, 2007). The spectral data model is an abstract mod"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": " must, recommended interface elements as should, and optional interface elements as may or simply \u201cmay\u201d without the bold face font. Sometimes the extent to which a given interface element is required depends upon the mode of operation of the service. For example, a service which performs spectral extraction must implement the APERTURE query parameter, but it is not used for other types of SSA serv"
+        }
+      ]
+    },
+    {
+      "title": "Challenges for Inclusion in Software Engineering: The Case of the Emerging Papua New Guinean Society",
+      "authors": [
+        "Raula Gaikovina Kula",
+        "Christoph Treude",
+        "Hideaki Hata",
+        "Sebastian Baltes",
+        "Igor Steinmacher",
+        "Marco Aurelio Gerosa",
+        "Winifred Kula Amini"
+      ],
+      "summary": "Software plays a central role in modern societies, with its high economic value and potential for advancing societal change. In this paper, we characterise challenges and opportunities for a country progressing towards entering the global software industry, focusing on Papua New Guinea (PNG). By hosting a Software Engineering workshop, we conducted a qualitative study by recording talks (n=3), employing a questionnaire (n=52), and administering an in-depth focus group session with local actors (n=5). Based on a thematic analysis, we identified challenges as barriers and opportunities for the PNG software engineering community. We also discuss the state of practices and how to make it inclusive for practitioners, researchers, and educators from both the local and global software engineering community.",
+      "pdf_url": "https://arxiv.org/pdf/1911.04016v2",
+      "arxiv_id": "1911.04016v2",
+      "published": "2019-10-31 22:20:22+00:00",
+      "techniques": [
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": "nalysis/growth-unchained-new-technologies-coupl ed-infrastructure-upgrades-are-expanding-access-financial). For example, since mid-2017, banks have actively promoted the distributed ledger technology blockchain for providing alternate forms of financial services. Progress, however, has been slow. As of mid-2018, only about 9.2% of the population has access to some form of digital wallet. The PNG g"
+        },
+        {
+          "technique": "gather",
+          "keyword": "gather",
+          "context": "up \u201cround table\u201d discussion took place two days after we collected the survey responses, lasting 1 hour and 41 minutes. For data analysis, we used transcripts of the talks and the survey responses to gather insights on the state of practice, then used the focus group for a deeper exploration based on the survey results. Our initial coding started with the analysis of the focus group, as it contain"
+        }
+      ]
+    },
+    {
+      "title": "Quality Attributes Optimization of Software Architecture: Research Challenges and Directions",
+      "authors": [
+        "Daniele Di Pompeo",
+        "Michele Tucci"
+      ],
+      "summary": "The estimation and improvement of quality attributes in software architectures is a challenging and time-consuming activity. On modern software applications, a model-based representation is crucial to face the complexity of such activity. One main challenge is that the improvement of distinctive quality attributes may require contrasting refactoring actions on the architecture, for instance when looking for trade-off between performance and reliability (or other non-functional quality attributes). In such cases, multi-objective optimization can provide the designer with a more complete view on these trade-offs and, consequently, can lead to identify suitable refactoring actions that take into account independent or even competing objectives.\n  In this paper, we present open challenges and research directions to fill current gaps in the context of multi-objective software architecture optimization.",
+      "pdf_url": "https://arxiv.org/pdf/2301.07516v1",
+      "arxiv_id": "2301.07516v1",
+      "published": "2023-01-18 13:37:21+00:00",
+      "techniques": [
+        {
+          "technique": "gather",
+          "keyword": "gather",
+          "context": "he solution space and, consequently, in the obtained results is usually tackled by performing multiple runs of the same experiments, and by trying to reach conclusions on the basis of the information gathered in all the runs. While this is reasonable and practical in most cases, it can be very expensive when optimizing architectures, and less effective on large solution spaces. Therefore, achievin"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "cases, multi-objective optimization can provide the designer with a more complete view on these tradeoffs and, consequently, can lead to identify suitable refactoring actions that take into account independent or even competing objectives. In this paper, we present open challenges and research directions to fill current gaps in the context of multi-objective software architecture optimization. Ind"
+        }
+      ]
+    },
+    {
+      "title": "Morescient GAI for Software Engineering (Extended Version)",
+      "authors": [
+        "Marcus Kessel",
+        "Colin Atkinson"
+      ],
+      "summary": "The ability of Generative AI (GAI) technology to automatically check, synthesize and modify software engineering artifacts promises to revolutionize all aspects of software engineering. Using GAI for software engineering tasks is consequently one of the most rapidly expanding fields of software engineering research, with over a hundred LLM-based code models having been published since 2021. However, the overwhelming majority of existing code models share a major weakness - they are exclusively trained on the syntactic facet of software, significantly lowering their trustworthiness in tasks dependent on software semantics. To address this problem, a new class of \"Morescient\" GAI is needed that is \"aware\" of (i.e., trained on) both the semantic and static facets of software. This, in turn, will require a new generation of software observation platforms capable of generating large quantities of execution observations in a structured and readily analyzable way. In this paper, we present a vision and roadmap for how such \"Morescient\" GAI models can be engineered, evolved and disseminated according to the principles of open science.",
+      "pdf_url": "https://arxiv.org/pdf/2406.04710v2",
+      "arxiv_id": "2406.04710v2",
+      "published": "2024-06-07 07:38:33+00:00",
+      "techniques": [
+        {
+          "technique": "software pipelining",
+          "keyword": "pipeline",
+          "context": "tware engineering task at hand. Our prototype implementation of such a platform, the Large-Scale Software Observatorium (LASSO)2 [32], features a domain-specific scripting language to design analysis pipelines for generating high-quality data sets based on individual preferences and functional/non-functional properties of interest [30]. It achieves this by integrating a test driver and additional "
+        },
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "cal problems to researchers, including the need for significant processing power. In indirect approaches, the SRH data is (pre)processed in some way as preparation for training. For example, reusable vector representations (e.g., embeddings such as Word2vec [48] and BERT [14]), can be generated from the data in which information with \u201cclose\u201d vector values is assumed to be more closely related than"
+        },
+        {
+          "technique": "gather",
+          "keyword": "gather",
+          "context": "ribed behavior, including the prediction of the actual \u201cfocal method\u201d \u2013 that is, the portion of the code that is being tested by a test. Morescient Usage. This line of work uses execution information gathered through testing to select the best solution from multiple code generations. This can be accomplished by sampling from a set of potential solutions, such as those provided by CodeT [11] or LEV"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "calable testing poses two key challenges. First, as mentioned above, there is a need for optimized test drivers that can execute potentially large numbers of tests on large numbers of code modules in parallel, without compromising performance. Second, obtaining precise observation data at scale within a given time budget is essential, but comes with its own set of complexities. A significant obsta"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "ever, the overwhelming majority of existing code models share a major weakness \u2013 they are exclusively trained on the syntactic facet of software, significantly lowering their trustworthiness in tasks dependent on software semantics. To address this problem, a new class of \u201cMorescient\u201d GAI is needed that is \u201caware\u201d of (i.e., trained on) both the semantic and static facets of software. This, in turn"
+        }
+      ]
+    },
+    {
+      "title": "Sound, Fine-Grained Traversal Fusion for Heterogeneous Trees - Extended Version",
+      "authors": [
+        "Laith Sakka",
+        "Kirshanthan Sundararajah",
+        "Ryan R. Newton",
+        "Milind Kulkarni"
+      ],
+      "summary": "Applications in many domains are based on a series of traversals of tree structures, and fusing these traversals together to reduce the total number of passes over the tree is a common, important optimization technique. In applications such as compilers and render trees, these trees are heterogeneous: different nodes of the tree have different types. Unfortunately, prior work for fusing traversals falls short in different ways: they do not handle heterogeneity; they require using domain-specific languages to express an application; they rely on the programmer to aver that fusing traversals is safe, without any soundness guarantee; or they can only perform coarse-grain fusion, leading to missed fusion opportunities. This paper addresses these shortcomings to build a framework for fusing traversals of heterogeneous trees that is automatic, sound, and fine-grained. We show across several case studies that our approach is able to allow programmers to write simple, intuitive traversals, and then automatically fuse them to substantially improve performance.",
+      "pdf_url": "https://arxiv.org/pdf/1904.07061v1",
+      "arxiv_id": "1904.07061v1",
+      "published": "2019-04-11 18:36:58+00:00",
+      "techniques": [
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "m shown in figure 2. The traversed node parameter is followed by the traversal\u2019s parameters, and an integer that represents the set of active traversals, active_flags. This parameter can be seen as a vector of flags where each bit determines whether a specific traversal function is active or truncated at any point  Proof sketch of soundness The argument for the soundness of Grafter\u2019s fusion proced"
+        },
+        {
+          "technique": "fusion",
+          "keyword": "fuse",
+          "context": "ty rrnewton@indiana.edu  Electrical and Computer Engineering Purdue University milind@purdue.edu  Abstract  writing these applications in the most performant manner\u2014 where many AST traversals must be fused into a single traversal to reduce the overhead of traversing and manipulating potentially-large programs [21]. In an attempt to balance these competing concerns, there has been prior work on com"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "tation and Application of Automata. Springer Berlin Heidelberg, Berlin, Heidelberg, 11\u201323. [2] Uday Bondhugula, Albert Hartono, J. Ramanujam, and P. Sadayappan. 2008. A Practical Automatic Polyhedral Parallelizer and Locality  [18]  16  Optimizer. In Proceedings of the 29th ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI \u201908). ACM, New York, NY, USA, 101\u2013113. https:/"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": " et al. who limit computations to binary trees traversed in pre- or post-order [23, 24], or Petrashko et al. who require very specific traversal structures in miniphases [21]). TreeFuser analyzes the dependence structure of the general tree traversals to perform call-specific partial fusion, which allows parts of traversals to be fused (unlike other prior work), and integrate code motion which imp"
+        }
+      ]
+    },
+    {
+      "title": "Feature Unification in TAG Derivation Trees",
+      "authors": [
+        "Sylvain Schmitz",
+        "Joseph Le Roux"
+      ],
+      "summary": "The derivation trees of a tree adjoining grammar provide a first insight into the sentence semantics, and are thus prime targets for generation systems. We define a formalism, feature-based regular tree grammars, and a translation from feature based tree adjoining grammars into this new formalism. The translation preserves the derivation structures of the original grammar, and accounts for feature unification.",
+      "pdf_url": "https://arxiv.org/pdf/0804.4584v1",
+      "arxiv_id": "0804.4584v1",
+      "published": "2008-04-29 11:39:18+00:00",
+      "techniques": [
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "rees are thus the cornerstone of several approaches to sentence generation (Koller and Striegnitz, 2002; Koller and Stone, 2007), that rely crucially on the ease of encoding regular tree grammars, as dependency grammars and planning problems respectively. Derivation trees also serve as intermediate representations from which both derived trees (and thus the linear order information) and semantics "
+        }
+      ]
+    },
+    {
+      "title": "SIMD-ified R-tree Query Processing and Optimization",
+      "authors": [
+        "Yeasir Rayhan",
+        "Walid G. Aref"
+      ],
+      "summary": "The introduction of Single Instruction Multiple Data (SIMD) instructions in mainstream CPUs has enabled modern database engines to leverage data parallelism by performing more computation with a single instruction, resulting in a reduced number of instructions required to execute a query as well as the elimination of conditional branches. Though SIMD in the context of traditional database engines has been studied extensively, it has been overlooked in the context of spatial databases. In this paper, we investigate how spatial database engines can benefit from SIMD vectorization in the context of an R-tree spatial index. We present vectorized versions of the spatial range select, and spatial join operations over a vectorized R-tree index. For each of the operations, we investigate two storage layouts for an R-tree node to leverage SIMD instructions. We design vectorized algorithms for each of the spatial operations given each of the two data layouts. We show that the introduction of SIMD can improve the latency of the spatial query operators up to 9x. We introduce several optimizations over the vectorized implementation of these query operators, and study their effectiveness in query performance and various hardware performance counters under different scenarios.",
+      "pdf_url": "https://arxiv.org/pdf/2309.16913v1",
+      "arxiv_id": "2309.16913v1",
+      "published": "2023-09-29 00:55:22+00:00",
+      "techniques": [
+        {
+          "technique": "loop unrolling",
+          "keyword": "unroll",
+          "context": "0MB and 84MB, respectively. The DTLB cache contains 64 4KB pages. The machine supports 56 cores and 512-bit SIMD registers. The CPU clock frequency is 2.0 GHz. We compile with gcc 11.3.0 with flags -funroll-loops, and -O3 enabled. We use Linux\u2019s perf events API to collect the hardware performance counters. All query operations are evaluated on an R-tree index with 10M 2D points synthetically gener"
+        },
+        {
+          "technique": "software pipelining",
+          "keyword": "pipeline",
+          "context": ", for short) instructions. Thread-level and instruction-level parallelism have been investigated extensively in spatial databases literature in the form of standalone query operators, query execution pipeline, and compilation of query plans [29]. However, this is not the case for data-level parallelism. Previous works [22, 32] in relational database management systems (RDBMS) on query operators, e"
+        },
+        {
+          "technique": "prefetching",
+          "keyword": "prefetch",
+          "context": "al select operator to better facilitate SIMD vectorization, and reduce LLC misses. Performing a select on an index typically results in cold LLC misses equal to the number of nodes accessed. Hardware prefetchers cannot hide these cold LLC misses, and it badly hurts index performance and the CPU\u2019s SIMD capabilities. Given that the R-Tree index nodes overlap each other, we introduce a queue to keep "
+        },
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "traditional database engines has been studied extensively, it has been overlooked in the context of spatial databases. In this paper, we investigate how spatial database engines can benefit from SIMD vectorization in the context of an R-tree spatial index. We present vectorized versions of the spatial range select, and spatial join operations over a vectorized R-tree index. For each of the operati"
+        },
+        {
+          "technique": "SIMD",
+          "keyword": "simd",
+          "context": "SIMD-ified R-tree Query Processing and Optimization Yeasir Rayhan and Walid G. Aref Purdue University, West Lafayette, IN, USA {yrayhan,aref}@purdue.edu  arXiv:2309.16913v1 [cs.DB] 29 Sep 2023  ABSTRA"
+        },
+        {
+          "technique": "gather",
+          "keyword": "gather",
+          "context": "mory location, say \ud835\udc5a, and loads contiguous elements starting at \ud835\udc5a into a target register, e.g., \u2193  [\ud835\udc53 , \ud835\udc54, \u210e, \ud835\udc56] \u2190 load(|\ud835\udc4e, \ud835\udc4f, \ud835\udc50, \ud835\udc51, \ud835\udc52, f, g, h, i, \ud835\udc57, \ud835\udc58 | ) | {z } | {z }  Target vector  Memory  1.2. Gather: Takes as input an array, say \ud835\udc34, with an index vector, \u2212\u2212\u2192 \u2212\u2212\u2192 \ud835\udc56\ud835\udc51\ud835\udc65, and stores the \ud835\udc34 elements specified by the \ud835\udc56\ud835\udc51\ud835\udc65 in order (as specified in the index vector) in a target register, e.g., [\ud835\udc4e, \ud835\udc57,"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": ".edu  arXiv:2309.16913v1 [cs.DB] 29 Sep 2023  ABSTRACT The introduction of Single Instruction Multiple Data (SIMD) instructions in mainstream CPUs has enabled modern database engines to leverage data parallelism by performing more computation with a single instruction, resulting in a reduced number of instructions required to execute a query as well as the elimination of conditional branches. Thou"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "ctor  Memory  1.4. Broadcast: Takes as input a data element, say \ud835\udc52, or a vector, say \ud835\udc63\u00ae, and replicates \ud835\udc52 or part of the \ud835\udc63\u00ae across all lanes of a target register. There are many variants of Broadcast depending on what needs to be replicated, e.g., to duplicate \ud835\udc63\u00ae\u2019s two lower elements into all lanes of a target register, we perform: [\ud835\udc4e, \ud835\udc4f, \ud835\udc4e, \ud835\udc4f] \u2190 broadcast( [a, b, \ud835\udc50, \ud835\udc51] ) | {z } | {z }  Target vec"
+        },
+        {
+          "technique": "latency hiding",
+          "keyword": "latency",
+          "context": "R-tree node to leverage SIMD instructions. We design vectorized algorithms for each of the spatial operations given each of the two data layouts. We show that the introduction of SIMD can improve the latency of the spatial query operators up to 9\u00d7. We introduce several optimizations over the vectorized implementation of these query operators, and study their effectiveness in query performance and "
+        },
+        {
+          "technique": "double buffering",
+          "keyword": "buffer",
+          "context": "iciency of the CPU, e.g., the number of instructions executed per clock cycle (IPC, for short), main-memory stalls, dominated by Last Level Cache misses (LLC misses, for short), Translation Lookaside Buffer misses (TLB misses, for short), and branch mispredictions. An LLC miss refers to the event of the processor attempting to access data that is not present in the last level cache and requires fe"
+        },
+        {
+          "technique": "speculative",
+          "keyword": "specul",
+          "context": " multiple elements at once, reduced instruction count by imposing minimum pressure on the processor\u2019s decode and execution unit, and conditional branch elimination by relieving the processor from bad speculation and mispredicting branches. Hence, there exist parallel execution opportunities to utilize SIMD for improving query performance in spatial databases, which is the focus of this paper. This"
+        }
+      ]
+    },
+    {
+      "title": "Optimal design of frame structures with mixed categorical and continuous design variables using the Gumbel-Softmax method",
+      "authors": [
+        "Mehran Ebrahimi",
+        "Hyunmin Cheong",
+        "Pradeep Kumar Jayaraman",
+        "Farhad Javid"
+      ],
+      "summary": "In optimizing real-world structures, due to fabrication or budgetary restraints, the design variables may be restricted to a set of standard engineering choices. Such variables, commonly called categorical variables, are discrete and unordered in essence, precluding the utilization of gradient-based optimizers for the problems containing them. In this paper, incorporating the Gumbel-Softmax (GSM) method, we propose a new gradient-based optimizer for handling such variables in the optimal design of large-scale frame structures. The GSM method provides a means to draw differentiable samples from categorical distributions, thereby enabling sensitivity analysis for the variables generated from such distributions. The sensitivity information can greatly reduce the computational cost of traversing high-dimensional and discrete design spaces in comparison to employing gradient-free optimization methods. In addition, since the developed optimizer is gradient-based, it can naturally handle the simultaneous optimization of categorical and continuous design variables. Through three numerical case studies, different aspects of the proposed optimizer are studied and its advantages over population-based optimizers, specifically a genetic algorithm, are demonstrated.",
+      "pdf_url": "https://arxiv.org/pdf/2501.00258v1",
+      "arxiv_id": "2501.00258v1",
+      "published": "2024-12-31 03:59:24+00:00",
+      "techniques": [
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "osed constraints are satisfied. Accordingly, the topology of the structure does not change throughout the optimization routine. Denoting x := [x1 , \u00b7 \u00b7 \u00b7 , xnx ]T and c := [c1 , \u00b7 \u00b7 \u00b7 , cnc ]T as the vectors of continuous and categorical design variables, respectively, the optimization problem mathematically reads  min J (u(x, c), x, c)  (1)  x,c  subject to K(x, c) u(x, c) = f (x, c), g (u(x, c),"
+        },
+        {
+          "technique": "tiling",
+          "keyword": "tile",
+          "context": "can be taken as design variables. However, this becomes troublesome when categorical variables have multiple attributes influencing the optimization progress in a conflicting manner, such as for a cantilever beam under gravity where its cross-sectional area and its second moment of area can affect the beam\u2019s deflection in opposing ways. Furthermore, relaxing the discrete variables to continuous on"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": " design variables (1085 continuous and 4 categorical variables), with a population size of 10 times the number of design variables, 10890 FE solves are needed per iteration. Even if the FE routine is parallelized with GA, with the computational resource used for the experiment (16 threads), the number of FE solves required for every optimization iteration per CPU core would be 10890/16 \u2248 680. For "
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": " number of choices available for the categorical variable ci . Therefore, without loss of generality, we assume the existing choices for each ci , i = 1, \u00b7 \u00b7 \u00b7 , nc , are indexed as {1, \u00b7 \u00b7 \u00b7 , Ni }. Depending on the problem at hand and the capabilities of the FE solver, J and g can be linear or nonlinear functions of their arguments. Other than continuity and (at least first order) differentiabil"
+        }
+      ]
+    },
+    {
+      "title": "Two-Scale Optimization of Graded Lattice Structures respecting Buckling on Micro- and Macroscale",
+      "authors": [
+        "Daniel H\u00fcbner",
+        "Fabian Wein",
+        "Michael Stingl"
+      ],
+      "summary": "Interest in components with detailed structures increased with the progress in advanced manufacturing techniques in recent years. Parts with graded lattice elements can provide interesting mechanical, thermal, and acoustic properties compared to parts where only coarse features are included. One of these improvements is better global buckling resistance of the component. However, thin features are prone to local buckling. Normally, analyses with high computational effort are conducted on high-resolution finite element meshes to optimize parts with good global and local stability. Until recently, works focused only on either global or local buckling behavior. We use two-scale optimization based on asymptotic homogenization of elastic properties and local buckling behavior to reduce the effort of full-scale analyses. For this, we present an approach for concurrent local and global buckling optimization of parameterized graded lattice structures. It is based on a worst-case model for the homogenized buckling load factor, which acts as a safeguard against pure local buckling. Cross-modes residing on both scales are not detected. We support our theory with numerical examples and validations on dehomogenized designs, which show the capabilities of our method, and discuss the advantages and limitations of the worst-case model.",
+      "pdf_url": "https://arxiv.org/pdf/2303.08710v1",
+      "arxiv_id": "2303.08710v1",
+      "published": "2023-03-15 15:44:31+00:00",
+      "techniques": [
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "solve the linear elasticity state equation for displacements of a structure under a given load. Then, an eigenvalue problem is solved, where the eigenvalues correspond to bifurcation points, and eigenvectors are interpreted as buckling modes of deflection. Throughout this article, we apply Voigt notation for tensors and assume plane stress conditions. Let us considerSa body \u2126 \u2282 R2 and its disM cre"
+        },
+        {
+          "technique": "coalescing",
+          "keyword": "coalesce",
+          "context": " We can clearly see that the symmetry of the unit lattice cell is reflected in the load factors. The shape of the uniaxial loading case matches very well with results by Bluhm et al. (2020). Next, we coalesce all data in a worst-case model. Having evaluated homogenized load factors for different cell repetitions \u03ba \u2208 N and all stresses on the unit stress sphere \u03c3\u0304 \u2208 S 2 , i.e., for all stress types"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": ")> (Fig. 1). This design is known in literature to provide good macroscopic buckling strength (Clausen et al. 2016). To get a periodic unit cell, we take two of these triangles, which together form a parallelogram, including its shorter diagonal (see Fig. 1). We parameterize the unit cell by one parameter \u03c1, which describes the relative volume or one minus porosity, respectively. With this paramet"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": " (3)  Nip X  ce,k E(\u03c1e )Be,k ue (\u03c1),  (6)  k=1 > ce,k Be,k E(\u03c1e )Be,k  (2)  e=1 k=1  V  with assembly operator denoted by and number of integration points Nip . E(\u03c1e ) is the elasticity tensor, which depends on the pseudo-density in element e. Be,k is the strain-displacement matrix of element e evaluated in the k-th integration  and k e (7) B\u0303e,i,k = \u2202N \u2202xi (x ) is the derivative of the matrix of "
+        }
+      ]
+    },
+    {
+      "title": "Instructional Level Parallelism",
+      "authors": [
+        "Taposh Dutta-Roy"
+      ],
+      "summary": "This paper is a review of the developments in Instruction level parallelism. It takes into account all the changes made in speeding up the execution. The various drawbacks and dependencies due to pipelining are discussed and various solutions to overcome them are also incorporated. It goes ahead in the last section to explain where is the new research leading us.",
+      "pdf_url": "https://arxiv.org/pdf/1909.06559v1",
+      "arxiv_id": "1909.06559v1",
+      "published": "2019-09-14 08:36:32+00:00",
+      "techniques": [
+        {
+          "technique": "software pipelining",
+          "keyword": "pipeline",
+          "context": "ons can be processed in one clock cycle and the updates that are valid is to be done in the last stage [1]. Determining how one instruction depends on the instructions can be made to flow through the pipeline like a serial program any updates that are needed to another is critical not only to the scheduling process but also to determine how much parallelism exits in a program and how that parallel"
+        },
+        {
+          "technique": "modulo scheduling",
+          "keyword": "modulo",
+          "context": "ctions in one cycle. The 2-way set associative instruction cache was composed of four small independent arrays that allowed four interleaving instructions to be fetched and placed in them computed by modulo 4. To avoid branching delays, four instructions are scanned ahead of time using the branch scanning logic so that the branch target can be fetched and outcome predicted. Branch prediction mecha"
+        },
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": " is a dynamic super-scalar microprocessor implementing 64-bit Mips 4 instruction set architecture. It has one cluster bus connecting as many as 4 chips. The R10000 implements register mapping and non-blocking caches, which complement each other to overlap cache refill operations. Thus, if an instruction misses in the cache it must wait for its operand to be refilled, but other instructions can con"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "ECE 585/SID: 999-28-7104/Taposh Dutta Roy  1  Instructional Level Parallelism Taposh Dutta Roy, Student Member, IEEE  Abstract\u2014This paper is a review of the developments in Instruction level parallelism. It takes into account all the changes made in speeding up the "
+        },
+        {
+          "technique": "ILP",
+          "keyword": "ilp",
+          "context": "s with the scheduling the instructions such that there are no hazards. It is important to note that when a programmer writes a program, he assumes serial execution of the instruction. The role of the ILP processor is to take a serial program (i.e. a specification of operations to execute)remove much of the non-essential sequential execution in this specification so that the program can be processe"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": " Member, IEEE  Abstract\u2014This paper is a review of the developments in Instruction level parallelism. It takes into account all the changes made in speeding up the execution. The various drawbacks and dependencies due to pipelining are discussed and various solutions to overcome them are also incorporated. It goes ahead in the last section to explain where is the new research leading us. Index Term"
+        },
+        {
+          "technique": "latency hiding",
+          "keyword": "latency",
+          "context": "ributions to high performance instruction processing [3]. This machine had four floating point registers and no cache. It took 12 cycles to service a load operation from memory. To tolerate this long latency, the load operation had to be overlapped with other instructions. With small number of available registers this meant possible overlap with other instructions that wrote into the same register"
+        },
+        {
+          "technique": "double buffering",
+          "keyword": "buffer",
+          "context": "ld occur. A. Implementing Precise Interrupts in CDC [4] Describes schemes to implement precise interrupts, one of these schemes were used in the CDC Cyber 180. The three methods are (1) Presence of a buffer in addition to the main register file, where in the buffer contains old values of registers and hence called \u201cHistory Buffer\u201d, while the main register file is updated out of the program order. "
+        },
+        {
+          "technique": "speculative",
+          "keyword": "specul",
+          "context": "uter (EPIC) architecture [2]. From what is made public to date it appears to be a wide instruction set architecture, with three instructions per 128-bit instruction parcel. It supports predicated and speculative execution. More over it can be seen that emphasis is made on employing dynamic scheduling technique in addition to the static scheduling. IV.  INSTRUCTION PROCESSING  In a single threaded "
+        }
+      ]
+    },
+    {
+      "title": "Scheduling Jobs with Work-Inefficient Parallel Solutions",
+      "authors": [
+        "William Kuszmaul",
+        "Alek Westover"
+      ],
+      "summary": "This paper introduces the \\emph{serial-parallel decision problem}. Consider an online scheduler that receives a series of tasks, where each task has both a parallel and a serial implementation. The parallel implementation has the advantage that it can make progress concurrently on multiple processors, but the disadvantage that it is (potentially) work-inefficient. As tasks arrive, the scheduler must decide for each task which implementation to use.\n  We begin by studying \\emph{total awake time}. We give a simple \\emph{decide-on-arrival} scheduler that achieves a competitive ratio of $3$ for total awake time -- this scheduler makes serial/parallel decisions immediately when jobs arrive. Our second result is an \\emph{parallel-work-oblivious} scheduler that achieves a competitive ratio of $6$ for total awake time -- this scheduler makes all of its decisions based only on the size of each serial job and without needing to know anything about the parallel implementations. Finally, we prove a lower bound showing that, if a scheduler wishes to achieve a competitive ratio of $O(1)$, it can have at most one of the two aforementioned properties (decide-on-arrival or parallel-work-oblivious). We also prove lower bounds of the form $1 + \u03a9(1)$ on the optimal competitive ratio for any scheduler.\n  Next, we turn our attention to optimizing \\emph{mean response time}. Here, we show that it is possible to achieve an $O(1)$ competitive ratio with $O(1)$ speed augmentation. This is the most technically involved of our results. We also prove that, in this setting, it is not possible for a parallel-work-oblivious scheduler to do well.\n  In addition to these results, we present tight bounds on the optimal competitive ratio if we allow for arrival dependencies between tasks (e.g., tasks are components of a single parallel program), and we give an in-depth discussion of the remaining open questions.",
+      "pdf_url": "https://arxiv.org/pdf/2405.11986v1",
+      "arxiv_id": "2405.11986v1",
+      "published": "2024-05-20 12:36:20+00:00",
+      "techniques": [
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "arXiv:2405.11986v1 [cs.DS] 20 May 2024  Scheduling Jobs with Work-Ine\ufb00icient Parallel Solutions William Kuszmaul\u2217  Alek Westover  Harvard University Cambridge, MA, USA william.kuszmaul@gmail.com  Massachusetts Institute of Technology Cambridge, MA, USA alekw@mit.edu  ABSTRACT "
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": " in this setting, it is not possible for a parallel-work-oblivious scheduler to do well. In addition to these results, we present tight bounds on the optimal competitive ratio if we allow for arrival dependencies between tasks (e.g., tasks are components of a single parallel program), and we give an in-depth discussion of the remaining open questions.  There are many tasks \ud835\udf0f for which the best par"
+        }
+      ]
+    },
+    {
+      "title": "Computational Register Analysis and Synthesis",
+      "authors": [
+        "Shlomo Engelson Argamon"
+      ],
+      "summary": "The study of register in computational language research has historically been divided into register analysis, seeking to determine the registerial character of a text or corpus, and register synthesis, seeking to generate a text in a desired register. This article surveys the different approaches to these disparate tasks. Register synthesis has tended to use more theoretically articulated notions of register and genre than analysis work, which often seeks to categorize on the basis of intuitive and somewhat incoherent notions of prelabeled 'text types'. I argue that an integration of computational register analysis and synthesis will benefit register studies as a whole, by enabling a new large-scale research program in register studies. It will enable comprehensive global mapping of functional language varieties in multiple languages, including the relationships between them. Furthermore, computational methods together with high coverage systematically collected and analyzed data will thus enable rigorous empirical validation and refinement of different theories of register, which will have also implications for our understanding of linguistic variation in general.",
+      "pdf_url": "https://arxiv.org/pdf/1901.02543v1",
+      "arxiv_id": "1901.02543v1",
+      "published": "2019-01-08 22:35:03+00:00",
+      "techniques": [
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "sed on extracting and validating what the primary such dimensions are and correlating them with existing register and genre categories. The main idea is, viewing texts as points in a high-dimensional vector space (whose axes are linguistic variables), to use statistical techniques such as principal components analysis (PCA) (Jolliffe 2011) to determine the main directions of stylistic variation in"
+        },
+        {
+          "technique": "coalescing",
+          "keyword": "coalesce",
+          "context": "on analysis of register characteristics, Teich and Fankhauser (2009) consider the question of how clusters of linguistic characteristics emerge in new registers as multidisciplinary scientific fields coalesce. To do this, they analyze texts from the DaSciTex corpus which comprises journal articles from nine scientific fields, including interdisciplinary (\u2018mixed\u2019) fields. They are: A computer scien"
+        },
+        {
+          "technique": "fusion",
+          "keyword": "fuse",
+          "context": " which show how often documents in one category were classified as each of the others, enables measuring the linguistic similarity of different document categories \u2013 categories that are more often confused with each other are more similar. Results here showed that the language of the mixed disciplines are each most similar to their respective pure disciplines (B1 and C1, B2 and C2, etc.), and some"
+        },
+        {
+          "technique": "interchange",
+          "keyword": "interchange",
+          "context": "t a group of texts sharing some more-or-less identifiable set linguistic characteristics, without any clear theoretical motivation. Indeed, in much of this literature, the term \u201cregister\u201d can be used interchangeably with \u201cgenre\u201d or \u201ctext type\u201d, and little attention is given to the structure of register or its categories. For the most part, this sort of informal approach is taken when studies contr"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "of a few hundred words, including pronouns, prepositions, auxiliary and modal verbs, conjunctions, and determiners. Numbers and interjections are usually included as well since they are essentially independent of topic, though they are not, strictly speaking, function words. Another approach is to directly estimate relative frequencies of different syntactic constructions; this has been made possi"
+        }
+      ]
+    },
+    {
+      "title": "Roman Observations Time Allocation Committee: Final Report and Recommendations",
+      "authors": [
+        "Roman Observations Time Allocation Committee",
+        "Core Community Survey Definition Committees"
+      ],
+      "summary": "The Nancy Grace Roman Space Telescope is poised to revolutionize our scientific understanding of exoplanets, dark matter, dark energy, and general astrophysics, including through an innovative community approach to defining and executing sky surveys. The Roman Observations Time Allocation Committee (ROTAC) was convened to recommend time allocations for the three Core Community Surveys (CCS) using the Wide Field Instrument (WFI): the High Latitude Wide Area Survey, the High Latitude Time Domain Survey, and the Galactic Bulge Time Domain Survey, as well as balance the time allocation for the General Astrophysics Surveys. Each CCS had a corresponding Definition Committee that collected community input and designed proposals for a nominal (in-guide) survey, as well as underguide and overguide options with smaller and larger time allocations, respectively. These options explored different ways of fulfilling the mission science requirements while maximizing general astrophysics science goals enabled by the surveys. In this report, the ROTAC lays out its recommendations for the three CCS observing designs and the WFI time allotment for CCS (74.5%) and the General Astrophysics Surveys (25.5%).",
+      "pdf_url": "https://arxiv.org/pdf/2505.10574v2",
+      "arxiv_id": "2505.10574v2",
+      "published": "2025-05-13 20:40:37+00:00",
+      "techniques": [
+        {
+          "technique": "software pipelining",
+          "keyword": "pipeline",
+          "context": "e cosmology objectives are agnostic to the precise timing of the deep field observations (although it is important to get to >2x medium tier depth in these fields as early as possible to test out the pipeline and identify anything that might need to be adjusted; and we restrict the observations to be >75\u00b0 from the Sun, with a preference for farther). However, the timing of the deep field observati"
+        },
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": " are harder, but not too close to the edge of the season.8 8  i.e., if 70 days out of 72 days of a season are allocated to GBTDS, the best possible allocation of the interruption would be as a single block of 2 days time somewhere in the first half of March, or the last week of September to first week of October.  34  \f\u2022 Low-cadence seasons: Observations of the survey fields over the four remainin"
+        },
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "., 2020). Extinctions were computed from the reddening map using an RV = 2.5 (O\u2019Donnell, 1994) extinction law in the optical, but with its power law infrared component modified to match the reddening vector found by Surot et al. (2020). We find that after adding the missing contribution of brown dwarfs to the event rate, the \u201cHuston2024\u201d model predicts microlensing event rates that are roughly a f"
+        },
+        {
+          "technique": "scatter",
+          "keyword": "scatter",
+          "context": "lts into alignment with the measurements. Each red point represents a 0.2 \u00d7 0.2 deg2 tile on the event rate map, whereas the OGLE IV data points are the average over a 1.4 deg2 field. The majority of scatter in the model points is due to variable extinction.  49  \fTable 10: Power law slopes describing how cadence and exposure time changes adjust the yield  Planet mass M\u2295 0.1 1  Bound planets \u03b1cad "
+        },
+        {
+          "technique": "coalescing",
+          "keyword": "coalesce",
+          "context": "er sub-populations (t \u2248 1\u2013 4 Gyr) at different metallicities (Dalessandro et al., 2022; Crociati et al., 2023); evidence indicates that they might be the remnants of more massive stellar systems that coalesced and contributed to the formation of 30  \fFigure 12: Left: Simulated grism spectra of stars, at R\u223c 500, across across a wide range of effective temperatures. The wavelength region shown is mo"
+        },
+        {
+          "technique": "tiling",
+          "keyword": "tile",
+          "context": "ons. The scripts used to generate the coverage maps and tilings in this section can be found at https://github.com/hirata10/RomanHLWASTools/tree/v0.1.  5.1  Tiling  In the imaging filters, the sky is tiled in two passes, with 3 dither positions (after each observation, the field of view is moved \u201cup\u201d (WFI +Y direction, see Fig. 7) by \u2248 1/3 of a field, and dithered diagonally to move the chip gaps)"
+        },
+        {
+          "technique": "fusion",
+          "keyword": "fuse",
+          "context": "gth studies of these objects across a wide range of the electromagnetic spectrum. WP13 \u2013 Faint cataclysmic variables in the Galactic bulge: The GBTDS could constrain the properties of the Galactic Diffuse X-ray Emission (GDXE); in particular to determine if there is a truly diffuse component, or if it can all be resolved into discrete sources, i.e. CVs. The GBTDS will enable the observations of CV"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "rations. Where necessary individual authors were contacted to provide additional information. At this stage, the committee\u2019s efforts were split into four different sub-groups, each of which worked in parallel but reported progress to the entire committee at biweekly Zoom meetings. The four subgroups were: \u2022 Imaging Implementation: Responsible for defining the detailed survey strategy (filters used"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "-domain surveys, but all of the programs obtain data early on in the mission. This timeline will be updated to include observations with the Coronagraph Instrument and Calibrations, and it will shift depending on the actual start date of survey operations (a late 2026 launch was assumed here). The brief periods when resource demand exceeds availability (>1.0) are largely artifacts here and will be"
+        },
+        {
+          "technique": "speculative",
+          "keyword": "specul",
+          "context": " the magnitude of \u03b1exp is less than the magnitude of \u03b1cad , the opposite of the FFP simulations, where for more massive planets \u2265 10M\u2295 , the magnitude of the slopes are essentially equal. We will not speculate on the cause of this here. The result is that for the lowest mass bound planets, faster cadence could be more valuable than increased exposure time, but we note that faster cadence still com"
+        }
+      ]
+    },
+    {
+      "title": "Efficient global register allocation",
+      "authors": [
+        "Ian Rogers"
+      ],
+      "summary": "In a compiler, an essential component is the register allocator. Two main algorithms have dominated implementations, graph coloring and linear scan, differing in how live values are modeled. Graph coloring uses an edge in an `interference graph' to show that two values cannot reside in the same register. Linear scan numbers all values, creates intervals between definition and uses, and then intervals that do not overlap may be allocated to the same register. For both algorithms the liveness models are computed at considerable runtime and memory cost. Furthermore, these algorithms do little to improve code quality, where the target architecture and register coalescing are important concerns.\n  We describe a new register allocation algorithm with lightweight implementation characteristics. The algorithm introduces a `future-active' set for values that will reside in a register later in the allocation. Registers are allocated and freed in the manner of linear scan, although other ordering heuristics could improve code quality or lower runtime cost. An advantageous property of the approach is an ability to make these trade-offs. A key result is the `future-active' set can remove any liveness model for over 90% of instructions and 80% of methods. The major contribution is the allocation algorithm that, for example, solves an inability of the similarly motivated Treescan register allocator to look ahead of the instruction being allocated - allowing an unconstrained allocation order, and an ability to better handle fixed registers and loop carried values. The approach also is not reliant on properties of SSA form, similar to the original linear scan work. An analysis is presented in a production compiler for Java code compiled through SSA form to Android dex files.",
+      "pdf_url": "https://arxiv.org/pdf/2011.05608v1",
+      "arxiv_id": "2011.05608v1",
+      "published": "2020-11-11 07:46:33+00:00",
+      "techniques": [
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": "va program is held in memory for optimization. The Java bytecode, or dex instructions, are parsed into a controlflow graph (CFG) and SSA form using an approach similar to [20] where predecessor basic blocks are always processed first, to allow \u03a6 instructions to be inserted at merges. Loop back-edges and exception catch blocks are handled pessimistically, with \u03a6 instructions introduced for all valu"
+        },
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "ause frequent stack overflow errors  While some of these challenges are relatively unique to dex files, there are similarities with constraints that exist in more general instruction sets such as for vector register files, spilling-to and filling-from the stack and two-address encoding.  2.2  The compiler  The compiler consists of front ends, middle end optimizations over the intermediate represen"
+        },
+        {
+          "technique": "gather",
+          "keyword": "gather",
+          "context": "as > 1 successor and the target basic block > 1 predecessor. Catch blocks generally have the first condition as there is exceptional and regular control-flow. Catch blocks have a first instruction to gather the thrown exception known as \u2018GetException\u2019 in the IR. Following critical edge splitting many of these blocks containing the \u2018GetException\u2019 instruction exist, and a \u03a6 instruction in what was t"
+        },
+        {
+          "technique": "coalescing",
+          "keyword": "coalesce",
+          "context": "d in [6]. Ahead of register allocation, the CFG has critical edges split and parallel copy blocks inserted in predecessor blocks. The parallel copy moves are named \u03a6-moves within the compiler and are coalesced during register allocation. A different copy operation is a \u2018swap-move\u2019, which is introduced to add a temporary name to solve the \u2018swap problem\u2019, critical edge splitting solving the \u2018lost co"
+        },
+        {
+          "technique": "tiling",
+          "keyword": "tile",
+          "context": " that unfortunately lowered code quality. Fig. 1 shows a repeat of Poletto and Sarkar\u2019s analysis but for LLVM [22] compiling itself at compilation level \u2018-O2\u2019. The box plots show the minimum, 1 percentile, median, 99 percentile and maximum compile time percentage of each phase compiling a file from LLVM, where the register allocator is LLVM\u2019s greedy allocator [26]. Unlike Poletto and Sarkar\u2019s earl"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "approach, that avoids computing a fixed point, for strict SSA programs with a loop-nesting forest in two passes is presented in [6]. Ahead of register allocation, the CFG has critical edges split and parallel copy blocks inserted in predecessor blocks. The parallel copy moves are named \u03a6-moves within the compiler and are coalesced during register allocation. A different copy operation is a \u2018swap-m"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "14]. They consist of a 1-byte opcode and then multiple bytes encoding registers used and defined, constants, branch offsets and symbol table indices. Registers are encoded into either 4, 8 or 16 bits depending on the instruction. A consequence of the register encoding is that all instructions can access the low 0 through 15 registers, a subset the higher 16 through 255 registers and an even smalle"
+        }
+      ]
+    },
+    {
+      "title": "New congruences for 4,6-regular partitions modulo primes",
+      "authors": [
+        "Qi-Yang Zheng"
+      ],
+      "summary": "The main result of the paper is the existence of an infinitely many families of Ramanujan-type congruences for $b_4(n)$ and $b_6(n)$ modulo primes $m \\geq 2$ and $m \\geq 5$, respectively. We provide new examples of congruences for $b_4(n)$ and $b_6(n)$. Moreover, we find two infinite explicit infinite families of congruences for $b_4(n)$ modulo $3$.",
+      "pdf_url": "https://arxiv.org/pdf/2308.04752v3",
+      "arxiv_id": "2308.04752v3",
+      "published": "2023-08-09 07:45:37+00:00",
+      "techniques": [
+        {
+          "technique": "modulo scheduling",
+          "keyword": "modulo",
+          "context": "NEW CONGRUENCES FOR 4,6-REGULAR PARTITIONS MODULO PRIMES  arXiv:2308.04752v3 [math.NT] 22 Sep 2023  QI-YANG ZHENG Abstract. The main result of the paper is the existence of an infinitely many families of Ramanujan-type congruences for b4 (n) a"
+        },
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "th recalling that Dedekind\u2019s eta function is defined by \u03b7(z) = q  1 24  \u221e Y  (1 \u2212 q n ),  n=1  where q = e2\u03c0iz . If m is a prime, we denote by Mk (\u03930 (N), \u03c7)m (respectively, Sk (\u03930 (N), \u03c7)m ) the Fm -vector space obtained by reducing the q-expansions of modular forms (resp. cusp forms) in Mk (\u03930 (N), \u03c7) (resp. Sk (\u03930 (N), \u03c7)) with integer coefficients modulo m. At times, for convenience, we will u"
+        }
+      ]
+    },
+    {
+      "title": "Quantum Annealing Implementation of Job-Shop Scheduling",
+      "authors": [
+        "Davide Venturelli",
+        "Dominic J. J. Marchand",
+        "Galo Rojo"
+      ],
+      "summary": "A quantum annealing solver for the renowned job-shop scheduling problem (JSP) is presented in detail. After formulating the problem as a time-indexed quadratic unconstrained binary optimization problem, several pre-processing and graph embedding strategies are employed to compile optimally parametrized families of the JSP for scheduling instances of up to six jobs and six machines on the D-Wave Systems Vesuvius processor. Problem simplifications and partitioning algorithms, including variable pruning and running strategies that consider tailored binary searches, are discussed and the results from the processor are compared against state-of-the-art global-optimum solvers.",
+      "pdf_url": "https://arxiv.org/pdf/1506.08479v2",
+      "arxiv_id": "1506.08479v2",
+      "published": "2015-06-29 00:27:32+00:00",
+      "techniques": [
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": "rt on the compilation attempts using the algorithm in [27]. Results are presented for the D-Wave chip installed at NASA Ames at the time of this study, for a larger chip with the same size of Chimera block and connectivity pattern (like the latest chip currently being manufactured by D-Wave Systems), and for a speculative yet-larger chip where the Chimera block is twice as large. We deem a JSP ins"
+        },
+        {
+          "technique": "scatter",
+          "keyword": "scatter",
+          "context": "le (green: 3 x 3, purple: 4 x 4, yellow: 5 x 5, blue: 6 x 6; darker colors represent ensembles with Pp = [1, 1] as opposed to lighter colors which indicate Pp = [0, 2]). Distributions on the right of scatter plots represent Gaussian fits of the histogram of the optimal JF for each ensemble. Runtime results are averaged over an ungauged run and 4 additional runs with random gauges [28].  Once the t"
+        },
+        {
+          "technique": "tiling",
+          "keyword": "tile",
+          "context": "peration randomly. For each set of parameters, we can compute solutions with a classical exhaustive solver in order to identify the median of the distribution hT i(N, Pp , \u03b8) as well as the other quantiles. These could also be inferred from previously solved instances with the proposed annealing solver. The resulting information can be used to guide the binary search required to solve the optimiza"
+        },
+        {
+          "technique": "fusion",
+          "keyword": "fuse",
+          "context": "erlying Ising model, this is achieved by introducing a large ferromagnetic (negative) coupling  JF between two spins. The embedding process modifies the QUBO problem accordingly and one should not confuse the logical QUBO problem value, which depends on the QUBO problem and the state considered, with the Ising problem energy seen by the optimizer (which additionally depends on the extra constraint"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "oning algorithms, including variable pruning, are discussed and the results from the processor are compared against classical global-optimum solvers.  I.  I. INTRODUCTION  The commercialization and independent benchmarking [1\u20134] of quantum annealers based on superconducting qubits has sparked a surge of interest for near-term practical applications of quantum analog computation in the optimization"
+        },
+        {
+          "technique": "latency hiding",
+          "keyword": "latency",
+          "context": "formulation will require the independent solution of several embedded instances {HT }, each corresponding to a different timespan T . Assuming that the embedding time, the machine setup time, and the latency between subsequent operations can all be neglected, due to their being non-fundamental, the running time T of the approach for a specific JSP instance reduces to the expected total annealing t"
+        },
+        {
+          "technique": "speculative",
+          "keyword": "specul",
+          "context": "mall-scale testing on the D-Wave Two processor [6]. The best procedure for comparison of quantum analog performance with traditional digital methods is still under debate [3, 7, 8] and remains mostly speculative due to the limited number of qubits on the currently available hardware. While waiting for the technology to scale up to more significant sizes, there is an increasing interest in the iden"
+        }
+      ]
+    },
+    {
+      "title": "Using Deep Neural Networks for Estimating Loop Unrolling Factor",
+      "authors": [
+        "Asma Balamane",
+        "Zina Taklit"
+      ],
+      "summary": "Optimizing programs requires deep expertise. On one hand, it is a tedious task, because it requires a lot of tests to find out the best combination of optimizations to apply with their best factors. On the other hand, this task is critical, because it may degrade the performance of programs instead of improving it. The automatization of this task can deal with this problem and permit to obtain good results. Optimizing loops that take the most significant part of the program execution time plays a crucial role to achieve best performance. In this paper, we address Loop unrolling optimization, by proposing a deep Neural Network model to predict the optimal unrolling factor for programs written for TIRAMISU. TIRAMISU is a polyhedral framework designed to generate high performance code for multiple platforms including multicores, GPUs, and distributed machines. TIRAMISU introduces a scheduling language with novel commands to explicitly manage the complexities that arise when targeting these systems.",
+      "pdf_url": "https://arxiv.org/pdf/1911.03991v1",
+      "arxiv_id": "1911.03991v1",
+      "published": "2019-11-10 20:19:33+00:00",
+      "techniques": [
+        {
+          "technique": "loop unrolling",
+          "keyword": "unroll",
+          "context": "Using Deep Neural Networks for Estimating Loop Unrolling Factor  arXiv:1911.03991v1 [cs.DC] 10 Nov 2019  Asma Balamane LMCS (ESI) Algiers, Algeria ea balamane@esi.dz  Zina Taklit LMCS (ESI) Algiers, Algeria ez taklit@esi.dz  Riyadh Baghdadi CSAIL "
+        },
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "tialisation algorithm  Random uniform  Number of iterations  Early stopping technique  Factors used for each applied optimization List of dependent loop nest (global optimizations case)  The features vector contains the most important nest loop characteristics such as the number of loop nest levels, dependencies between loop nest levels and the loop operations characteristic, etc.. In the other ha"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "he number of branch operations. Loop unrolling enables other optimizations, many of which target the memory system. The main important advantage of loop unrolling is that it exposes instruction level parallelism (ILP) to the compiler [3]. Unrolling improves performance almost in all cases where it is applied in a significant way [4]. However, if the loop unrolling is not carefully applied, it may "
+        },
+        {
+          "technique": "ILP",
+          "keyword": "ilp",
+          "context": "branch operations. Loop unrolling enables other optimizations, many of which target the memory system. The main important advantage of loop unrolling is that it exposes instruction level parallelism (ILP) to the compiler [3]. Unrolling improves performance almost in all cases where it is applied in a significant way [4]. However, if the loop unrolling is not carefully applied, it may negatively af"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "r each loop nest (TIRAMISU computation). This loop nests abstraction summarizes the characteristics that influence the execution efficiency on modern processors and gives a highlevel representation independently on the execution architecture platforms.  \fTable 1.  Figure and table captions do not end with a period  Loop levels characteristics Number of the loop nest levels Number of dependencies b"
+        }
+      ]
+    },
+    {
+      "title": "Loop Unrolling in Multi-pipeline ASIP Design",
+      "authors": [
+        "Rajitha Navarathna",
+        "Swarnalatha Radhakrishnan",
+        "Roshan Ragel"
+      ],
+      "summary": "Application Specific Instruction-set Processor (ASIP) is one of the popular processor design techniques for embedded systems which allows customizability in processor design without overly hindering design flexibility. Multi-pipeline ASIPs were proposed to improve the performance of such systems by compromising between speed and processor area. One of the problems in the multi-pipeline design is the limited inherent instruction level parallelism (ILP) available in applications. The ILP of application programs can be improved via a compiler optimization technique known as loop unrolling. In this paper, we present how loop unrolling effects the performance of multi-pipeline ASIPs. The improvements in performance average around 15% for a number of benchmark applications with the maximum improvement of around 30%. In addition, we analyzed the variable of performance against loop unrolling factor, which is the amount of unrolling we perform.",
+      "pdf_url": "https://arxiv.org/pdf/1402.0671v1",
+      "arxiv_id": "1402.0671v1",
+      "published": "2014-02-04 09:36:34+00:00",
+      "techniques": [
+        {
+          "technique": "loop unrolling",
+          "keyword": "unroll",
+          "context": "Loop Unrolling in Multi-pipeline ASIP Design Rajitha Navarathna, Swarnalatha Radhakrishnan and Roshan Ragel Department of Computer Engineering, University of Peredeniya, Peradeniya 20400 Sri Lanka [rajitha"
+        },
+        {
+          "technique": "software pipelining",
+          "keyword": "pipeline",
+          "context": "Loop Unrolling in Multi-pipeline ASIP Design Rajitha Navarathna, Swarnalatha Radhakrishnan and Roshan Ragel Department of Computer Engineering, University of Peredeniya, Peradeniya 20400 Sri Lanka [rajitha, swarna, roshanr]@"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "s were proposed to improve the performance of such systems by compromising between speed and processor area. One of the problems in the multi-pipeline design is the limited inherent instruction level parallelism (ILP) available in applications. The ILP of application programs can be improved via a compiler optimization technique known as loop unrolling. In this paper, we present how loop unrolling"
+        },
+        {
+          "technique": "ILP",
+          "keyword": "ilp",
+          "context": "ed to improve the performance of such systems by compromising between speed and processor area. One of the problems in the multi-pipeline design is the limited inherent instruction level parallelism (ILP) available in applications. The ILP of application programs can be improved via a compiler optimization technique known as loop unrolling. In this paper, we present how loop unrolling effects the "
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "Sort applications have achieved better performance when we increase the number of pipelines to three. Bit count has no improvement in three pipelines compared to two pipelines ASIP due to instruction dependency. Table 2: Performance Analysis in Three-Pipeline Application  Bubble Sort  # of Clock Cycles No Loop Loop Unrolling Unrolling 8,498 6,882  Improve ment / (%) 19.02  Bit String  273,455  215"
+        }
+      ]
+    },
+    {
+      "title": "Differentiability in Unrolled Training of Neural Physics Simulators on Transient Dynamics",
+      "authors": [
+        "Bjoern List",
+        "Li-Wei Chen",
+        "Kartik Bali",
+        "Nils Thuerey"
+      ],
+      "summary": "Unrolling training trajectories over time strongly influences the inference accuracy of neural network-augmented physics simulators. We analyze this in three variants of training neural time-steppers. In addition to one-step setups and fully differentiable unrolling, we include a third, less widely used variant: unrolling without temporal gradients. Comparing networks trained with these three modalities disentangles the two dominant effects of unrolling, training distribution shift and long-term gradients. We present detailed study across physical systems, network sizes and architectures, training setups, and test scenarios. It also encompasses two simulation modes: In prediction setups, we rely solely on neural networks to compute a trajectory. In contrast, correction setups include a numerical solver that is supported by a neural network. Spanning these variations, our study provides the empirical basis for our main findings: Non-differentiable but unrolled training with a numerical solver in a correction setup can yield substantial improvements over a fully differentiable prediction setup not utilizing this solver. The accuracy of models trained in a fully differentiable setup differs compared to their non-differentiable counterparts. Differentiable ones perform best in a comparison among correction networks as well as among prediction setups. For both, the accuracy of non-differentiable unrolling comes close. Furthermore, we show that these behaviors are invariant to the physical system, the network architecture and size, and the numerical scheme. These results motivate integrating non-differentiable numerical simulators into training setups even if full differentiability is unavailable. We show the convergence rate of common architectures to be low compared to numerical algorithms. This motivates correction setups combining neural and numerical parts which utilize benefits of both.",
+      "pdf_url": "https://arxiv.org/pdf/2402.12971v2",
+      "arxiv_id": "2402.12971v2",
+      "published": "2024-02-20 12:40:31+00:00",
+      "techniques": [
+        {
+          "technique": "loop unrolling",
+          "keyword": "unroll",
+          "context": "arXiv:2402.12971v2 [physics.comp-ph] 10 Oct 2024  Differentiability in Unrolled Training of Neural Physics Simulators on Transient Dynamics Bjoern List, Li-Wei Chen, Kartik Bali, Nils Thuerey School of Computation, Information and Technology Technical University Munich B"
+        },
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": " a normalized domain size X and u, and produce a single channel, the updated u, as output. The GCN follows the hierarchical structure of directional Edge-Conv graph nets [101, 41] where each EdgeConv block is comprised of two message-passing layers with an additive skip connection. The message-passing concatenates node, edge, and direction features, which are fed to an MLP that returns output node"
+        },
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "e training with respect to the solution state u is frequently called a-posteriori training [80]. For the prediction and correction setups from equation (6) and (4), respectively, the input and output vectors of the networks share the same solution space. While the learned mapping differs in prediction and correction cases, one does not necessarily need different architectures to train one or the o"
+        },
+        {
+          "technique": "gather",
+          "keyword": "gather",
+          "context": "least 5 frames in the trajectory exceed this threshold, such that the decorrelation time becomes T X \b Tdecorr = min T : 1(C t < 0.8) \u2265 5 . (30) T  t=0  The statistics of the reached step-counts were gathered over all test cases, as for the L2 errors. Figure 8 depicts the time until de-correlation between inference runs and the ground truth for the KS system. For all model sizes and both network a"
+        },
+        {
+          "technique": "scatter",
+          "keyword": "scatter",
+          "context": "vsky and Antonio Politi. Lyapunov Exponents: A Tool to Explore Complex Dynamics. Cambridge University Press, 2016. [68] Ugo Piomelli, William H. Cabot, Parviz Moin, and Sangsan Lee. Subgrid-scale backscatter in turbulent and transitional flows. Physics of Fluids A: Fluid Dynamics, 3(7):1766\u20131771, 07 1991. ISSN 0899-8213. doi: 10.1063/1.857956. URL https://doi.org/10.1063/1.857956. [69] Jaime Pizar"
+        },
+        {
+          "technique": "coalescing",
+          "keyword": "coalesce",
+          "context": "he airfoil surfaces. When the Mach number is below M = 0.77, the unsteadiness in the flowfield is mainly caused by the high-frequency vortex shedding. At around M = 0.8, a series of compression waves coalesce to form a strong shock wave, and the flow structures are dominated by alternately moving shock waves along the upper and lower sides of the airfoil. For M > 0.88, the strong shock waves becom"
+        },
+        {
+          "technique": "tiling",
+          "keyword": "tile",
+          "context": "For the vast majority of tests, models trained with unrolling outperform 15  \f4.1  Distribution Shift and Long-term Gradients  4  RESULTS  the corresponding one-step baselines. Unrolling is also versatile concerning the type of the modeled correction, as networks were tasked to either learn truncations due to reduced convergence orders with graph networks (KS), or spatial grid coarsening errors vi"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "gation of gradients. The NOG setup does not differentiate solver operations, which makes the backpropagation pass cheaper than that of WIG. In principle, the gradient backpropagation of NOG setups is parallelizable across the unrolling horizon. While WIG requires a complete sequential backward pass through m steps, NOG calculates independent gradient contributions for each unrolled step. We report"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": " 28, 42], or lately diffusion models [47, 49, 38]. Variations of these approaches compute the evolution in an encoded latent space [104, 27, 28, 14, 107, 96]. In an effort to achieve discretization-independence of the learned simulators, neural operators have shifted the learning task towards finding a mapping between the function spaces of the numerical solutions. The architectural changes that b"
+        }
+      ]
+    },
+    {
+      "title": "Constructions and bounds for separating hash families",
+      "authors": [
+        "X. Niu",
+        "H. Cao"
+      ],
+      "summary": "In this paper, we present a new construction for strong separating hash families by using hypergraphs and obtain some optimal separating hash families.\n  We also improve some previously known bounds of separating hash families.",
+      "pdf_url": "https://arxiv.org/pdf/1611.03274v2",
+      "arxiv_id": "1611.03274v2",
+      "published": "2016-11-10 12:11:18+00:00",
+      "techniques": [
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": " the size of certain separating hash families, Australas. J. Combin. 67 (2017), 294-303. [16] H.Hanani, On quadruple systems, Canad. J. Math. 12 (1960), 12:145-157. [17] H.Hanani, Balanced incomplete block designs and related designs, Discrete Math. 11 (1975), 255-369. [18] D. R.Hughes, On t-designs and groups, Amer. J. Math. 87 (1965), 761-778. [19] P. C. Li, G. H. J. van Rees, and R. Wei, Constr"
+        }
+      ]
+    },
+    {
+      "title": "Grayscale Image Authentication using Neural Hashing",
+      "authors": [
+        "Yakup Kutlu",
+        "Apdullah Yay\u0131k"
+      ],
+      "summary": "Many different approaches for neural network based hash functions have been proposed. Statistical analysis must correlate security of them. This paper proposes novel neural hashing approach for gray scale image authentication. The suggested system is rapid, robust, useful and secure. Proposed hash function generates hash values using neural network one-way property and non-linear techniques. As a result security and performance analysis are performed and satisfying results are achieved. These features are dominant reasons for preferring against traditional ones.",
+      "pdf_url": "https://arxiv.org/pdf/1703.00726v1",
+      "arxiv_id": "1703.00726v1",
+      "published": "2017-03-02 11:26:56+00:00",
+      "techniques": [
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": "\uf02b b2 ) \uf02b b3 \uf03d f 3 ( w 3 f 2 ( w 2 f 1 ( w 1 P \uf02b b1 ) \uf02b b 2 \uf02b b 3  Here w 1 is of 8 x 512 size, f 3 are sigmoid functions.  w2  of 32 x 8 size,  b2  of 8x1 size and  b3  of 32x1 size,  f1 , f 2  and  Block Hash Neural network based hash function is depicted in Figure 2. H  r  \uf03d H  r1  \uf0c4 H  r2  \uf0c4 H  r3  .... H  i  (1)  Each dimensions are passed through the block hash and 32x512 sized is performed. "
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": " different from inputs' size it is difficult to compute target from input, while it is easy to compute input from target. Due to this property neural network can be used in hash functions Desai2013. Parallel implementation is a significant property of neural networks. Each layer is paralleled. So, they can implement certain functionality independently.  Figure 4. Binary Sensitivity.  \fNatural and "
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "neural network can be used in hash functions Desai2013. Parallel implementation is a significant property of neural networks. Each layer is paralleled. So, they can implement certain functionality independently.  Figure 4. Binary Sensitivity.  \fNatural and Engineering Sciences  28  According to this, ANN are available for data progressing Neural networks has ability to make relationship using trai"
+        }
+      ]
+    },
+    {
+      "title": "Post-quantum hash functions using $\\mathrm{SL}_n(\\mathbb{F}_p)$",
+      "authors": [
+        "Corentin Le Coz",
+        "Christopher Battarbee",
+        "Ram\u00f3n Flores",
+        "Thomas Koberda",
+        "Delaram Kahrobaei"
+      ],
+      "summary": "We define new families of Tillich-Z\u00e9mor hash functions, using higher dimensional special linear groups over finite fields as platforms. The Cayley graphs of these groups combine fast mixing properties and high girth, which together give rise to good preimage and collision resistance of the corresponding hash functions. We justify the claim that the resulting hash functions are post-quantum secure.",
+      "pdf_url": "https://arxiv.org/pdf/2207.03987v3",
+      "arxiv_id": "2207.03987v3",
+      "published": "2022-07-08 16:15:11+00:00",
+      "techniques": [
+        {
+          "technique": "modulo scheduling",
+          "keyword": "modulo",
+          "context": " summarize their results in the following theorem: Theorem 2.1 (Arzhantseva-Biswas [AB22]). Let n \u2265 2 and let p a prime. Write \u03c0p : SLn (Z) \u2192 SLn (Fp ) for the canonical projection given by reduction modulo p. There exist matrices A\u0303, B\u0303 \u2208 SLn (Z) such that: (i) There exists a prime p0 such that for all p \u2265 p0 , the matrices A\u0303p := \u03c0p (A\u0303) and B\u0303p := \u03c0p (B\u0303) generate SLn (Fp ). (ii) If hA\u0303, B\u0303i is"
+        },
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": "l platforms fits into the context of recent efforts to modernize existing hash functions, and to adapt them to the design and security of hash-based consensus mechanisms, most notably with respect to blockchains [Bor20], and especially in light of the recently proved practicality of finding collisions in the SHA-1 hashing algorithm [SBK+ 17]. The general idea behind Tillich-Ze\u0301mor hash functions i"
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": " random walks in simplicial graphs. Nevertheless, the fact that we restrict ourselves to non backtracking random walks precludes the use of multiplicativity of the hash function, and thus complicates parallel computation. We discuss these issues in Section 3.4. Structure of the paper: In Section 2 we give the relevant group theoretic background, define the hash functions, prove the expansion prope"
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "the girth of Gn,p is O(log p), we consider nontrivial solutions to preimage or collision breaking to be ones where C1 log p \u2264  m X  (ki + \u2113i ) \u2264 C2 log p,  i=1  where C1 and C2 are positive constants depending on n but not on p. Note that estimates for C1 and C2 can be produced, and that Proposition 3.1 furnishes an estimate for C1 , for instance. Sharp values for C1 and C2 are of relatively minor"
+        }
+      ]
+    },
+    {
+      "title": "Solving the Resource Constrained Project Scheduling Problem Using the Parallel Tabu Search Designed for the CUDA Platform",
+      "authors": [
+        "Libor Bukata",
+        "Premysl Sucha",
+        "Zdenek Hanzalek"
+      ],
+      "summary": "In the paper, a parallel Tabu Search algorithm for the Resource Constrained Project Scheduling Problem is proposed. To deal with this NP-hard combinatorial problem many optimizations have been performed. For example, a resource evaluation algorithm is selected by a heuristic and an effective Tabu List was designed. In addition to that, a capacity-indexed resource evaluation algorithm was proposed and the GPU (Graphics Processing Unit) version uses a homogeneous model to reduce the required communication bandwidth. According to the experiments, the GPU version outperforms the optimized parallel CPU version with respect to the computational time and the quality of solutions. In comparison with other existing heuristics, the proposed solution often gives better quality solutions.",
+      "pdf_url": "https://arxiv.org/pdf/1711.04556v1",
+      "arxiv_id": "1711.04556v1",
+      "published": "2017-11-13 12:52:49+00:00",
+      "techniques": [
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": "are required to be fully loaded to exploit the graphics card power. In our approach, the parallelization is carried out in two ways. The first one is a parallelization performed within the scope of a block, for example the parallel filter (see Section 4.4), the parallel neighborhood evaluation, and other parallel reductions. The second one is a parallelization introduced by launching many blocks o"
+        },
+        {
+          "technique": "vectorization",
+          "keyword": "vector",
+          "context": "ctivities 0 and N \u22121 such that d0 = dN \u22121 = 0. Activity 0 is a predecessor of all other activities and activity N \u2212 1 is the end activity of a project. A schedule of the RCPSP can be represented as a vector of activities\u2019 start times S = {s0 , . . . , sN \u22121 } where si \u2208 N. Alternatively, a schedule can be expressed as an order of activities W = {w0 , . . . , wN \u22121 } \u2208 W where wu is the u-th activi"
+        },
+        {
+          "technique": "interchange",
+          "keyword": "interchange",
+          "context": "quality.  CUDA toolkit (version 5.0.35) and Microsoft Visual Studio 2010. The sequential CPU version of the algorithm corresponds to one Tabu Search instance with the exception that solutions are not interchanged (|F | = 1 and B = 1). Instead of using the selection heuristic (see Section 5.4) the faster evaluation algorithm was selected dynamically by periodic measuring every 1000 iterations. The "
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "Solving the Resource Constrained Project Scheduling Problem Using the Parallel Tabu Search Designed for the CUDA Platform1 Libor Bukata\u2217, Pr\u030cemysl S\u030cu\u030acha, Zdene\u030ck Hanza\u0301lek  arXiv:1711.04556v1 [cs.DC] 13 Nov 2017  Department of Control Engineering, the Czech Technical "
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": "ch each thread initializes its own location by a short TS operator, i.e. a modified version of the Taillard\u2019s robust tabu search. Then the asynchronous parallel tabu search is started. Every thread independently reads a solution and parameters from the location, possibly makes a diversification, runs the TS operator on the solution, and writes back and sets an UPDATE flag if an improving solution "
+        },
+        {
+          "technique": "latency hiding",
+          "keyword": "latency",
+          "context": "al problems (e.g. [4, 5, 6]), since a modern June 10, 2025  \fgraphics card is usually much more powerful than a current multi-core CPU. Although the graphics cards have some restrictions (e.g. a high-latency global memory access), the new GPU architectures like Kepler and Fermi can significantly reduce these bottlenecks. As a consequence modern GPUs are applicable to the problems which were solvab"
+        },
+        {
+          "technique": "double buffering",
+          "keyword": "buffer",
+          "context": "tion index is circularly incremented. Diversification takes place if the read solution does not have the UPDATE flag set. Every best global solution is copied to half of the locations of the circular buffer to propagate elite solutions. Since the circular buffer is shared by many threads, the access has to be as short as possible and the locations have to be protected by critical sections. Relativ"
+        }
+      ]
+    },
+    {
+      "title": "Chunks and Tasks: a programming model for parallelization of dynamic algorithms",
+      "authors": [
+        "Emanuel H. Rubensson",
+        "Elias Rudberg"
+      ],
+      "summary": "We propose Chunks and Tasks, a parallel programming model built on abstractions for both data and work. The application programmer specifies how data and work can be split into smaller pieces, chunks and tasks, respectively. The Chunks and Tasks library maps the chunks and tasks to physical resources. In this way we seek to combine user friendliness with high performance. An application programmer can express a parallel algorithm using a few simple building blocks, defining data and work objects and their relationships. No explicit communication calls are needed; the distribution of both work and data is handled by the Chunks and Tasks library. This makes efficient implementation of complex applications that require dynamic distribution of work and data easier. At the same time, Chunks and Tasks imposes restrictions on data access and task dependencies that facilitates the development of high performance parallel back ends. We discuss the fundamental abstractions underlying the programming model, as well as performance and fault resilience considerations. We also present a pilot C++ library implementation for clusters of multicore machines and demonstrate its performance for sparse blocked matrix-matrix multiplication.",
+      "pdf_url": "https://arxiv.org/pdf/1210.7427v1",
+      "arxiv_id": "1210.7427v1",
+      "published": "2012-10-28 09:00:22+00:00",
+      "techniques": [
+        {
+          "technique": "loop unrolling",
+          "keyword": "unroll",
+          "context": "ility to do speculative execution of tasks. 3.2.2. Speculative task execution On each worker, several threads execute tasks. In order to have efficient task stealing between workers, we need to avoid unrolling additional branches of a task hierarchy when there is a lot of work in a branch that is already about to be unrolled. This could be achieved by only allowing one thread at a time to execute "
+        },
+        {
+          "technique": "register blocking",
+          "keyword": "block",
+          "context": " chunks and tasks to physical resources. In this way we seek to combine user friendliness with high performance. An application programmer can express a parallel algorithm using a few simple building blocks, defining data and work objects and their relationships. No explicit communication calls are needed; the distribution of both work and data is handled by the Chunks and Tasks library. This make"
+        },
+        {
+          "technique": "prefetching",
+          "keyword": "prefetch",
+          "context": "ks that returns a list of all chunk identifiers stored in that chunk. The list of child chunks can be used by a library implementation in different ways, for example to destruct chunk hierarchies, to prefetch child chunks, or to send child chunks together with a chunk. 2.2. The task abstraction Task types are derived from the Task base class. The programmer has to specify the input chunk types and"
+        },
+        {
+          "technique": "fusion",
+          "keyword": "fuse",
+          "context": "pteron 6220 processors running at 3.0 GHz, with 64 GB of memory per node. The nodes are interconnected with a 2:1 oversubscribed QDR InfiniBand fabric. Since the 16 cores on each node share 8 256-bit fused multiply-add (FMA) units, each node can at best perform 8*4 double precision multiply-add operations per cycle. Given the clock speed of 3.0 GHz, this gives a theoretical peak performance of 96 "
+        },
+        {
+          "technique": "parallelism",
+          "keyword": "parallel",
+          "context": "Chunks and Tasks: a programming model for parallelization of dynamic algorithms Emanuel H. Rubenssona , Elias Rudberga  arXiv:1210.7427v1 [cs.DC] 28 Oct 2012  a Division  of Scientific Computing, Department of Information Technology, Uppsala "
+        },
+        {
+          "technique": "dependency",
+          "keyword": "depend",
+          "context": " This makes efficient implementation of complex applications that require dynamic distribution of work and data easier. At the same time, Chunks and Tasks imposes restrictions on data access and task dependencies that facilitates the development of high performance parallel back ends. We discuss the fundamental abstractions underlying the programming model, as well as performance and fault resilie"
+        },
+        {
+          "technique": "double buffering",
+          "keyword": "buffer",
+          "context": "Fibonacci number. 2.1. The chunk abstraction To define a chunk type you need to inherit from the Chunk base class and define a few member functions. Functions to pack/unpack the chunk to/from a given buffer are mandatory. Those functions may for example be used by a Chunks and Tasks library when chunks need to be sent to other processes over a network or to write chunks to secondary storage.  4  \f"
+        },
+        {
+          "technique": "speculative",
+          "keyword": "specul",
+          "context": "ay, the task execution can be performed without interruption, even if a call to for example copyChunk would result in communication with a remote process. Other benefits include the possibility to do speculative execution of tasks. 3.2.2. Speculative task execution On each worker, several threads execute tasks. In order to have efficient task stealing between workers, we need to avoid unrolling ad"
+        }
+      ]
+    }
+  ],
+  "technique_summary": {
+    "vectorization": 16,
+    "parallelism": 17,
+    "dependency": 24,
+    "SIMD": 2,
+    "gather": 8,
+    "scatter": 4,
+    "speculative": 6,
+    "software pipelining": 6,
+    "interchange": 3,
+    "register blocking": 11,
+    "fusion": 5,
+    "loop unrolling": 5,
+    "prefetching": 2,
+    "latency hiding": 4,
+    "double buffering": 4,
+    "tiling": 5,
+    "coalescing": 5,
+    "modulo scheduling": 3,
+    "ILP": 3
+  }
+}

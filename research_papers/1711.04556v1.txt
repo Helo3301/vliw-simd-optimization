@@ -1,0 +1,2073 @@
+Solving the Resource Constrained Project Scheduling Problem Using the
+Parallel Tabu Search Designed for the CUDA Platform1
+Libor Bukata∗, Přemysl Šůcha, Zdeněk Hanzálek
+
+arXiv:1711.04556v1 [cs.DC] 13 Nov 2017
+
+Department of Control Engineering, the Czech Technical University in Prague,
+Karlovo náměstı́ 13, 121 35 Prague 2, the Czech Republic
+
+Abstract
+In the paper, a parallel Tabu Search algorithm for the Resource Constrained Project Scheduling Problem is proposed. To deal with this NP-hard combinatorial problem many optimizations have been
+performed. For example, a resource evaluation algorithm is selected by a heuristic and an effective
+Tabu List was designed. In addition to that, a capacity-indexed resource evaluation algorithm was
+proposed and the GPU (Graphics Processing Unit) version uses a homogeneous model to reduce the
+required communication bandwidth. According to the experiments, the GPU version outperforms the
+optimized parallel CPU version with respect to the computational time and the quality of solutions.
+In comparison with other existing heuristics, the proposed solution often gives better quality solutions.
+Cite as: Libor Bukata, Premysl Sucha, Zdenek Hanzalek, Solving the Resource Constrained Project
+Scheduling Problem using the parallel Tabu Search designed for the CUDA platform, Journal of Parallel
+and Distributed Computing, Volume 77, March 2015, Pages 58-68, ISSN 0743-7315, http://dx.doi.
+org/10.1016/j.jpdc.2014.11.005.
+Source code: https://github.com/CTU-IIG/RCPSPCpu, https://github.com/CTU-IIG/RCPSPGpu
+Keywords: Resource Constrained Project Scheduling Problem, Parallel Tabu Search, CUDA,
+homogeneous model, GPU
+1. Introduction
+The Resource Constrained Project Scheduling
+Problem (RCPSP), which has a wide range of applications in logistics, manufacturing and project
+management [1], is a universal and well-known
+problem in the operations research domain. The
+problem can be briefly described using a set of
+∗
+
+The corresponding author.
+Email addresses: libor.bukata@cvut.cz (Libor
+Bukata), premysl.sucha@cvut.cz (Přemysl Šůcha),
+zdenek.hanzalek@cvut.cz (Zdeněk Hanzálek)
+1 c
+2017. This manuscript version is made available under the CC-BY-NC-ND 4.0 license http://
+creativecommons.org/licenses/by-nc-nd/4.0/.
+Preprint submitted to J. Parallel Distrib. Comput.
+
+activities and a set of precedence constraints describing the relationships among activities. Each
+activity requires a defined amount of the resources
+and every resource has a limited capacity. The
+objective is to find the best feasible schedule according to a criterion. The RCPSP was proved
+to be NP-hard in the strong sense when the criterion is makespan [2]. For that reason only small
+instances (approximately up to 30 activities) can
+be reliably solved by exact methods like Branch &
+Bound [3], therefore a heuristic or a meta-heuristic
+is required to solve the problem satisfactorily.
+In recent times, there is an increased interest
+in using graphics cards to solve difficult combinatorial problems (e.g. [4, 5, 6]), since a modern
+June 10, 2025
+
+graphics card is usually much more powerful than
+a current multi-core CPU. Although the graphics
+cards have some restrictions (e.g. a high-latency
+global memory access), the new GPU architectures like Kepler and Fermi can significantly reduce these bottlenecks. As a consequence modern
+GPUs are applicable to the problems which were
+solvable only on CPUs previously.
+Not only the high computational power makes
+graphics cards attractive to researchers and practitioners, but also the mature Nvidia CUDA framework which enables us to create GPU programs
+in an effective and relatively easy way since it extends standard languages like C/C++ by adding
+GPU specific functions and language keywords.
+Nevertheless, the CUDA is only designed for the
+Nvidia graphics cards.
+From the implementation point of view, there
+are two models. The first one is called a homogeneous model where all required data structures
+are stored in a GPU at the beginning of an algorithm and the results are read at the end of the
+algorithm. There is no communication between
+the CPU and the GPU during the computations.
+The second approach is a heterogeneous model.
+The main logic of an algorithm runs on the CPU
+and the GPU is used only for the most computationally intensive tasks. The disadvantage of the
+heterogeneous model is the frequent communication during computations, therefore, the communication bandwidth can state a bottleneck. However, the heterogeneous model is usually simpler
+to implement.
+
+cores). Every location (i.e. an index of a thread)
+has different parameters (a tabu tenure, stopping
+criteria). At the beginning of the search each
+thread initializes its own location by a short TS
+operator, i.e. a modified version of the Taillard’s
+robust tabu search. Then the asynchronous parallel tabu search is started. Every thread independently reads a solution and parameters from the
+location, possibly makes a diversification, runs the
+TS operator on the solution, and writes back and
+sets an UPDATE flag if an improving solution is
+found. After that the thread location index is circularly incremented. Diversification takes place if
+the read solution does not have the UPDATE flag
+set. Every best global solution is copied to half of
+the locations of the circular buffer to propagate
+elite solutions. Since the circular buffer is shared
+by many threads, the access has to be as short as
+possible and the locations have to be protected by
+critical sections.
+Relatively many authors try to use a GPU
+for solving combinatorial problems. For example,
+Czapiński and Barnes [10] implemented a GPU
+version of TS to solve the Flowshop Scheduling
+Problem (FSP). The success of the implementation illustrates an achieved speedup against the
+CPU version. The GPU version was up to 89.01
+times faster than the CPU (Intel Xeon 3.0 GHz,
+2 GB memory, Nvidia Tesla C1060 GPU). Nevertheless, the quality of solutions was not investigated.
+The Flowshop Scheduling Problem was also
+solved by Zajı́ček and Šůcha [11]. The authors
+implemented a GPU version of an island based
+genetic algorithm. Islands are used for migration
+of individuals among sub-populations, where each
+sub-population is a subset of solutions and an individual corresponds to a specific solution. Subpopulation can be evaluated, mutated and crossed
+over independently of other sub-populations, therefore, huge parallelization can be achieved. It should
+be noted that a homogeneous model was used.
+The maximal speedup against the CPU was 110
+for 100 activities and 5 machines (AMD Phenom
+II X4 945 3.0 GHz, Nvidia Tesla C1060).
+Czapiński [5] proposed a Parallel Multi-start
+Tabu Search for the Quadratic Assignment Prob-
+
+1.1. Related works
+The Tabu Search meta-heuristic was proposed
+by Glover in 1986 [7]. Hundreds of publications
+have been written since that time. The basic concept of the TS meta-heuristic is clarified in Gendreau [8]. The author has described the basic
+terms of the TS, as a Tabu List (TL), aspiration
+criteria, diversification, intensification, etc.
+From the Tabu Search parallelization point of
+view James et al. [9] proposed a sophisticated solution. The authors use a circular buffer where
+the size of the buffer is equivalent to the number
+of the started threads (often the number of CPUs
+2
+
+lem. The main idea is to start several Parallel
+Tabu Search instances with different parameters
+and initial solutions. All Tabu Search instances
+should terminate approximately at the same time
+since the synchronization is required to get the
+most promising solutions. When a stop criterion
+is met, the modified solutions are read back and
+the most promising solutions are used as the initial solutions in the next run. The Tabu Search
+instance runs entirely on the GPU, therefore communication overheads are reduced to minimum.
+The achieved results reveal the effectiveness of the
+implementation since Nvidia GTX 480 is up to 70
+times faster than a six-core Intel Core i7-980x 3.33
+GHz.
+Hofmann et al. [12] investigated the suitability
+of graphics cards for genetic algorithms. The authors selected two problems to solve, namely the
+Weierstrass function minimization and the Traveling Salesman Problem. The first problem can
+be very effectively implemented on the GPU since
+the Weierstrass function is comprised of floatingpoint operations and trigonometric functions that
+are directly supported by the GPU hardware. In
+contrast to the first problem the second problem
+was not tailor-made for the GPU, therefore, the
+multi-core CPU was able to compete with the
+GPU. The authors suggest that all parts of a genetic algorithm should be performed on the Fermi
+or newer GPUs (i.e. homogeneous model).
+Boyer et al. [13] used dynamic programming
+to solve the knapsack problem on a GPU. An effective data compression was proposed to reduce
+memory occupancy. The achieved results show
+that the Nvidia GTX 260 graphics card was up
+to 26 faster than Intel Xeon 3.0 GHz.
+The above mentioned combinatorial problems
+have something in common. The solution evaluation is quite simple since it is usually a “simple sum”. On the other hand, the RCPSP requires much more complicated schedule evaluation methods and data structures.
+
+CPU version in both performance speedup and
+the quality of solutions. This is possible thanks
+to an effective schedule evaluation and a GPUoptimized Simple Tabu List. In addition, the required data transfers are reduced to minimum due
+to the homogeneous model. Our Parallel Tabu
+Search is able to outperform other Tabu Search
+implementations in the quality of the resulting solutions.
+The paper is structured as follows: The following section introduces the RCPSP mathematical formulation and notation. The Tabu Search
+meta-heuristic is briefly described in Section 3.
+Our proposed Parallel Tabu Search algorithm for
+the CUDA platform is described in detail in Sections 4, 5, and 6. The performed experiments are
+located in Section 7 and the last section concludes
+the work.
+2. Problem Statement
+According to the standard notation, classification for the RCPSP is PS|prec|Cmax [14]. A
+project can be described as follows: There is a set
+of activities V = {0, . . . , N − 1} with durations
+D = {d0 , . . . , dN −1 } where N is the number of
+activities. There are two dummy activities 0 and
+N −1 such that d0 = dN −1 = 0. Activity 0 is a predecessor of all other activities and activity N − 1
+is the end activity of a project. A schedule of the
+RCPSP can be represented as a vector of activities’ start times S = {s0 , . . . , sN −1 } where si ∈ N.
+Alternatively, a schedule can be expressed as an
+order of activities W = {w0 , . . . , wN −1 } ∈ W
+where wu is the u-th activity of the schedule and
+W is a set of all feasible solutions.
+The RCPSP can be represented as Direct Acyclic
+Graph G(V, E) where nodes V are activities and
+edges E are precedence relations. If there is edge
+(i, j) ∈ E then si + di ≤ sj since activity j has to
+be scheduled after activity i.
+Each activity requires some amount of renewable resources. The number of project resources is
+denoted as M and a set of resources capacities is
+R = {R0 , . . . , RM −1 } where Rk ∈ N. Maximal re−1
+source capacity Rmax is equal to maxM
+k=0 Rk . Activity resource requirement ri,k ∈ N means that
+
+1.2. Contribution and Paper Outline
+The proposed solution is the first known GPU
+algorithm for the RCPSP. The performed experiments revealed that the GPU outperforms the
+3
+
+Activity i
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+
+activity i requires ri,k ≤ Rk resource units of resource k during its execution. As si and di values
+are positive integers, the resulting schedule length
+Cmax (i.e. the project makespan) will also be an
+integer as well.
+A lower bound of the project makespan can be
+found by neglecting resources. For each activity
+i ∈ V all outgoing edges (i, j) ∈ E are weighted
+by its duration di . The longest path from 0 to
+N −1 in graph G(V, E) corresponds to the critical
+path. Its length is equal to the optimal project
+makespan on the condition that all resources have
+an unlimited capacity.
+
+∀i∈V
+
+sj ≥ si + di
+∀(i, j) ∈ E
+!
+X
+Cmax
+max
+ri,k ≤ Rk
+t=0
+
+ri,0
+0
+5
+2
+3
+2
+3
+4
+2
+4
+1
+2
+0
+
+ri,1
+0
+3
+1
+2
+3
+4
+1
+2
+5
+2
+2
+0
+
+Successors
+{1, 2}
+{3, 6}
+{4, 5}
+{5, 10}
+{7}
+{8, 9}
+{7, 9}
+{8, 10}
+{11}
+{11}
+{11}
+{}
+
+Table 1: Data of an example instance.
+
+2.1. Mathematical Formulation
+minimize Cmax
+s.t. Cmax = max (si + di ) = sN −1
+
+di
+0
+4
+3
+5
+5
+3
+2
+4
+2
+3
+4
+0
+
+3. Brief description of the Tabu Search metaheuristic
+
+(1)
+(2)
+
+To move through solution space W, a transformation of the current solution to a neighborhood
+solution is required. This transformation is called
+a move which can be seen as a light solution modification like a swap of two elements in an order,
+etc.
+The Tabu Search meta-heuristic was proposed
+by Glover [7] as an improvement of the local search
+technique [8]. A local search algorithm starts
+from the initial solution and iteratively improves
+this solution by applying the best neighborhood
+moves until a local optimum is reached, whereas
+the Tabu Search introduces a short-term memory called Tabu List which reduces the probability of getting stuck in a local optimum or plateau
+by forbidding the previously visited solutions. As
+a consequence, not only improving solutions are
+permitted and the search process is able to climb
+
+(3)
+(4)
+
+i∈Ft
+
+∀k ∈ {0, . . . , M − 1}
+Ft = {i ∈ V |si ≤ t < si + di }
+The objective of the RCPSP is to find a feasible schedule W with the minimal schedule length
+Cmax . The schedule length is the latest finish
+time of any activity (Equations (1),(2)). Equation (3) ensures that all precedence relations are
+satisfied. A schedule is feasible if all precedence
+relations are satisfied and the resources are not
+overloaded, i.e. the activities requirements do not
+exceed the capacity of any resource at any time
+(Equation (4)).
+2.2. Instance Example
+The data of an example instance are showed in
+Table 1. In the project there are 10 non-dummy
+activities and 2 renewable resources with maximal
+capacity 6. The corresponding graph of precedences is shown in Figure 1. The critical path
+is highlighted by bold lines and its length is 16.
+One of the feasible solutions of the instance is the
+activity order W = {0, 1, 2, 3, 4, 6, 5, 7, 9, 10, 8, 11}
+with Cmax = 22. The resource utilization for this
+order is depicted in Figure 2.
+
+3
+
+i
+
+10
+
+5
+
+di
+
+4
+
+1
+
+6
+
+0
+
+4
+
+2
+
+0
+
+2
+
+4
+
+3
+
+5
+
+7
+4
+
+8
+
+11
+
+2
+
+0
+
+5
+3
+
+9
+3
+
+Figure 1: Graph of precedences for the example instance.
+
+4
+
+R1
+
+resource utilization
+
+6
+5
+
+5
+
+4
+
+4
+
+9
+
+3
+
+2
+
+8
+
+2
+
+1
+
+3
+
+1
+0
+
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+6
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+14
+
+10
+15
+
+16
+
+17
+
+18
+
+19
+
+20
+
+21
+
+t [s]
+
+R0
+
+6
+resource utilization
+
+22
+
+5
+
+6
+
+4
+
+3
+
+5
+
+3
+
+1
+
+9
+
+8
+
+2
+
+2
+
+1
+0
+
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+4
+6
+
+7
+
+8
+
+9
+
+7
+10
+
+11
+
+12
+
+13
+
+14
+
+10
+15
+
+16
+
+17
+
+18
+
+19
+
+20
+
+21
+
+22
+
+t [s]
+
+Figure 2: Utilization of resources for the example instance.
+
+to the hills in the search space W if it is necessary.
+Due to efficiency, the Tabu List usually contains only parts of solutions or several previously
+applied moves. As moves or parts of solutions do
+not have to be unique, it is possible that a forbidden move leads to the best solution. In this case
+it is reasonable to permit the move since the resulting solution was not visited before. In general,
+exceptions allowing forbidden moves are called aspiration criteria [8].
+The quality of the resulting solutions can be
+further improved by a suitable search strategy.
+For example, if a current location in the solution space is promising, i.e. the best solution
+was found recently, then a more thorough search
+is performed – intensification. It can be accomplished by concentrating more computational power
+to this locality of the space. Opposite to that, if
+a current location is unpromising, i.e. only poor
+solutions were found, then diversification is performed. The diversification moves the current
+search location to another one where better solutions could be found. It is often realized by
+applying a few random moves.
+The Tabu Search process is stopped if a stop
+criterion is met. The stop criterion can be the
+5
+
+number of iterations, achieved quality of the best
+found solution, the maximal number of iterations
+since the last best solution was found, etc.
+4. Exploration of the Solution Space
+4.1. Creating Initial Activity Order
+Our Tabu Search algorithm starts from initial
+feasible solution W init ∈ W which is created in
+the following way: First of all, the longest paths
+in graph G from the start activity 0 to all other
+activities are found. The weight of each graph
+edge (i, j) ∈ E is set to 1. Activities with the
+same maximal distance from the start activity are
+grouped to levels. The level lk corresponds to all
+activities with maximal distance k from the start
+activity, therefore, activity 0 is at level l0 and activity N − 1 is at level lmax where subscript max
+corresponds with the last level number. The final
+feasible schedule can be created from levels such
+that W = {{l0 }, . . . , {lmax }}. Alternative feasible
+schedules can be created by shuffling the activities
+on the same level.
+4.2. Move Transformation
+Schedule order W is changed in our Tabu Search
+algorithm by a swap move. A simple example is
+
+illustrated in Figure 3. Two dummy activities (0
+and N − 1) cannot be swapped due to precedence
+constraints, therefore the activity at w0 is always
+0 and the activity at wN −1 is always N − 1. The
+swap move is defined as swap(u, v) where u and
+v are swapped indices. As swap(u, v) modifies a
+schedule in the same way as swap(v, u) only swaps
+with u < v are taken into account without loss of
+generality.
+
+reduced neighborhood, moves are restricted to all
+swap(u, v), where u < v and |v − u| ≤ δ. Value δ
+is the maximal distance between the swapped activities in order W . The size of the neighborhood
+|Nreduced (W )| is parametrized by δ.
+There are two reasons why only feasible moves
+are applied. The neighborhood size is reduced
+without noticeable deterioration of the project makespan and there is no need to check the feasibility
+of schedules.
+
+swap(3, 6)
+0
+
+3
+
+7
+
+1
+
+2
+
+8
+
+4
+
+6
+
+5
+
+9
+
+0
+
+3
+
+7
+
+4
+
+2
+
+8
+
+1
+
+6
+
+5
+
+9
+
+4.4. Filtering Infeasible Moves
+In order to saturate a GPU, feasible schedules in Nreduced should be evaluated in a parallel way by dividing the schedules equally among
+the threads. Since the evaluation of a schedule is
+much more time-consuming than checking whether
+a move is feasible it is advantageous to filter out
+all infeasible moves before the neighborhood evaluation. It reduces the branch divergency of warps,
+hence the overall performance of the resources
+evaluation is improved.
+In Algorithm 1 is shown how infeasible moves
+are filtered out from the neighborhood. The filter
+works in two phases since it was discovered that
+it is more effective due to the lower branch divergency than to filter out all the infeasible moves
+at once. In the end, only part of the array with
+feasible moves is taken into account in the neighborhood evaluation.
+
+Figure 3: Example of the swap move.
+
+Let W ∈ W be a feasible activity order. A
+feasible order means that there is not a violated
+precedence relation. A feasible move is a move
+which does not violate any precedence relation,
+therefore if this move is applied to a feasible schedule then the modified schedule will be feasible as
+well. Move swap(u, v) is feasible if the following
+equations are satisfied.
+(wu , wx ) ∈
+/E
+(wx , wv ) ∈
+/E
+
+∀x ∈ {u + 1, . . . , v}
+∀x ∈ {u, . . . , v − 1}
+
+(5)
+(6)
+
+The First Equation (5) means that there are
+no edges from activity wu to the activities at indices from u+1 to v. If there is any edge, then activity wu cannot be moved to position v without
+a precedence violation. In a similar way, Equation (6) states that activity wv cannot be moved
+to index u if there is a precedence relation that
+becomes violated.
+4.3. Neighborhood Generation
+Full neighborhood Nf ull (W ) ⊆ W of schedule
+W is a set of schedules obtained by applying all
+feasible moves. Since the full neighborhood is usually too large to be evaluated in a reasonable time
+only a subset of the neighborhood is usually taken
+into account. Such a subset will be called as a reduced neighborhood denoted Nreduced (W ). In the
+
+Algorithm 1 Removing infeasible moves from the reduced neighborhood.
+Require: Nreduced (W )
+Ensure: It filters out infeasible moves from the reduced
+neighborhood.
+1: Let MovesArray be an array containing all potential
+swaps in Nreduced (W ).
+2: All moves not satisfying Equation (5) are removed, i.e.
+set empty.
+3: Reorder MovesArray such that all empty moves are in
+the end of the array.
+4: Remove moves that do not satisfy Equation (6).
+5: Move all feasible moves to the beginning of
+MovesArray.
+
+4.5. Simple Tabu List and Cache
+The tabu list in [10] is not suitable for a GPU
+since it is necessary to go through all moves in
+6
+
+5. Schedule Evaluation
+
+the tabu list to decide whether a move is in the
+tabu list or not. As a consequence it places higher
+demands on the device memory bandwidth. To
+avoid this a simple and efficient Simple Tabu List
+(STL) with constant algorithmic complexity is proposed. Access to the STL is performed like an
+access to a circular buffer. Its size is fixed and is
+equal to |tabuList|. In our case, the STL stores
+swap moves. Each swap(u, v) is stored to the STL
+as a pair of swapped indices (u, v). A special value
+is used for an empty move, e.g. swap(0, 0). At
+each iteration of the TS algorithm one move is
+added (see Algorithm 3) and the oldest one is removed if the STL is full.
+
+During the evaluation of W , precedence relations and resource constraints have to be taken
+into account to calculate activities start times si
+and Cmax . The precedence earliest start time esprec
+i
+of activity i can be calculated as max∀(j,i)∈E (sj + dj ),
+where j are predecessors of activity i. The resources earliest start time esres
+can be computed
+i
+using either a time-indexed or capacity-indexed resources evaluation algorithm. The capacity-indexed
+algorithm is a completely new approach to the
+best of our knowledge, whereas the time-indexed
+algorithm is well-known [15]. The names of the
+algorithms were selected with respect to the indexed unit of a resource state array. According
+to a heuristic the probable faster resources evaluation algorithm is selected in the schedule evaluation procedure. Having considered both precedence and resource constraints the final earliest
+start time is esi = max(esprec
+, esres
+i ).
+i
+
+Algorithm 2 Check if a move is in the STL.
+Require: tabuCache − STL cache.
+Require: (u, v) − Swap move indices.
+Ensure: It returns true if the move is in the STL, otherwise false.
+1: return tabuCache[u, v]
+
+The Tabu Cache (TC) was proposed for effective checking if the move is in the STL. It is illustrated in Algorithm 2. Checking if a swap is in the
+STL occurs much more often than adding a new
+move since a move is added only once per iteration and check if the move is in the STL occurs for
+every neighborhood schedule. The TC is implemented as a 2-dimensional N × N boolean array
+which is synchronized with the STL. A check if a
+move is in the STL requires one read operation,
+thus, the required memory bandwidth is very low.
+It is obvious that a check if the move is in the STL
+has O(1) algorithmic complexity.
+
+5.1. Capacity-indexed resources evaluation
+5.1.1. Required Data Structures
+The most difficult part during the project makespan evaluation is computation of the activities’
+start times with respect to the resource capacities.
+In our approach, the evaluation of resources requires one array ck with length Rk per resource k.
+Value ck [Rk − ri,k ] corresponds to the earliest resource start time of activity i with resource requirement ri,k > 0 on resource k. At the start of
+the evaluation, all the resources arrays are set to
+zeros. After that, activities are added one by one
+to a schedule according to W and arrays are updated with respect to the activity requirements
+and precedences. The resources arrays are ordered descendly, i.e. ck [Rk − l] ≤ ck [Rk − l −
+1] | ∀l ∈ {1, . . . , Rk − 1}. The state of resources
+is represented as a set C = {c0 , . . . , cM −1 }.
+
+Algorithm 3 Add a move to the STL.
+Require: tabuList − Fixed size array.
+Require: tabuCache − STL cache.
+Require: writeIndex − Current write position.
+Require: (u, v) − Swap move indices.
+Ensure: Add move to STL and update TC.
+1: (uold , vold ) = tabuList[writeIndex ]
+2: tabuCache[uold , vold ] = false
+3: tabuList[writeIndex ]= (u, v)
+4: tabuCache[u, v] = true
+5: writeIndex = (writeIndex + 1) % |tabuList|
+
+5.1.2. The Earliest Resources Start Time
+∈ N of activResource earliest start time esres
+i
+ity i with respect to an occupation of resources
+can be calculated using Equation (7). It is guaranteed that resources are not overloaded if activity i start time si ≥ esres
+i . Final activity start
+7
+
+time si can be more delayed due to the precedence
+relations.
+
+esres
+=
+i
+
+
+
+
+max ck [Rk − ri,k ]
+k∈{0,...,M −1}: ri,k >0
+
+0
+
+∃ri,k > 0
+
+to be decremented to zero (lines 2, 13, 19) for each
+resource k.
+It is performed by setting ri,k elements of ck
+to the activity finish time si + di after the last
+ck ≥ si + di . Until the variable requiredEffort is
+zero, the shifted (right shift about ri,k ) copy of
+the original resource array ck (original values are
+stored in copy auxiliary variable) is made. The
+complexity of the algorithm is O(M · Rmax ).
+
+(7)
+
+otherwise
+
+5.1.3. Update of the Resources Arrays
+If activity i is added into the schedule, resources arrays C have to be updated by Algorithm 4. Each resource array ck is updated indi-
+
+resource availability - ck
+
+si
+
+Algorithm 4 Method updates state of resources after
+adding activity i.
+Require: ri,k , di , C, R
+Require: copy − Auxiliary array with length Rmax ).
+Require: si − Scheduled start time of activity i.
+Ensure: Update C - activity i is added.
+1: for (k = 0; k < M ; ++k) do
+2:
+requiredEffort = ri,k · di
+3:
+if (requiredEffort > 0) then
+4:
+resIdx = 0; copyIdx = 0
+5:
+newTime = si + di
+6:
+while (requiredEffort > 0 AND resIdx < Rk )
+do
+7:
+if (ck [resIdx ] < newTime) then
+8:
+if (copyIdx ≥ ri,k ) then
+9:
+newTime = copy[copyIdx − ri,k ]
+10:
+end if
+11:
+timeDiff = newTime − max(ck [resIdx ], si )
+12:
+if (requiredEffort − timeDiff > 0) then
+13:
+requiredEffort -= timeDiff
+14:
+copy[copyIdx ++] = ck [resIdx ]
+15:
+ck [resIdx ] = newTime
+16:
+else
+17:
+ck [resIdx ] = max(ck [resIdx ], si )
+18:
+ck [resIdx ] += requiredEffort
+19:
+requiredEffort = 0
+20:
+end if
+21:
+end if
+22:
+resIdx = resIdx + 1
+23:
+end while
+24:
+end if
+25: end for
+
+si + di
+
+7
+
++1
+
+6
+
++1
+
+5
+
+Rmax
+
++3
+
+4
+
++2
+
+3
+
++2
+
+activity
+required
+effort
+
+2
+9 units
+1
+4
+
+5
+
+6
+7
+8
+9
+10
+resource earliest start time
+
+Figure 4: An example of the resource state update.
+
+The algorithm is illustrated on an example in
+Figure 4. There is one resource with maximal
+capacity 7. Added activity i requires 3 resource
+units (i.e. ri,k = 3) and its duration di is 3. The
+activity was scheduled at si = 5. The solid line
+corresponds to the original resource state ck =
+{7, 7, 5, 5, 5, 5, 4} and the dotted line corresponds
+to the updated resource c0k = {8, 8, 8, 7, 7, 5, 4}.
+Activity required effort is depicted by a square
+with dashed border. The positive numbers between solid and dotted lines are effort contributions when old start time (solid line) will be changed
+to the new start time (dotted line). It should be
+noticed, that the sum of all contributions is the
+requiredEffort for a given activity.
+
+vidually (line 1). Value requiredEffort = ri,k · di
+will be called Required Resource Effort. Activity
+i can be added to the schedule if and only if each
+resource is able to provide its Required Resource
+Effort. In other words, variable requiredEffort has
+8
+
+5.2. Time-indexed resources evaluation
+5.2.1. Required Data Structures
+In the time-indexed evaluation algorithm the
+state of each resource k is stored in array τk . Each
+element τk [t] corresponds to the number of available resource units that resource k is able to provide at time t ∈ {0, . . . , UBCmax }, where UBCmax
+is the upper boundPof the makespan which can be
+calculated as e.g. ∀i∈V di . Each τk array has initialized all its elements to the Rk value before the
+start of the evaluation. The state of all resources
+will be denoted as T = {τ0 , . . . , τM −1 }.
+
+5.2.3. Update of the Resources Arrays
+The state of resources is updated as is shown
+in Algorithm 6. Having scheduled activity i at si
+the τk arrays have to be updated in the [si , si +
+di ) interval. For each resource k, values in the
+interval are decreased by ri,k units.
+Algorithm 6 Updating of resources after adding activity i.
+Require: di , T, ri,k
+Require: si − Scheduled start time of activity i.
+Ensure: It updates state of resources T .
+for (k = 0; k < M − 1; ++k) do
+for (t = si ; t < si + di ; ++t) do
+τk [t] -= ri,k
+end for
+end for
+
+5.2.2. The Earliest Resources Start Time
+Algorithm 5 Algorithm calculates the earliest start time
+of activity i.
+Require: ri,k , di , R, UBCmax , T
+Require: esprec
+− The precedence earliest start time.
+i
+Ensure: Calculate the earliest start time esi of activity i.
+1: loadTime = 0;
+2: for (t = esprec
+; t < UBCmax AND loadTime < di ;
+i
+++t) do
+3:
+sufficientCapacity = true
+4:
+for (k = 0; k < M − 1; ++k) do
+5:
+if (τk [t] < ri,k ) then
+6:
+loadTime = 0
+7:
+sufficientCapacity = false
+8:
+end if
+9:
+end for
+10:
+if (sufficientCapacity == true) then
+11:
+++loadTime
+12:
+end if
+13: end for
+14: return t − loadTime
+
+5.3. Schedule Evaluation Procedure
+The schedule evaluation procedure is shown
+in Algorithm 7. Activities are read one by one
+from the activities order W . For each activity wu ,
+all its predecessors are found and the precedence
+relations are used to update activity wu ’s precedence earliest start time esprec
+wu ∈ N (see lines 3–6).
+Then the resources restrictions are checked and
+res
+the start time is adjusted to swu = max(esprec
+wu , eswu ).
+Project makespan Cmax is the finish time of activAlgorithm 7 Complete schedule evaluation.
+Require: W, C, T, E
+Ensure: Calculate Cmax and the activities’ start times.
+1: Cmax = 0
+2: for (u = 0; u < N ; ++u) do
+3:
+esprec
+wu = 0
+4:
+for all ((j, wu ) ∈ E) do
+prec
+5:
+esprec
+wu = max(eswu , sj + dj )
+6:
+end for
+prec
+7:
+esres
+wu = getEarliestResourcesTime(activity wu , eswu )
+prec
+res
+8:
+swu = max(eswu , eswu )
+9:
+updateResources(activity wu , swu )
+10:
+Mark current activity wu as scheduled.
+11:
+Cmax = max(Cmax , swu + dwu )
+12: end for
+13: return Cmax
+
+The earliest start time of activity i can be calculated using Algorithm 5. In the algorithm, the
+loadTime variable corresponds with the number
+of consecutive time units in which resources are
+able to meet resource requirements of activity i. If
+loadTime = di then a time interval into which activity i can be scheduled was found. Having considered variable t as a finish time of a candidate
+interval, the resulting interval is the first interval
+[t − loadTime, t) ∩ N such that loadTime = di .
+The final earliest start time is the lower endpoint
+of the interval.
+
+ity N − 1. As only feasible moves are allowed, an
+infeasibility test of the resulting schedules is not
+required.
+9
+
+5.4. Heuristic Selection of Resources Evaluation
+Algorithms
+Before the search is started on the GPU, the
+probable faster resources evaluation algorithm is
+heuristically selected by decision rules and the required resources arrays are allocated. To create
+the rules, the JRip classifier from the Weka datamining tool [16] was learned using pre-calculated
+attributes shown in Table 2.
+Min. resource capacity:
+Avg. resource capacity:
+Max. resource capacity:
+Avg. activity duration:
+Avg. branch factor:
+Critical path length:
+Evaluation algorithm:
+
+Min. resource capacity ≥ 29
+true
+
+TIME
+
+false
+
+Avg. resource capacity ≥ 29
+Avg. branch factor ≥ 2.1
+true
+
+TIME
+
+min Rk
+∀k∈{0,...,M −1}
+X
+1
+Rk
+M
+∀k∈{0,...,M −1}
+
+false
+
+Min. resource capacity ≥ 25
+Max. resource capacity ≥ 42
+true
+TIME
+
+max Rk
+∀k∈{0,...,M −1}
+X
+1
+di
+N
+∀i∈V
+|E|
+N
+
+false
+CAPACITY
+
+Figure 5: An example of the decision tree.
+
+see Section 2
+CAPACITY/TIME
+
+Table 2: Attributes used for learning.
+
+Attribute “Evaluation algorithm” determines
+the class, i.e. the time-indexed or capacity-indexed
+evaluation algorithm, to which the classifier should
+classify. As the final class dependends on the
+hardware and instance parameters it is necessary
+to determine the probable correct class by measuring — each evaluation algorithm was selected
+for a small number of iterations and the faster
+one was selected as the desired one. The resulting rules heuristically decide which of the two
+algorithms should be more effective for a given
+instance. The rules can be transformed into a
+decision tree as is shown in Figure 5. Once the
+rules are created they can be applied to other similar instances without any measuring overhead as
+well. To show the effectivity and usefulness of
+the heuristic the experiments were performed in
+Section 7.
+6. Parallel Tabu Search for CUDA platform
+Our Parallel Tabu Search for GPU (PTSG) is
+proposed with respect to the maximal degree of
+parallelization since thousands of CUDA threads
+10
+
+are required to be fully loaded to exploit the graphics card power. In our approach, the parallelization is carried out in two ways. The first one
+is a parallelization performed within the scope of
+a block, for example the parallel filter (see Section 4.4), the parallel neighborhood evaluation,
+and other parallel reductions. The second one is
+a parallelization introduced by launching many
+blocks on the multi-processors simultaneously.
+The basic steps of the PTSG are described in
+Figure 6. First of all, an instance is read and the
+initial solutions are created in accordance with
+Section 4.1. After that, every second solution
+is improved by using the forward-backward improvement method. The method is iteratively
+shaking a schedule from the left to the right in
+order to make a resource profile straight as long
+as the schedule is getting shorter. To get more details about the method, refer to the original article
+by Li and Willis [17]. The created solutions are
+copied into a working set, i.e. a set of shared solutions. The best solution in the working set will
+be called the global best solution and its make∗
+span will be denoted as Cmax
+. Furthermore, the
+block’s Tabu Lists and Tabu Caches are initialized and auxiliary arrays such as τk , and ck are
+allocated. Having had prepared required datastructures, the host is ready to launch the kernel.
+In the GPU part, every block is an independent Tabu Search instance communicating with
+
+the others through the global memory (see Section 6.1). At the beginning, every block reads
+
+nication conditions are satisfied (see Section 6.1).
+The search is stopped if the specified number of
+∗
+is equal to the
+iterations was achieved or Cmax
+length of a critical path.
+After the termination of the kernel, the best
+global solution is copied from the global memory
+to the host memory. The solution is printed and
+all allocated data-structures are freed.
+
+create initial solutions
+
+apply forward-backward improvement method for every second solution
+
+CPU
+
+6.1. Co-operation Among CUDA Blocks and Iterations Distribution
+To assure the high quality solutions, the cooperation among Tabu Search instances is accomplished by exchanging solutions through the working set F that has a fixed number of solutions
+|F |. Each solution k ∈ F consists of the ork
+, the tabu
+der of activities W k , makespan Cmax
+k
+list and iterations counter IC . The solutions exchange takes place if the last read solution has not
+been improved for more than Iassigned iterations
+or the block found an improvement of the last
+read solution. The block writes the best found
+solution to F if it improves the last read solution
+and reads the next solution from F . Since the
+working set could be accessed by many blocks at
+the same time, it is necessary to use read/write
+locks in order to maintain data integrity. The
+co-operation among Tabu Search instances was
+inspired by James et al. [9].
+After the block has read a solution from the
+working set, it is checked whether the solution
+was not read more than Φmax times without being
+improved. If it is the case, a small number Φsteps
+of random feasible swaps is applied to randomize
+the read solution — diversification. After that,
+the read solution k ∈ F has assigned the number
+of iterations Iassigned according to the following
+equation.
+
+initialize and fill GPU structures
+launch kernel
+
+read an initial solution
+
+generate Nreduced and filter
+out all infeasible moves
+
+GPU
+(a block)
+
+main loop
+
+evaluate the neighborhood
+and select the best move m∗
+
+apply m∗ and add it to STL
+
+no
+
+exchange data?
+yes
+
+co-operation
+with other blocks
+
+no
+
+stop condition?
+yes
+load data to CPU
+
+CPU
+
+print the best GPU solution
+
+Figure 6: Parallel Tabu Search for the CUDA platform.
+
+an initial solution from the working set. After
+that, the search is started for a specified number
+of iterations of the main loop. In the main loop,
+the neighborhood is generated, evaluated and the
+best move m∗ is selected, applied and added into
+the STL. Move m∗ leads to the best criterion improvement or to the smallest criterion deterioration. This move cannot be in the STL with one
+exception — the move leads to the global best solution. At the end of an iteration the solutions are
+exchanged through the working set if the commu-
+
+quality
+}|
+{
+
+
+k
+Cmax
+−100
+−1
+∗
+
+quantity
+
+Iassigned
+
+$ z }| {
+1 Iblock
+=
+5 Itotal
+
+z
+
+Cmax
+
+0.8e
+z
+
+intactness
+}|
+{ !%
+
+
+IC k
+−4
+
++ 0.2e
+11
+
+Iblock
+
+(8)
+
+Iblock is the number of iterations assigned to
+each Tabu Search instance and Itotal is the total
+number of iterations calculated as Iblock B, where
+B is the number of launched blocks. The part
+denoted as quantity corresponds to the maximal
+number of iterations which can be assigned to
+read solution k. It is ensured, that at least 5 solutions are read from the working set by each block.
+The quality part takes into account the quality of
+read solution k. It is obvious that the high quality
+solutions are preferred to poor ones — intensification. And the last part intactness guarantees
+that each solution k ∈ F has been given some
+iterations to prove the quality.
+
+CUDA toolkit (version 5.0.35) and Microsoft Visual Studio 2010.
+The sequential CPU version of the algorithm
+corresponds to one Tabu Search instance with the
+exception that solutions are not interchanged (|F | =
+1 and B = 1). Instead of using the selection
+heuristic (see Section 5.4) the faster evaluation
+algorithm was selected dynamically by periodic
+measuring every 1000 iterations. The parallel CPU
+version differs from the sequential version in the
+neighborhood evaluation. The feasible schedules
+in the neighborhood are divided among CPU threads
+to reduce evaluation time. Both the CPU and
+GPU versions were fully optimized with respect
+to memory access patterns and hardware architecture (cache sizes). To fully saturate the GPU the
+maximal number of available registers per CUDA
+thread was limited to 32 due to possibility to
+launch 4 blocks on a multiprocessor at once (altogether 16 blocks on the GPU), where each block
+has 512 CUDA threads.
+
+6.2. Memory Model
+The placement of the data-structures is a crucial task highly influencing the effectiveness of the
+GPU program, therefore, each decision should be
+considered thoroughly with respect to the access
+pattern, required bandwidth and data visibility
+(local or shared data). In the shared memory current block order Wblock , durations of activities D,
+and auxiliary arrays are stored. Although D is
+a read-only array which could be located in the
+constants memory, it was moved to the shared
+memory due to the higher bandwidth. The texture memory is used for storing read-only data as
+ri,k values and predecessors of the activities. In
+the local memory, private data-structures of each
+thread are located, i.e. resources arrays ck , τk ,
+and start times of activities S. The long latency
+of the memory is compensated by using a partial coalescing since the arrays are often accessed
+at the same relative indices as the majority of
+threads evaluate similar schedules (Wblock + swap
+move). Finally, the global memory is employed to
+store the working set F .
+
+J30
+J60
+J90 J120
+N
+30+2 60+2 90+2 120+2
+M
+4
+|dataSet|
+480
+480
+480
+600
+δ
+30
+60
+60
+60
+|tabuList|
+60
+250
+600
+800
+Φsteps
+20
+Φmax
+3
+|F |
+16
+Table 3: PTSG parameters and data-sets information.
+
+To evaluate the performance and the quality of
+resulting solutions the benchmark using the wellknown J30, J60, J90 and J120 data-sets was performed. The number of instances in a data-set
+will be denoted as |dataSet|. The selected PTSG
+parameters and data-sets information are stated
+in Table 3.
+The results for the J30 data-set are shown in
+Tables 4 and 6. The CPM dev and OPT dev values are the average percentage distance from the
+critical path length and the average percentage
+distance from the optimal makespan respectively.
+Best sol states the number of optimal solutions
+which have been proved to be optimal according
+
+7. Experimental Results
+Experiments were performed on the AMD Phenom(tm) II X4 945 server (4 cores, 8 GB memory) equipped with a mid-range Nvidia Geforce
+GTX 650 Ti (1 GB, 768 cuda cores, 4 multiprocessors) graphics card. The testing environment
+was the Windows Server 2008 with an installed
+12
+
+CPU
+OPT dev
+0.04
+–
+
+Itotal CPM dev
+10000
+13.43
+20000
+–
+
+Best sol
+471
+–
+
+CPM dev
+13.41
+13.38
+
+GPU
+OPT dev
+0.02
+0.01
+
+Best sol
+473
+478
+
+Table 4: Quality of solutions — J30.
+
+Itotal CPM dev
+10000
+11.13
+20000
+–
+30000
+–
+50000
+–
+
+CPU
+UB dev
+0.51
+–
+–
+–
+
+Best sol
+380
+–
+–
+–
+
+CPM dev
+11.22
+11.08
+10.99
+10.91
+
+GPU
+UB dev
+0.57
+0.47
+0.41
+0.36
+
+Best sol
+375
+388
+394
+394
+
+Table 5: Quality of solutions — J60.
+
+CPU seq.
+CPU par.
+GPU
+GPU
+
+Itotal Comp time
+10000
+1255
+10000
+343
+10000
+176
+20000
+306
+
+Sched sec
+126400
+478300
+985543
+1120900
+
+CPU seq.
+CPU par.
+GPU
+GPU
+GPU
+GPU
+
+Speedup
+1.00
+3.65
+7.12
+–
+
+Table 6: Performance comparison — J30.
+
+Itotal CPM dev
+10000
+10.81
+20000
+–
+30000
+–
+50000
+–
+
+CPU
+UB dev
+0.92
+–
+–
+–
+
+Itotal Comp time
+10000
+7094
+10000
+1732
+10000
+257
+20000
+485
+30000
+709
+50000
+1164
+
+Sched sec
+59700
+248700
+1733800
+1818600
+1861900
+1879400
+
+Speedup
+1.00
+4.10
+27.60
+–
+–
+–
+
+Table 7: Performance comparison — J60.
+
+Best sol
+367
+–
+–
+–
+
+CPM dev
+11.04
+10.82
+10.73
+10.56
+
+GPU
+UB dev
+1.09
+0.93
+0.86
+0.74
+
+Best sol
+365
+371
+373
+375
+
+Table 8: Quality of solutions — J90.
+
+Itotal CPM dev
+10000
+33.41
+20000
+–
+30000
+–
+50000
+–
+
+CPU
+UB dev
+2.70
+–
+–
+–
+
+Best sol
+215
+–
+–
+–
+
+CPM dev
+34.67
+34.04
+33.66
+33.54
+
+GPU
+UB dev
+3.50
+3.11
+2.85
+2.76
+
+Best sol
+194
+208
+213
+222
+
+Table 9: Quality of solutions — J120.
+
+CPU seq.
+CPU par.
+GPU
+GPU
+GPU
+GPU
+
+Itotal Comp time
+10000
+20294
+10000
+5001
+10000
+475
+20000
+923
+30000
+1348
+50000
+2221
+
+Sched sec
+36000
+148300
+1599600
+1632000
+1660700
+1674000
+
+Speedup
+1.00
+4.06
+42.70
+–
+–
+–
+
+CPU seq.
+CPU par.
+GPU
+GPU
+GPU
+GPU
+
+Table 10: Performance comparison — J90.
+
+Itotal Comp time
+10000
+148170
+10000
+35812
+10000
+2938
+20000
+5742
+30000
+8513
+50000
+14160
+
+Sched sec
+25700
+107200
+1340400
+1351900
+1353300
+1347800
+
+Speedup
+1.00
+4.14
+50.40
+–
+–
+–
+
+Table 11: Performance comparison — J120.
+
+13
+
+Algorithm and reference
+Genetic Algorithm - Gonçalves et al. [18]
+This work - Nvidia Geforce GTX 650 Ti
+This work - AMD Phenom(tm) II X4 945
+CARA algorithm - Valls et al. [19]
+Ant Colony Optimization - Zhou et al. [20]
+Tabu Search - Artigues et al. [21]
+Simulated Annealing - Bouleimen and Lecocq [22]
+
+J30
+13.38
+13.38
+13.43
+13.46
+-
+
+CPM dev
+J60
+J90 J120
+10.49
+30.08
+10.91 10.56 33.54
+11.13 10.81 33.41
+11.45 11.12 34.53
+11.42
+35.11
+12.05
+36.16
+11.90
+37.68
+
+Table 12: Comparison with other heuristics.
+
+to the results in the PSPLIB homepage — http:
+//www.om-db.wi.tum.de/psplib/. Comp time
+is the total run-time stated in seconds and the
+Sched sec is the number of evaluated schedules
+per second. It is obvious that the GPU version
+is able to achieve a similar quality of solutions in
+terms of CPM dev as the CPU version. Having
+had Itotal doubled, the GPU version found 478
+optimal solutions from the 480 solutions in the
+data-set. From the performance point of view Table 6 reveals a significant improvement in computational time if parallelization is performed. For
+example, the parallel CPU version is 3.65 times
+faster than the sequential CPU version and the
+GPU is almost 2 times faster than the parallel
+CPU version. If Itotal is increased to 20000 the
+GPU is still slightly faster and achieves better
+quality solutions.
+For the J60 data-set the results are shown in
+Tables 5 and 7, where UB dev is the average percentage distance from the best currently known
+upper bounds. The CPU version gives slightly
+better solutions for 10000 iterations, but on the
+other hand if the GPU is given 20000 iterations
+the quality of solutions is comparable with the
+CPU version and the GPU is still 3.56 times faster
+than the parallel CPU version. The lower quality
+of GPU solutions for the same Itotal is probably
+caused by wasting work when many Parallel Tabu
+Search instances have read the same solution from
+the working set and only one writes the best improvement. It can be noted, that the parallel CPU
+version is more than 4 times faster than the sequential one. The reason of that is either better
+cache utilization or the AMD True Core Scalability technology.
+
+The results in Tables 8 and 10 for the J90 dataset show that the GPU is better utilized for bigger instances and the GPU is more than 10 times
+faster than the parallel CPU version for the same
+number of iterations. The same quality of solutions is achieved 5.4 times faster on the GPU.
+Results for the J120 data-set are shown in Tables 9 and 11. It can be noted that the quality
+of GPU solutions is substantially lower for 10000
+iterations. The GPU requires about 50000 iterations to achieve the quality of the CPU solutions. On the other hand, the GPU is able to
+compete with the CPU since 50000 iterations is
+performed 2.5 times faster than 10000 iterations
+for the parallel CPU version. The GPU evaluates more than one million schedules per second,
+whereas the CPU evaluates one hundred thousand.
+The quality of the solutions is compared with
+the existing solutions for the RCPSP in Table 12.
+Our proposed PTSG outperforms other Tabu Search
+implementations with respect to the quality of
+solutions. For example, Artigues’ Tabu Search
+[21] has been given at least 11000 iterations for
+the J120 data-set and achieves 36.16 % CPM dev.
+Having had 10000 iterations the proposed PTSG
+reaches 33.41 % and 34.67 % for the CPU and
+GPU respectively. In addition, the proposed PTSG
+can be just as good as other heuristic approaches
+like Ant Colony Optimization and Simulated Annealing. On the other hand, the state of the art
+random-key genetic algorithms give even better
+solutions than the PTSG.
+From the performance point of view it is difficult to compare since the different algorithms and
+hardware architectures were used for experiments.
+14
+
+dependent on the characteristics of instances and
+it cannot be generally determined which evaluation algorithm is faster. The capacity-indexed
+evaluation algorithm is usually faster for long schedules with low resource capacities in contrast to the
+time-indexed algorithm which usually performs
+better for short schedules with high resource capacities.
+
+For example, Artigues’s Tabu Search requires 67 s
+per J120 instance on average. The testing configuration was not stated. The PTSG requires 4.9 s
+(10000 iterations) on the mid-range GPU with the
+substantially higher quality of solutions. The genetic algorithm by Gonçalves et al. [18] takes
+180 s per J120 instance on average on the Intel
+Core 2 Duo 2.4 GHz processor.
+7.1. Evaluation of the Selection Heuristic
+The heuristic (see Section 5.4) is using the
+JRip classifier from the Weka data mining tool [16]
+to decide which resources evaluation algorithm
+should be faster. To get data for the learning,
+the Progen generator [23] was used to generate
+4 data-sets with 30, 60, 90, and 120 activities
+respectively. The parameters of the generated
+data-sets were set the same as for J30, J60, J90,
+and J120 data-sets with the exception that different random seeds were used. For each generated data-set the classifier was learned using
+weka.classifiers.rules.JRip -F 3 -N 2.0
+-O 10 -S 0 command and tested on the corresponding standard data-set with the same number of activities. The achieved results in Table 13
+reveal that the accuracy is decreasing with the
+number of activities. The reason for this behavior
+can be the smaller ratio of the resources evaluation time to the total run-time.
+J30
+72.3 %
+
+J60
+85.8 %
+
+J90
+91.9 %
+
+time-indexed
+capacity-indexed
+heuristic
+
+J30 J60 J90 J120
+1.02 1.10 1.09 1.23
+1.27 1.34 1.96 1.73
+1
+1
+1
+1
+
+Table 14: Effect of the heuristic on the PTSG performance.
+
+7.2. Demonstration of Convergence
+To demonstrate that co-operation among blocks
+is beneficial the graph of convergency (in Figure 7)
+was created for j1206_4.sm instance. It can be
+seen that the quality of solutions is getting better
+with the increasing number of launched blocks,
+therefore, it is obvious that co-operation leads to
+the better solutions. To ensure the smoothness of
+
+J120
+96.3 %
+
+Table 13: Accuracy of the Selection Heuristic — the percentage of correctly classified.
+
+To prove that the proposed heuristic also improves the PTSG performance the run-time was
+measured for each evaluation algorithm and normalized with respect to the reference run-time, i.e.
+the run-time achieved by using the heuristic. The
+results in Table 14 show that the heuristic accelerates the PTSG up to 2 times and its effect is decreasing as the evaluation of schedules becomes a
+less time-consuming part of the PTSG. The timeindexed algorithm seems to be faster than the
+capacity-indexed algorithm on the standard datasets. On the other hand, the achieved speedup is
+
+Figure 7: Graph of convergence for the GPU version.
+
+the graph each point was averaged over 50 measurements.
+8. Conclusion
+The first known GPU algorithm dealing with
+the Resource Constrained Project Scheduling Prob15
+
+lem has been proposed. The performed experiments on the standard benchmark instances reveal the merits of the proposed solution. The
+achieved quality of solutions is very good and outperforms the other Tabu Search implementations
+to the best of our knowledge. In addition to this,
+the GPU algorithm design has proved to be very
+effective since the mid-range GPU was substantially faster than the optimized parallel CPU version. The Nvidia Geforce GTX 650 Ti GPU is
+able to evaluate more than one million schedules
+per second for the J120 data-set on average. The
+achieved performance boost could not be reached
+without effective structures and auxiliary algorithms. The Simple Tabu List implementation is
+adapted to the features of the GPU, the capacityindexed evaluation algorithm was proposed and
+many parallel reductions were applied. In addition to this, the homogeneous model reduces the
+required communication bandwidth between the
+CPU and the GPU.
+In spite of the fact that GPUs are not primarily designed for solving combinatorial problems
+the rising interest about these solutions can be
+seen [24]. The reason for this is the high computational power of graphics cards and the relatively
+user friendly programming API that the CUDA
+offers. So it can be expected that GPUs will be
+more and more used in operations research in the
+future.
+
+[5]
+
+[6]
+
+[7]
+
+[8]
+
+[9]
+
+[10]
+
+[11]
+
+[12]
+
+[13]
+
+[14]
+
+References
+[1] N. Fu, H. C. Lau, P. Varakantham, F. Xiao, Robust
+Local Search for Solving RCPSP/max with Durational Uncertainty, J. Artif. Int. Res. 43 (1) (2012)
+43–86.
+[2] J. Blazewicz, J. Lenstra, A. Kan, Scheduling subject
+to resource constraints: classification and complexity,
+Discrete Applied Mathematics 5 (1) (1983) 11–24.
+[3] A. S. Chaleshtarti, S. Shadrokh, Branch and
+Bound Algorithms for Resource Constrained Project
+Scheduling Problem Subject to Cumulative Resources, in: Proceedings of the 2011 International
+Conference on Information Management, Innovation
+Management and Industrial Engineering - Volume 01,
+ICIII ’11, IEEE Computer Society, Washington, DC,
+USA, 2011, pp. 147–152.
+[4] A. Delvacq, P. Delisle, M. Gravel, M. Krajecki, Parallel Ant Colony Optimization on Graphics Processing
+
+[15]
+
+[16]
+
+[17]
+
+[18]
+
+16
+
+Units, Journal of Parallel and Distributed Computing
+73 (1) (2013) 52–61.
+M. Czapiński, An effective Parallel Multistart Tabu
+Search for Quadratic Assignment Problem on CUDA
+platform, Journal of Parallel and Distributed Computing (2012).
+W. Božejko, Z. Hejducki, M. Uchroński, M. Wodecki,
+Solving the Flexible Job Shop Problem on MultiGPU, Proceedings of the International Conference on
+Computational Science, ICCS 2012 9 (0) (2012) 2020–
+2023.
+F. Glover, Future Paths for Integer Programming and
+Links to Artificial Intelligence, Comput. Oper. Res.
+13 (5) (1986) 533–549.
+M. Gendreau, An Introduction to Tabu Search, in:
+F. Glover, G. Kochenberger (Eds.), Handbook of
+Metaheuristics, Vol. 57 of International Series in Operations Research & Management Science, Springer
+New York, 2003, pp. 37–54.
+T. James, C. Rego, F. Glover, A cooperative parallel
+tabu search algorithm for the quadratic assignment
+problem, European Journal of Operational Research
+195 (3) (2009) 810–826.
+M. Czapiński, S. Barnes, Tabu Search with two approaches to parallel flowshop evaluation on CUDA
+platform, J. Parallel Distrib. Comput. 71 (2011) 802–
+811.
+T. Zajı́ček, P. Šůcha, Accelerating a Flow Shop
+Scheduling Algorithm on the GPU, Workshop on
+Models and Algorithms for Planning and Scheduling
+Problems (MAPSP).
+J. Hofmann, S. Limmer, D. Fey, Performance investigations of genetic algorithms on graphics cards,
+Swarm and Evolutionary Computation (2013).
+V. Boyer, D. El-Baz, M. Elkihel, Solving knapsack
+problems on gpu, Computers & Operations Research
+39 (1) (2012) 42–47.
+P. Brucker, A. Drexl, R. Möhring, K. Neumann,
+E. Pesch, Resource-constrained project scheduling:
+Notation, classification, models, and methods, European Journal of Operational Research 112 (1) (1999)
+3–41.
+J. E. Kelley, 1963. The critical-path method:
+Resources planning and scheduling. In: Muth,
+J.F., Thompson, G.L. (Eds.), Industrial Scheduling.
+Prentice-Hall, Englewood Cliffs, NJ, pp. 347–365.
+M. Hall, E. Frank, G. Holmes, B. Pfahringer,
+P. Reutemann, I. H. Witten, The WEKA Data Mining Software: An Update, SIGKDD Explor. Newsl.
+11 (1) (2009) 10–18.
+K. Li, R. Willis, An iterative scheduling technique
+for resource-constrained project scheduling, European Journal of Operational Research 56 (3) (1992)
+370–379.
+J. F. Gonçalves, M. G. Resende, J. J. Mendes, A Biased Random-Key Genetic Algorithm with Forward-
+
+[19]
+
+[20]
+
+[21]
+
+[22]
+
+[23]
+
+[24]
+
+Backward Improvement for the Resource Constrained
+Project Scheduling Problem, Journal of Heuristics
+17 (5) (2011) 467–486.
+V. Valls, S. Quintanilla, F. Ballestı́n, Resourceconstrained project scheduling: A critical activity reordering heuristic, European Journal of Operational
+Research 149 (2) (2003) 282–301.
+L. Zhou, D. Wang, W. Peng, An ACO for Solving
+RCPSP, in: Computer Science and Computational
+Technology, 2008. ISCSCT ’08. International Symposium on, Vol. 2, 2008, pp. 250–253.
+C. Artigues, P. Michelon, S. Reusser, Insertion techniques for static and dynamic resource-constrained
+project scheduling, European Journal of Operational
+Research 149 (2) (2003) 249–267.
+K. Bouleimen, H. Lecocq, A new efficient simulated
+annealing algorithm for the resource-constrained
+project scheduling problem and its multiple mode
+version, European Journal of Operational Research
+149 (2) (2003) 268–281.
+R. Kolisch, C. Schwindt, A. Sprecher, Benchmark Instances for Project Scheduling Problems, in: Handbook on Recent Advances in Project Scheduling,
+Kluwer, 1998, pp. 197–212.
+A. R. Brodtkorb, T. R. Hagen, M. L. Sætra, Graphics
+processing unit (GPU) programming strategies and
+trends in GPU computing, Journal of Parallel and
+Distributed Computing 73 (1) (2013) 4–13.
+
+17
+
+

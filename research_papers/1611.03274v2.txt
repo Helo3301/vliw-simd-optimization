@@ -1,0 +1,1969 @@
+arXiv:1611.03274v2 [cs.IT] 16 Sep 2017
+
+Constructions and bounds for separating hash families
+X. Niu and H. Cao ∗
+Institute of Mathematics,
+Nanjing Normal University, Nanjing 210023, China
+
+Abstract
+In this paper, we present a new construction for strong separating hash families by using
+hypergraphs and obtain some optimal separating hash families. We also improve some previously
+known bounds of separating hash families.
+Key words: Hash family, separating hash family, strong separating hash family, hypergraph
+
+1
+
+Introduction
+
+Let X and Y be two finite sets of sizes n and m respectively. An (N ; n, m)-hash family F is a
+family of functions from X to Y with |F| = N . For all pairwise disjoint subsets C1 , C2 , . . . , Ct ⊆ X,
+if there exists some f such that f (Ci ) ∩ f (Cj ) = ∅ for all 1 ≤ i < j ≤ t. Then C1 , C2 , . . . , Ct are
+separable in F, and the function f is said to separate the sets C1 , C2 , . . . , Ct .
+Given positive integers w1 , w2 , . . . , wt , we say F is a {w1 , w2 , . . . , wt }-separating hash family,
+denoted by SHF(N ; n, m, {w1 , w2 , . . . , wt }), if for all pairwise disjoint subsets C1 , C2 , . . . , Ct ⊆ X
+with |Ci | = wi for i = 1, 2, . . . , t, there exists some f ∈ F which separates C1 , C2 , . . . , Ct . The
+parameter multiset {w1 , w2 , . . . , wt } is called the type of F. For the sake of brevity, we use SHF to
+denote separating hash family, and we also use {w1q1 , w2q2 , . . . , wtqt } to denote the multiset in which
+there are exactly qi copies of wi and wi < wj for 1 ≤ i < j ≤ t. Further, w1 will be written as w.
+An SHF(N ; n, m, {1q , w}) with w ≥ 2 is also called a strong separating hash family.
+Separating hash families were first introduced by Stinson, Trung and Wei [26]. It can be used to
+construct frameproof codes, secure frameproof codes and parent-identifying codes, see [7, 22, 25, 26].
+Most results of the known papers on separating hash families are focused on their bounds and
+constructions, see [1–6, 10–12, 12, 14, 15, 24, 27, 28].
+Given an SHF(N ; n, m, {w1 , w2 , . . . , wt }), we construct an N ×n matrix A = (ai,j ) having entries
+on a set of m elements such that ai,j = fi (xj ) where f1 , f2 , . . . , fN are some fixed ordering of the
+functions in F and x1 , . . . , xn are elements of X. This matrix is called the representation matrix of
+∗
+Research supported by the National Natural Science Foundation of China under Grant No. 11571179, and the
+Priority Academic Program Development of Jiangsu Higher Education Institution.
+
+1
+
+the SHF. For all disjoint sets of columns C1 , C2 , . . . , Ct of A with |Ci | = wi , 1 ≤ i ≤ t, there exists
+at least one row r of A such that {ar,x : x ∈ Ci } ∩ {ar,y : y ∈ Cj } = ∅ holds for all 1 ≤ i < j ≤ t. We
+say the row r separates the sets C1 , C2 , . . . , Ct . An SHF(N ; n, m, {w1 , w2 , · · · , wt }) is called optimal
+if n is maximum for given N, m, w1 , w2 , · · · , wt or if N is minimum for given n, m, w1 , w2 , · · · , wt .
+In the literature optimal results for separating hash families are quite rare. In this paper, we
+present a new construction for strong separating hash families by using hypergraphs and obtain
+some optimal separating hash families. It is easy to see that a separating hash family with type
+{w1 , w2 , . . . , wt } is a separating hash family with type {w1 + w2 , w3 , . . . , wt } and also a separating hash family with type {w, w2 , . . . , wt } with w ≤ w1 . So separating hash families with type
+{w1 , w2 , . . . , wt } can yield separating hash families with type {w1′ , w2′ }. Thus it is valuable to study
+the bound of separating hash families with type {w1 , w2 }.
+This paper is organized as follows. In the next section, we present a new construction for
+strong separating hash families by using hypergraphs and present some optimal strong separating hash families. In Section 3 we construct an optimal SHF(4; 10, 4, {2, 2}) and use it to
+improve the known bound for an SHF(2w; n, m, {w, w}). In the last section, we improve the
+known bound for an SHF(w1 + w2 ; n, m, {w1 , w2 }) and use it to improve the known bound for
+P
+an SHF( ti=1 wi ; n, m, {w1 , w2 , . . . , wt }).
+
+2
+
+A new construction for strong separating hash family
+
+In this section, we will give a construction for strong separating hash families by using hypergraphs,
+and we also give some tight results for strong separating hash families. A hypergraph is a pair
+H = (V, E), where V is a finite set whose elements are called vertices and E is a family of subsets
+of V , called edges. It is k-uniform if each of its edges contains precisely k vertices.
+Theorem 2.1 Let V = {x1 , x2 , . . . , xn } and E = {B1 , B2 , . . . , BN }, where Bi is an m-subset of
+V , 1 ≤ i ≤ N . If G = (V, E) is an m-uniform hypergraph with the property that any l vertices
+are contained in exactly one edge, then there exists an SHF(N ; n, m + 1, {1w1 , w2 }) for all positive
+integers w1 and w2 satisfying w1 ≤ l and w1 + w2 ≤ n.
+Proof: Let Bi = {yi,1 , yi,2 , . . . , yi,m }, 1 ≤ i ≤ N . Define an N × n matrix A = (ai,j ) by
+(
+b, if xj = yi,b
+ai,j =
+0, otherwise.
+Now we prove A is a representation matrix of an SHF(N ; n, m+1, {1w1 , w2 }). Let C = {c1 , c2 , . . . , cn }
+denote the column set of A. Let C1 , C2 , . . . , Cw1 , Cw1 +1 be pairwise disjoint subsets of C such that
+Ci = {csi } for i = 1, 2, . . . , w1 and | Cw1 +1 |= w2 ≤ n − w1 . Then | C1 ∪ C2 ∪ · · · ∪ Cw1 |= w1 ≤ l,
+Cw1 +1 ⊂ C\{cs1 , cs2 , . . . , csw1 }.
+Since G = (V, E) is an m-uniform hypergraph with the property that any l vertices are contained
+in exactly one edge, we can find an edge Bt ∈ E such that {xs1 , xs2 , . . . , xsw1 } ⊂ Bt . Let Bt =
+2
+
+{xs1 , xs2 , . . . , xsw1 , xsw1 +1 , . . . , xsm }. Then {at,s1 , at,s2 , . . . , at,sm } = {1, 2, . . . , m} and at,j = 0 for
+any j ∈ {1, 2, . . . , n}\{s1 , s2 , . . . , sm }. Thus, {at,k : ck ∈ Ci } ∩ {at,k : ck ∈ Cj } = ∅ holds for all
+1 ≤ i < j ≤ w1 + 1. Therefore, the t-th row of A can separate C1 , C2 , . . . , Cw1 +1 .
+
+Example 2.2 Let V = Z7 and E = {{i, i + 1, i + 3} : i ∈ Z7 }. We can obtain the following
+representation matrix of an SHF(7; 7, 4, {12 , 5}) by Theorem 2.1.
+1
+0
+0
+0
+3
+0
+2
+
+2
+1
+0
+0
+0
+3
+0
+
+0
+2
+1
+0
+0
+0
+3
+
+3
+0
+2
+1
+0
+0
+0
+
+0
+3
+0
+2
+1
+0
+0
+
+0
+0
+3
+0
+2
+1
+0
+
+0
+0
+0
+3
+0
+2
+1
+
+For our results, we need the following conclusion on m-uniform hypergraphs.
+Theorem 2.3 ([16–18]) 1. For any 3 ≤ m ≤ 5, there exists an m-uniform hypergraph G = (V, E)
+with the property that any two vertices are contained in exactly one edge, where |V | = n satisfying
+n(n−1)
+.
+n ≡ 1, m (mod m2 − m), and |E| = m(m−1)
+2. For any n ≡ 2, 4 (mod 6), there exists a 4-uniform hypergraph with n vertices and
+edges such that any three vertices are contained in exactly one edge.
+
+n(n−1)(n−2)
+24
+
+3. For any prime power m and integer l ≥ 2, there exists an (m+1)-uniform hypergraph G = (V, E)
+with the property that any three vertices are contained in exactly one edge, where |V | = n satisfying
+(n3 )
+n = ml + 1, and |E| = m+1
+.
+( 3 )
+By Theorems 2.1 and 2.3 we have the following theorem.
+Theorem 2.4 1. Let 3 ≤ m ≤ 5, n ≡ 1, m (mod m2 − m), n > m, and N =
+is an SHF(N ; n, m + 1, {12 , n − 2}).
+2. Let n ≡ 2, 4 (mod 6), n ≥ 8 and N =
+
+n(n−1)(n−2)
+.
+24
+
+Then there
+
+Then there is an SHF(N ; n, 5, {13 , n − 3}).
+
+3. Let n = ml + 1, where m is a prime power and l ≥ 2. Let N =
+SHF(N ; n, m + 2, {13 , n − 3}).
+
+n(n−1)
+m(m−1) .
+
+n
+3
+m+1
+3
+
+( )
+
+(
+
+)
+
+. Then there is an
+
+Now we have obtained some new strong separating hash families from Theorem 2.4. We continue
+to show that these results from Theorem 2.4 are all tight by discussing the lower bound of N for
+an SHF(N ; w1 + w2 , m, {1w1 , w2 }). When w1 + w2 ≤ m, it is easy to see that N ≥ 1. So this case
+is trivial and we only need to deal with the case w1 + w2 > m.
+
+3
+
+Theorem 2.5 If there is an SHF(N ; w1 + w2 , m, {1w1 , w2 }) with w1 + w2 > m, then N ≥
+
+2)
+(w1w+w
+1
+.
+m−1
+( w1 )
+
+Proof: Let A = (ai,j ) be a representation matrix of an SHF(N ; w1 + w2 , m, {1w1 , w2 }) with the
+column set C = {c1 , c2 , . . . , cn }. Then the total number of the pairwise disjoint subsets of C which
+
+2
+. On the other hand, suppose C1 , C2 , . . . , Cw1 +1 are pairwise disjoint
+need to be separated is w1w+w
+1
+subsets of C such that | Cw1 +1 |= w2 and | Cj |= 1 for 1 ≤ j ≤ w1 . Let Cj = {cij } for 1 ≤ j ≤ w1 .
+If these w1 + 1 subsets can be separated by the ith row, then the element ai,j appears exactly once
+in the ith row for any j ∈ {i1 , i2 , . . . , iw1 }. Since w1 + w2 > m, there are at most m − 1 elements
+occurring exactly once in each row. So the maximum number of the pairwise disjoint subsets which
+2)
+
+(w1w+w
+1
+.
+.
+Thus,
+N
+≥
+can be separated by each row is m−1
+m−1
+w1
+( w1 )
+
+By Theorem 2.5, it is easy to check that these strong separating hash families constructed in
+Theorem 2.4 are all optimal. For more results on m-uniform hypergraphs with the property that
+any t vertices are contained in exactly one edge, see [8](pages 72-73, 82-84, 661). For example,
+there are a 5-uniform hypergraph with 11 vertices and 66 edges such that any four vertices are
+contained in exactly one edge, and a 6-uniform hypergraph with 12 vertices and 132 edges such
+that any five vertices are contained in exactly one edge, see [8](page 661). By Theorems 2.1 and
+2.5, we obtain an optimal SHF(66; 11, 5, {14 , 7}) and an optimal SHF(132; 12, 6, {15 , 7}).
+
+Remark 1 : For the bounds of strong separating hash families, Sarkar and Stinson [22] proved that
+∗
+there exists an infinite class of SHF(N ; n, m, {1w1 , w2 }) for which N is O((w1 (w1 + w2 ))log n log n).
+Liu and Shen [20] gave an infinite constructions of the SHF(N ; n, m, {1w1 , w2 }) for which N is
+n 
+O(log n). Guo and Stinson [15] proved N ≥ m−1
+when w1 ≥ m − 1 and w1 + w2 ≤ n ≤
+2(w1 + w2 ) − m. Now we compare our conclusion with the bound in [15]. By the definition of
+an SHF, it is obvious that m − 1 ≥ w1 . So Guo and Stinson’s bound in [15] can be restated as
+
+N ≥ wn1 when m − 1 = w1 and w1 + w2 ≤ n ≤ w1 + 2w2 − 1. When n = w1 + w2 and m − 1 = w1 ,
+it is easy to see that we have the same conclusion. But for the case n = w1 + w2 and m − 1 > w1 ,
+we have a new tight bound.
+Actually, the hypergraphs used in Theorem 2.1 need not to be k-uniform, and any l vertices
+need not to be contained in exactly one edge. We can generalize this construction to a hypergraph
+with different edge sizes. The proof of the following theorem is similar to that of Theorem 2.1. So
+we just present the theorem without proof.
+Theorem 2.6 Suppose there is a hypergraph with n vertices and N edges such that the maximum edge size is m and any l vertices are contained in at least one edge, then there exists an
+SHF(N ; n, m + 1, {1w1 , w2 }) for all positive integers w1 and w2 satisfying w1 ≤ l and w1 + w2 ≤ n.
+Below are some results of k-uniform hypergraphs such that any l vertices are contained in at
+least one edge.
+Theorem 2.7 ([8, 9]) 1.There exists an 3-uniform hypergraph G = (V, E) with the property that
+4
+
+any two vertices are contained in at least one edge, where |V | = n ≥ 5 and |E| = ⌈ n3 ⌈ n−1
+2 ⌉⌉.
+2.There exists an 4-uniform hypergraph G = (V, E) with the property that any two vertices are
+contained in at least one edge, where |V | = n ≥ 6 and |E| = ⌈ n4 ⌈ n−1
+3 ⌉⌉ + c, where c = 1 if
+n = 7, 9, 10; c = 2 if n = 19; and c = 0 for all other values of n.
+3. There exists an 4-uniform hypergraph G = (V, E) with the property that any three vertices are
+n−2
+contained in at least one edge, where |V | = n and |E| = ⌈ n4 ⌈ n−1
+3 ⌈ 2 ⌉⌉⌉ satisfying n 6= 12t + 7 for
+any t ∈ ([0, 12]\{6}) ∪ {16, 21, 23, 25, 29}.
+For more results on m-uniform hypergraphs with the property that any t vertices are contained
+in at least one edge, see [8](pages 366-372). By Theorems 2.6 and 2.7 we have the following theorem.
+Theorem 2.8 1. For n ≥ 5, there is an SHF(N ; n, 4, {12 , n − 2}) with N = ⌈ n3 ⌈ n−1
+2 ⌉⌉.
+2. For n = 7, 9, 10, there is an SHF(N ; n, 5, {12 , n − 2}) with N = ⌈ n4 ⌈ n−1
+3 ⌉⌉ + 1.
+3. There is an SHF(31; 19, 5, {12 , 17}).
+4. For n ≥ 6 and n 6= 7, 9, 10, 19, there is an SHF(N ; n, 5, {12 , n − 2}) with N = ⌈ n4 ⌈ n−1
+3 ⌉⌉.
+5. For any n 6= 12t + 7, t ∈ ([0, 12]\{6}) ∪ {16, 21, 23, 25, 29}, there is an SHF(N ; n, 5, {13 , n − 3})
+n−2
+with N = ⌈ n4 ⌈ n−1
+3 ⌈ 2 ⌉⌉⌉.
+By Theorem 2.6, we can obtain more results on strong separating hash families by using the
+known results on hypergraphs. For example, there exists a hypergraph with 10 vertices and 12
+edges with size 3 or 4 such that any two vertices are contained in exactly one edge, see [8](page
+231). Thus, we can construct an SHF(12; 10, 5, {12 , 8}). There exists a hypergraph with 16 vertices
+and 68 edges with size 4 or 5 such that any three vertices are contained in exactly one edge, see
+[8](page 662). Thus, we can construct an SHF(68; 16, 6, {13 , 13}). There exists a hypergraph with
+17 vertices and 252 edges with size 5 or 6 such that any four vertices are contained in exactly one
+edge, see [8](page 663). Thus, we can construct an SHF(252; 17, 7, {14 , 13}). There also exists a
+hypergraph with 16 vertices and 478 edges with size 6 or 8 such that any five vertices are contained
+in exactly one edge, see [8](page 661). Thus, we can construct an SHF(478; 16, 9, {15 , 11}). For
+more results of the known papers on hypergraphs, see [8].
+For given parameters n, m, w1 , w2 of an SHF(N ; n, m + 1, {1w1 , w2 }), we can also obtain the
+following bounds on N . Let M (n, k, l) denote the minimum possible number of edges of a kuniform hypergraph with the property that any l vertices are contained in at least one edge.
+Theorem 2.9 ([21])
+to infinity.
+
+(nl)
+(nl)
+k ≤ M (n, k, l) ≤ (1 + o(1)) k , where the o(1) term tends to zero as n tends
+(l)
+( l)
+
+According to Theorems 2.6 and 2.9, we have the following theorem.
+
+5
+
+Theorem 2.10 If there exists an SHF(N ; n, m + 1, {1w1 , w2 }) with w1 ≤ m, then N ≤ (1 +
+(n)
+(n)
+(n)
+o(1)) wm1 . Furthermore, if n = w1 + w2 , we have wm1 ≤ N ≤ (1 + o(1)) wm1 .
+(w1 )
+(w1 )
+(w1 )
+
+3
+
+An improved bound for SHF(2w; n, m, {w, w})
+
+In this section, we shall give a new bound for an SHF(2w; n, m, {w, w}) with w ≥ 2. This bound is
+useful in the next section. We start with some definitions and notations.
+Let A and B be two matrices. If B can be obtained from A by permuting the rows and/or
+columns and/or elements, then we say that A is isomorphic to B.
+Lemma 3.1 If A is a representation matrix of an SHF(N ; n, m, {w1 , w2 , . . . , wt }), and if B is
+isomorphic to A, then B is also a representation matrix of an SHF(N ; n, m, {w1 , w2 , . . . , wt }).
+In order to find good upper bounds for SHFs, we often use one of the general methods to show
+that a particular choice of n implies that the representation matrix A always contains a submatrix
+which is impossible in an SHF with given parameters. Such a submatrix is referred to a forbidden
+configuration.
+Lemma 3.2 If A is a representation matrix of an SHF(4; n, m, {2, 2}), then any submatrix of A
+can’t be isomorphic to the following forbidden configurations F1 , F2 and F3 .
+F2
+
+F1
+a
+b
+∗
+∗
+
+a
+b
+∗
+∗
+
+∗
+∗
+c
+d
+
+∗
+∗
+c
+d
+
+a
+b
+x
+∗
+
+F3
+∗
+∗
+x
+∗
+
+a
+b
+∗
+v
+
+∗
+∗
+∗
+v
+
+a
+∗
+x
+∗
+
+a
+b
+∗
+∗
+
+∗
+b
+∗
+v
+
+∗
+∗
+x
+v
+
+Proof: It is easy to check that in F1 or F3 the column sets C1 = {1, 3} and C2 = {2, 4} are not
+separable, and in F2 the column sets C1 = {1, 4} and C2 = {2, 3} are not separable.
+Suppose A = (ai,j ) is an N × n representation matrix of an SHF on m elements in Y . We need
+the following notations for the following lemmas. Let
+λix = |{j : ai,j = x, 1 ≤ j ≤ n}|, 1 ≤ i ≤ N, x ∈ Y,
+λmax = max{λix : 1 ≤ i ≤ N, x ∈ Y }, and
+di,j (x, y) = |{k : ai,k = x, aj,k = y, 1 ≤ k ≤ n}|, 1 ≤ i < j ≤ N.
+Suppose B is a submatrix of A, we shall use A − B to denote the matrix obtained by removing all
+these entries in B from A.
+
+6
+
+Lemma 3.3 Suppose A is a representation matrix of an SHF(4; n, m, {2, 2}) with m ≥ 3. If there
+is a pair of elements x and y such that di,j (x, y) ≥ 2, then n ≤ (m − 1)2 + 1.
+Proof: Without loss of generality, we may assume d1,2 (a, b) ≥ 2. Then the matrix B in Table 1 is
+a submatrix of A.
+Table 1: Three submatrices of A
+a
+b
+B=
+x
+u
+
+a
+b
+y
+v
+
+a
+b
+E=
+x
+u
+
+∗
+∗
+y
+u
+
+a
+b
+y
+v
+
+a
+b
+M=
+x
+u
+
+a
+b
+y
+v
+
+∗
+∗
+y
+u
+
+∗
+∗
+x
+v
+
+By Lemma 3.1 we only need to consider the following 5 cases.
+1. λ3x = λ3y = 1. Then A − B is a representation matrix of an SHF(4; n − 2, m, {2, 2}), and
+there are at most m − 2 distinct elements in row three. By the pigeonhole principle, there is an
+4
+element t in row four such that λ4t ≥ ⌈ n−2
+m ⌉. If λt > m − 2, then we have an element g in row
+three such that d3,4 (g, t) ≥ 2 by the pigeonhole principle. So we obtain a submatrix of A which is
+isomorphic to the forbidden configuration F1 . Thus, λ4t ≤ m − 2. Then we have ⌈ n−2
+m ⌉ ≤ m − 2.
+2
+So, n ≤ m − 2m + 2.
+2. λ3x = 1, λ3y > 1, λ4u = 1, λ4v > 1. Let D be the 4 × (n − 1) matrix obtained from A by
+removing column one. Then D is a representation matrix of an SHF(4; n − 1, m, {2, 2}), and there
+are at most m − 1 distinct elements in the last two rows. By the pigeon hole principle, there is an
+n−1
+n−1
+⌉. Then we have ⌈ m−1
+⌉ ≤ m − 1 and n ≤ m2 − 2m + 2.
+element t such that λ4t ≥ ⌈ m−1
+3. λ3x = 1, λ3y > 1, λ4u > 1, λ4v = 1. By Lemma 3.2( forbidden configuration F2 ) we know that
+λ4u = λ3y = 2, and A − E is a representation matrix of an SHF(4; n − 3, m, {2, 2}), and there are
+n−3
+⌉ ≤ m − 2 and
+at most m − 2 distinct elements in rows three and four. Similarly we have ⌈ m−2
+2
+n ≤ m − 4m + 7.
+4. λ3x = 1, λ3y > 1, λ4u > 1, λ4v > 1. In this case, it also holds that λ4u = λ3y = 2 by
+Lemma 3.2(forbidden configuration F2 ), and A − E is a representation matrix of an SHF(4; n −
+3, m, {2, 2}), and there are at most m − 2 and m − 1 distinct elements in rows three and four
+n−3
+respectively. Thus we have ⌈ m−2
+⌉ ≤ m − 1 and n ≤ m2 − 3m + 5.
+5. λ3x > 1, λ3y > 1, λ4u > 1, λ4v > 1. By Lemma 3.2(forbidden configuration F2 ) we know that
+λ3x = λ3y = λ4u = λ4v = 2, and A − M is a representation matrix of an SHF(4; n − 4, m, {2, 2}), and
+n−4
+⌉ ≤ m − 2 and
+there are at most m − 2 distinct elements in the last two rows. So we have ⌈ m−2
+2
+n ≤ m − 4m + 8.
+Combining the above 5 cases with the condition m ≥ 3, we have obtained n ≤ (m − 1)2 + 1.
+The proof is complete.
+Now we prove that if there exists an SHF(4; n, 4, {2, 2}), then n ≤ 10. To prove this conclusion,
+we assume that an SHF(4; 11, 4, {2, 2}) exists and we get a contradiction.
+7
+
+Lemma 3.4 If A is a representation matrix of an SHF(4; 11, 4, {2, 2}), then 3 ≤ λmax ≤ 4,
+di,j (x, y) ≤ 1 for all admissible elements x, y and parameters i, j, and each row of A is isomorphic
+to R1 or R2 as below.
+
+a
+
+a
+
+a
+
+a
+
+b
+
+R1
+b b
+
+∗
+
+∗
+
+∗
+
+∗
+
+a
+
+a
+
+a
+
+b
+
+b
+
+R2
+b c
+
+c
+
+c
+
+d
+
+d
+
+Proof: By Lemma 3.3, di,j (x, y) ≤ 1 holds for any admissible elements x, y and parameters i, j.
+Then it is obvious that λmax ≤ 4. Also we know that λmax ≥ 3 since 4 × 2 = 8 < 11. So we have
+3 ≤ λmax ≤ 4, and it’s easy to see that each row of A is isomorphic to R1 or R2 .
+Lemma 3.5 If A is a representation matrix of an SHF(4; 11, 4, {2, 2}), then there is at most one
+row of A which is isomorphic to R1 .
+Proof: Assume, by contradiction, that A has two rows which are both isomorphic to R1 . Without
+loss of generality, we assume both of the first two rows are isomorphic to R1 and λ1a = 4. By
+Lemma 3.3, d1,2 (a, g) = 1 holds for any element g which is in the second row and in the same
+column with a. Since there are four distinct elements in total in the second row, there exists an
+element e such that d1,2 (a, e) = 1 and λ2e = 4. So we may assume the first 7 columns of A is the
+submatrix as below.
+a
+∗
+x
+u
+
+a
+∗
+y
+v
+
+a
+∗
+z
+i
+
+a
+e
+t
+j
+
+∗
+e
+x
+a4,5
+
+∗
+e
+y
+a4,6
+
+∗
+e
+z
+a4,7
+
+Then by Lemma 3.4 we have (a4,5 , a4,6 , a4,7 ) = (v, i, u) or (i, u, v). We distinguish two cases.
+1. (a4,5 , a4,6 , a4,7 ) = (v, i, u). Then we have the following submatrix.
+a
+∗
+x
+u
+
+a
+∗
+y
+v
+
+a
+c
+z
+i
+
+a
+e
+t
+j
+
+∗
+e
+x
+v
+
+∗
+e
+y
+i
+
+∗
+e
+z
+u
+
+Thus, the column sets C1 = {1, 6} and C2 = {3, 5} are not separable, a contradiction.
+2. (a4,5 , a4,6 , a4,7 ) = (i, u, v). Then we also have the following submatrix.
+a
+∗
+x
+u
+
+a
+∗
+y
+v
+
+a
+c
+z
+i
+
+a
+e
+t
+j
+
+∗
+e
+x
+i
+
+∗
+e
+y
+u
+
+∗
+e
+z
+v
+
+Thus, the column sets C1 = {1, 7} and C2 = {2, 5} are not separable, a contradiction.
+8
+
+Lemma 3.6 If A is a representation matrix of an SHF(4; 11, 4, {2, 2}), then each row of A is
+isomorphic to R2 .
+Proof: By Lemma 3.5, we know that A has no two rows which are both isomorphic to R1 . So we
+assume that the first row of A is isomorphic to R1 and the other rows of A are isomorphic to R2 .
+Without loss of generality, we start with the following submatrix.
+a
+b
+x
+u
+
+a
+c
+y
+v
+
+a
+d
+z
+i
+
+a
+e
+t
+j
+
+∗
+b
+∗
+∗
+
+∗
+b
+∗
+∗
+
+∗
+c
+∗
+∗
+
+∗
+c
+∗
+∗
+
+∗
+d
+∗
+∗
+
+∗
+d
+∗
+∗
+
+∗
+e
+x
+∗
+
+By Lemma 3.4, a4,11 = v or i. By Lemma 3.1, we only consider a4,11 = v. By Lemma 3.2(forbidden
+configuration F3 ), considering the column set {3, 4, 11}, we have
+d3,4 (z, v) = d3,4 (x, i) = 0.
+
+(1)
+
+1. λ3x = 2. Then λ3y = λ3z = λ3t = 3. By Lemma 3.4 we can get the following matrix.
+a
+b
+x
+u
+
+a
+c
+y
+v
+
+a
+d
+z
+i
+
+a
+e
+t
+j
+
+∗
+b
+z
+∗
+
+∗
+b
+y
+∗
+
+∗
+c
+z
+∗
+
+∗
+c
+t
+∗
+
+∗
+d
+y
+∗
+
+∗
+d
+t
+∗
+
+∗
+e
+x
+v
+
+Since d2,4 (b, u) = d3,4 (z, i) = 1 and (1), we have a4,5 = j, then a4,7 = u. So we have a
+submatrix (rows 1,2,3,4 and columns 2,4,5,7) which is isomorphic to the forbidden configuration
+F3 , a contradiction.
+2. λ3x = 3.
+(i) d2,3 (c, x) = 1, let a3,7 = x. Since d3,4 (x, u) = d3,4 (x, v) = 1, we have a4,7 = j by (1). By
+Lemma 3.2(forbidden configuration F3 ), considering the column set {2, 3, 7} we have d3,4 (z, j) = 0.
+Then λ3z = 2 and d3,4 (z, u) = 1 by (1). Then we have the following submatrix.
+a
+b
+x
+u
+
+a
+c
+y
+v
+
+a
+d
+z
+i
+
+a
+e
+t
+j
+
+∗
+b
+∗
+∗
+
+∗
+b
+∗
+∗
+
+∗
+c
+x
+j
+
+∗
+c
+z
+u
+
+∗
+d
+∗
+∗
+
+∗
+d
+∗
+∗
+
+∗
+e
+x
+v
+
+Thus, the column sets C1 = {3, 7} and C2 = {4, 8} are not separable, a contradiction.
+(ii) d2,3 (c, x) = 0, let a3,9 = x. Since d3,4 (x, u) = d3,4 (x, v) = 1, so a4,9 = j by (1).
+a
+b
+x
+u
+
+a
+c
+y
+v
+
+a
+d
+z
+i
+
+a
+e
+t
+j
+
+∗
+b
+∗
+∗
+
+∗
+b
+∗
+∗
+9
+
+∗
+c
+∗
+∗
+
+∗
+c
+∗
+∗
+
+∗
+d
+x
+j
+
+∗
+d
+∗
+∗
+
+∗
+e
+x
+v
+
+Thus, the column sets C1 = {2, 9} and C2 = {3, 11} are not separable, a contradiction.
+
+Lemma 3.7 If A is a representation matrix of an SHF(4; 11, 4, {2, 2}) and each row of A is isomorphic to R2 , then there exists a submatrix B satisfying λ2e = λ2f = λ2g = 3 and λ3x = λ3y = λ3z = 3.
+a
+B= e
+x
+
+a
+f
+y
+
+a
+g
+z
+
+Proof: Suppose that A does not contain a submatrix isomorphic to B. Then we show that A is
+not a representation matrix of an SHF(4; 11, 4, {2, 2}). Since each row of A is isomorphic to R2 , we
+have λ1d = λ2h = λ3t = λ4j = 2. By Lemma 3.1, we have the following submatrix, where C, D and E
+are 3 × 3 matrices, and F is a 3 × 2 matrix.
+a
+
+a a
+C
+
+b
+
+b b
+D
+
+c
+
+c c
+E
+
+d
+
+d
+F
+
+If there is not element in {h, t, j} satisfying d1,k (a, g) = 1, then the submatrix (row set {1, 2, 3} and
+column set {1, 2, 3}) is isomorphic to B; If there exists exactly one element g in {h, t, j} satisfying
+d1,k (a, g) = 1, then the submatrix (row set {1, 2, 3, 4}\{k} and column set {1, 2, 3}) is isomorphic to
+B. So the matrix C contains at least two elements in {h, t, j}. Similarly, the matrices D and E also
+contain at least two elements in {h, t, j}, respectively. Since λ2h = λ3t = λ4j = 2, each of matrices of
+C, D and E contains two elements of {h, t, j}. So the matrix F does not contain any one element
+of {h, t, j}. Thus, for any two elements g, g1 in {d, h, t, j}, dk1 ,k2 (g, g1 ) = 0, {k1 , k2 } ⊂ {1, 2, 3, 4}.
+By Lemma 3.1, we have the following submatrix.
+d
+∗
+x
+v
+
+d
+∗
+y
+∗
+
+∗
+h
+x
+i
+
+∗
+h
+z
+∗
+
+∗
+∗
+t
+∗
+
+∗
+∗
+t
+∗
+
+∗
+∗
+∗
+j
+
+∗
+∗
+∗
+j
+
+a
+e
+x
+u
+
+b
+f
+y
+v
+
+c
+h
+z
+i
+
+Since a4,2 and a4,4 are in the set {u, v, i}, we have (a4,2 , a4,4 ) ∈ {(u, u), (i, u), (u, v)}. If (a4,2 , a4,4 ) =
+(u, u), then the column sets C1 = {1, 4} and C2 = {2, 3} are not separable, a contradiction; If
+(a4,2 , a4,4 ) = (i, u), then (a1,3 , a1,4 ) = (b, b) by Lemma 3.4, a contradiction; If (a4,2 , a4,4 ) = (u, v),
+then (a2,1 , a2,2 ) = (e, e) by Lemma 3.4, a contradiction.
+
+Lemma 3.8 There is no SHF(4; 11, 4, {2, 2}) with all 4 rows isomorphic to R2 .
+Proof: Let A is a representation matrix of an SHF(4; 11, 4, {2, 2}). Assume that every row of A
+is isomorphic to R2 . By Lemma 3.7, we suppose the first three rows and columns is a submatrix
+which is isomorphic to B satisfying λ2e = λ2f = λ2g = 3 and λ3x = λ3y = λ3z = 3. Suppose the fourth
+
+10
+
+elements in rows two and three are h and t respectively. Then λ2h = λ3t = 2. We distinguish two
+cases.
+1. d2,3 (h, t) = 0. Without loss of generality, let d2,3 (e, t) = d2,3 (f, t) = 1.
+(i) a3,5 = a3,7 . Since d2,3 (e, x) = d2,3 (f, y) = 1, we have a3,5 = a3,7 = z. So we have the
+following submatrix.
+a
+e
+x
+u
+
+a
+f
+y
+v
+
+a
+g
+z
+i
+
+∗
+e
+t
+∗
+
+∗
+e
+z
+∗
+
+∗
+f
+t
+∗
+
+∗
+f
+z
+∗
+
+∗
+g
+x
+∗
+
+∗
+g
+y
+∗
+
+∗
+h
+x
+∗
+
+∗
+h
+y
+∗
+
+By Lemma 3.4, we have i ∈
+/ {a4,5 , a4,7 , a4,8 , a4,9 }. By Lemma 3.2(forbidden configuration F3 ), we
+have i ∈
+/ {a4,4 , a4,6 , a4,10 , a4,11 }, otherwise, we have 4 submatrices (row set {1, 2, 3, 4}, and column
+sets {2, 3, 4, 6}, {1, 3, 4, 6}, {2, 3, 10, 11}, {1, 3, 10, 11} respectively) which are all isomorphic to F3 .
+So we have λ4i = 1, a contradiction.
+(ii) a3,5 6= a3,7 . We distinguish three cases, (a3,5 , a3,7 ) = (y, x), (y, z), and (z, x). If (a3,5 , a3,7 ) =
+(y, x), then (a3,10 , a3,11 ) = (z, z), a contradiction. (a3,5 , a3,7 ) = (y, z) and (a3,5 , a3,7 ) = (z, x) are
+isomorphic. So let(a3,5 , a3,7 ) = (z, x).
+a
+e
+x
+u
+
+a
+f
+y
+v
+
+a
+g
+z
+i
+
+∗
+e
+t
+∗
+
+∗
+e
+z
+∗
+
+∗
+f
+t
+∗
+
+∗
+f
+x
+∗
+
+∗
+g
+x
+∗
+
+∗
+g
+y
+∗
+
+∗
+h
+y
+∗
+
+∗
+h
+z
+∗
+
+By Lemmas 3.2 and 3.4, the possible elements of each position in the last row are listed as below.
+a4,k
+possible elements
+
+a4,4
+v, j
+
+a4,5
+v, j
+
+a4,6
+u, j
+
+a4,7
+i, j
+
+a4,8
+v, j
+
+a4,9
+u, j
+
+a4,10
+i, j
+
+a4,11
+u, j
+
+If a4,4 = v, by Lemma 3.4, we have a4,5 = j, then a4,11 = u. By Lemma 3.2(forbidden
+configuration F3 ), considering the column set {1, 2, 5}, we have d3,4 (y, j) = 0, then a4,9 = u. So
+a4,6 = j by λ4u = 3. By Lemma 3.2(forbidden configuration F3 ), considering the column set {2, 3, 6},
+we have d3,4 (z, j) = 0, a contradiction.
+If a4,4 = j, by Lemma 3.4 we have a4,5 = v and a4,6 = u. By Lemma 3.2(forbidden configuration
+F3 ), considering the column sets {1, 2, 4} and {1, 3, 4}, we have d3,4 (y, j) = d34 (z, j) = 0, so
+a4,9 = a4,11 = u. Thus, λ4u = 4, a contradiction.
+2. d2,3 (h, t) = 1. Without loss of generality, let d2,3 (g, t) = 1.
+a
+e
+x
+u
+
+a
+f
+y
+v
+
+a
+g
+z
+i
+
+∗
+e
+y
+∗
+
+∗
+e
+z
+∗
+
+∗
+f
+x
+∗
+11
+
+∗
+f
+z
+∗
+
+∗
+g
+x
+∗
+
+∗
+g
+t
+∗
+
+∗
+h
+t
+∗
+
+∗
+h
+y
+∗
+
+Similarly, we have the following table.
+a4,k
+possible elements
+
+a4,4
+i, j
+
+a4,5
+v, j
+
+a4,6
+i, j
+
+a4,7
+u, j
+
+a4,8
+v, j
+
+a4,9
+u, v, j
+
+a4,10
+j
+
+a4,11
+u, j
+
+By Lemma 3.4, we have a4,9 = u and a4,11 = u. Then λ4u = 3, and a4,7 = j. By Lemma 3.4, we
+have a4,5 = v and a4,6 = i.
+a
+e
+x
+u
+
+a
+f
+y
+v
+
+∗
+e
+y
+∗
+
+a
+g
+z
+i
+
+∗
+e
+z
+v
+
+∗
+f
+x
+i
+
+∗
+f
+z
+j
+
+∗
+g
+x
+∗
+
+∗
+g
+t
+u
+
+∗
+h
+t
+j
+
+∗
+h
+y
+u
+
+Now, we have a submatrix (rows 1, 2, 3, 4 and columns 2, 3, 10, 11) which is isomorphic to F3 , a
+contradiction.
+
+Theorem 3.9 There exists an optimal SHF(4; 10, 4, {2, 2}).
+Proof: It’s obvious that Lemma 3.8 contradicts with Lemma 3.6. So if there is an SHF(4; n, 4, {2, 2}),
+then n ≤ 10. Next, we give a representation matrix of an SHF(4; 10, 4, {2, 2}) in the following.
+1
+1
+1
+1
+
+1
+2
+2
+2
+
+1
+3
+3
+3
+
+2
+1
+2
+3
+
+2
+2
+3
+1
+
+2
+3
+1
+2
+
+3
+1
+3
+2
+
+3
+2
+1
+3
+
+3
+3
+2
+1
+
+4
+4
+4
+4
+
+Thus, there exists an optimal SHF(4; 10, 4, {2, 2}).
+Theorem 3.10 If there exists an SHF(4; n, m, {2, 2}) with m ≥ 4, then n ≤ (m − 1)2 + 1.
+Proof: If m = 4, the conclusion follows by Theorem 3.9. Now assume that m > 4. Let A be a
+representation matrix of an SHF(4; n, m, {2, 2}). Now, we consider the following two cases.
+1. There is a pair of elements x and y in the i-th row and the j-th row respectively such that
+di,j (x, y) > 1. Then we have n ≤ (m − 1)2 + 1 by Lemma 3.3.
+2. di,j (x, y) ≤ 1 for any admissible elements x, y and parameters i, j. Then we have λmax ≤ m.
+Assume, for a contradiction that n = (m − 1)2 + 2. By the pigeonhole principle, there is an element
+n
+⌉ = m − 1 for 1 ≤ i ≤ 4.
+ti such that λiti ≥ ⌈ m
+(i) λmax = m. Assume that there are two elements a and k in different rows (without loss of
+generality, in the first two rows) such that λ1a = λ2k = m. Then there is a submatrix of A as below.
+
+12
+
+a
+∗
+x1
+u1
+
+a
+∗
+x2
+u2
+
+···
+···
+···
+···
+
+a
+∗
+xm−1
+um−1
+
+a
+k
+xm
+um
+
+∗
+k
+y1
+v1
+
+∗
+k
+y2
+v2
+
+···
+···
+···
+···
+
+∗
+k
+ym−1
+vm−1
+
+By Lemma 3.2(forbidden configuration F3 ), d3,4 (xi , vj ) = 0 and d4,3 (ui , yj ) = 0 for any ui 6= vj ,
+xi 6= yj , 1 ≤ i, j ≤ m − 1. So, there are at least (m − 1) × (m − 3) distinct pairs of elements s and t
+such that d3,4 (s, t) = 0. Thus, (m − 1)× (m − 3)+ n ≤ m2 , ie. (m − 1)× (m − 3)+ (m − 1)2 + 2 ≤ m2 ,
+so we have m ≤ 4. It contradicts m > 4.
+So we may assume that there is exactly one row (without loss of generality, the first row)
+containing an element a such that λ1a = m.
+a
+∗
+x1
+u1
+
+a
+∗
+x2
+u2
+
+···
+···
+···
+···
+
+a
+∗
+xm−1
+um−1
+
+a
+k
+xm
+um
+
+∗
+k
+y1
+v1
+
+∗
+k
+y2
+v2
+
+···
+···
+···
+···
+
+∗
+k
+ym−2
+vm−2
+
+Similarly, we can obtain (m − 2) × (m − 3) distinct pairs of elements s and t such that d3,4 (s, t) = 0.
+Since λ3xm ≤ m − 1 and λ4um ≤ m − 1, we know that there are two elements w in row three and z in
+row four such that d3,4 (xm , z) = d3,4 (w, um ) = 0. Thus, (m − 2) × (m − 3) + 2 + n ≤ m2 contradicts
+m > 4.
+λ1a
+
+(ii) λmax = m − 1. Then there exist two elements a and k in the first two rows such that
+= λ2k = m − 1. Suppose there is a submatrix of A as blew.
+a
+∗
+x1
+u1
+
+a
+∗
+x2
+u2
+
+···
+···
+···
+···
+
+a
+∗
+
+a
+k
+
+xm−2
+um−2
+
+xm−1
+um−1
+
+∗
+k
+y1
+v1
+
+∗
+k
+y2
+v2
+
+···
+···
+···
+···
+
+∗
+k
+ym−2
+vm−2
+
+Similarly, there are at least (m − 2) × (m − 4) + 2 distinct pairs of elements s and t such that
+d3,4 (s, t) = 0. Thus, (m − 2) × (m − 4) + 2 + n ≤ m2 . So we have m ≤ 5. If m > 5, we have a
+contradiction. Now we assume that m = 5. Then we have the following submatrix of A.
+a
+∗
+x1
+u1
+
+a
+∗
+x2
+u2
+
+a
+∗
+x3
+u3
+
+a
+k
+x4
+u4
+
+∗
+k
+y1
+v1
+
+∗
+k
+y2
+v2
+
+∗
+k
+y3
+v3
+
+Let X1 = {x1 , x2 , x3 }, Y1 = {y1 , y2 , y3 }, U1 = {u1 , u2 , u3 } and V1 = {v1 , v2 , v3 }. Since di,j (x, y) ≤ 1,
+we have |{x1 , x2 , x3 , x4 }| = |{x4 , y1 , y2 , y3 }| = 4. Then by m = 5 we have 2 ≤| X1 ∩ Y1 |≤ 3.
+Similarly, we can get 2 ≤| U1 ∩ V1 |≤ 3. Now we continue to distinguish the following 2 cases.
+(a) | X1 ∩ Y1 |= 3 and | U1 ∩ V1 |= 3. Thus, X1 = Y1 and U1 = V1 . By Lemma 3.1 we only need
+to consider the following two submatrices.
+13
+
+a
+∗
+x1
+u1
+
+a
+∗
+x2
+u2
+
+a
+∗
+x3
+u3
+
+a
+k
+x4
+u4
+
+∗
+k
+x1
+u2
+
+∗
+k
+x2
+u3
+
+∗
+k
+x3
+u1
+
+a
+∗
+x1
+u1
+
+a
+∗
+x2
+u2
+
+a
+∗
+x3
+u3
+
+a
+k
+x4
+u4
+
+∗
+k
+x1
+u3
+
+∗
+k
+x2
+u1
+
+∗
+k
+x3
+u2
+
+It is easy to check that in the left submatrix column sets C1 = {1, 6} and C2 = {3, 5} are not
+separable, and in the right submatrix the column sets C1 = {1, 7} and C2 = {2, 5} are not separable,
+a contradiction.
+(b) | X1 ∩ Y1 |= 2 and | U1 ∩ V1 |≤ 3. By Lemma 3.1, we may assume that y1 = x1 , y2 = x2 and
+y3 = x5 . So we have the following submatrix.
+a
+∗
+x1
+u1
+
+a
+∗
+x2
+u2
+
+a
+∗
+x3
+u3
+
+a
+k
+x4
+u4
+
+∗
+k
+x1
+v1
+
+∗
+k
+x2
+v2
+
+∗
+k
+x5
+v3
+
+For each i = 1, 2, since |V1 \ {vi , ui }| ≥ 1, we know that there is at least one element ti ∈
+V1 \ {vi , ui } such that d3,4 (xi , ti ) = 0 by Lemma 3.2(forbidden configuration F3 ).
+Similarly, since |V1 \ {u3 }| ≥ 2 and |U1 \ {v3 }| ≥ 2 we know that there are at least two elements
+t3 , t4 ∈ V1 \{u3 } and t5 , t6 ∈ U1 \{v3 } such that d3,4 (x3 , t3 ) = 0, d3,4 (x3 , t4 ) = 0 and d3,4 (x5 , t5 ) = 0,
+d3,4 (x5 , t6 ) = 0 respectively.
+Since m = 5, λ3x4 ≤ 4, and λ4u4 ≤ 4, we know that there are two elements w in row three and z
+in row four such that w 6= x4 , z 6= u4 and d3,4 (x4 , z) = d3,4 (w, u4 ) = 0.
+Since x4 6∈ X1 ∪ Y1 and u4 6∈ U1 ∪ V1 we have obtained at least 8 distinct pairs of elements (s, t)
+such that d3,4 (s, t) = 0. So we have 8 + n = 8 + 18 = 26 > 25, a contradiction.
+The proof is complete.
+Remark 2 : It’s easy to see that the bound in Theorem 3.10 is tight for m = 4 by Theorem 3.9.
+Now we are in the position to prove the main result of this section.
+Theorem 3.11 If there exists an SHF(2w; n, m, {w, w}) with m ≥ 2w ≥ 4, then n ≤ (m − 1)2 + 1.
+Proof: We use induction on w to prove the theorem.
+1. By Theorem 3.10, for w = 2 this conclusion holds.
+2. Assume the conclusion holds for w = k − 1, k ≥ 3. Then, we consider the case w =
+k. Let m ≥ 2k ≥ 6. Assume, for a contradiction, that A is a representation matrix of an
+SHF(2k; (m − 1)2 + 2, m, {k, k}), and C denote the set of all columns of A. By removing the
+first two rows of A, we obtain a (2k − 2) × (m2 − 2m + 3) submatrix B. By inductive hypothesis, B
+is not an SHF(2k − 2; (m − 1)2 + 2, m, {k − 1, k − 1}). Thus, there are two disjoint subsets of columns
+C1 and C2 of B with |C1 | = |C2 | = k − 1 which are not separable. Now, we consider the same
+14
+
+column sets C1 and C2 in A. Let D = C\(C1 ∪C2 ), then |D| = m2 −2m−2k +5 ≥ m2 −3m+5 > m.
+Let Yi , Ui and Vi (i = 1, 2) be the element sets in which each element appears in the i-th row of
+these columns in D, C1 and C2 respectively.
+If there exist two elements x ∈ Y1 and y ∈ Y2 such that d1,2 (x, y) ≥ 2, then we have two
+distinct columns l1 and l2 agreeing in the first two rows. So C1 ∪ {l1 } and C2 ∪ {l2 } are not
+separated in A, a contradiction. Now, assume that d1,2 (x, y) ≤ 1 for all x ∈ Y1 and y ∈ Y2 . If
+{a1,j1 : j1 ∈ C1 } ∩ {a1,j2 : j2 ∈ C2 } =
+6 ∅, then we have two distinct columns l1 and l2 agreeing in
+the second row. So C1 ∪ {l1 } and C2 ∪ {l2 } are not separated in A, a contradiction. By Lemma
+3.1, we only need to consider the case that {ai,j1 : j1 ∈ C1 } ∩ {ai,j2 : j2 ∈ C2 } = ∅, 1 ≤ i ≤ 2, and
+d1,2 (x, y) ≤ 1 for all x ∈ Y1 and y ∈ Y2 . Suppose that |Y1 | ≥ |Y2 |, we distinguish the following four
+cases.
+(i) |Y1 | ≤ m − 1. Since ⌈ n−2(k−1)
+m−1 ⌉ = m − 1, by the pigeonhole principle, there exists an element
+1
+x ∈ Y1 such that λx ≥ m − 1 in D. Since d1,2 (x, y) ≤ 1 for x ∈ Y1 and y ∈ Y2 , we have two columns
+l1 and l2 in D such that a1,l1 = a1,l2 = x and a2,l1 ∈ U2 ∪ V2 . If a2,l1 ∈ U2 , then C1 ∪ {l2 } is not
+separated from C2 ∪ {l1 }, a contradiction. Similarly, we have a contradiction for a2,l1 ∈ V2 .
+(ii) |Y1 | = m and |Y2 | < m − 1. Since ⌈ n−2(k−1)
+m−2 ⌉ = m, by the pigeonhole principle, there exists
+an element x ∈ Y2 such that λ2x ≥ m in D. Then we have two columns l1 and l2 in D such that
+a2,l1 = a2,l2 = x and a1,l1 ∈ U1 . So C1 ∪ {l2 } is not separated from C2 ∪ {l1 }, a contradiction.
+(iii) |Y1 | = m and |Y2 | = m − 1. Since ⌈ n−2(k−1)
+m−1 ⌉ = m − 1, by the pigeonhole principle, there
+2
+exists an element x ∈ Y2 such that λx ≥ m − 1 in D. We may have a contradiction by using the
+similar method in case (i).
+(iv) |Y1 | = |Y2 | = m. For any column ki ∈ Ci (i = 1, 2), we have a1,k1 ∈ Y1 , a1,k2 ∈ Y1 ,
+a2,k1 ∈ Y2 and a2,k2 ∈ Y2 . If there exist distinct columns l1 and l2 in D, such that a1,k2 = a1,l1 and
+a2,k1 = a2,l2 , we have that C1 ∪ {l1 } is not separated from C2 ∪ {l2 }, a contradiction. Otherwise,
+there exists the unique column l such that a1,k2 = a1,l , or a2,k1 = a2,l , so a1,k2 = a1,l and a2,k1 = a2,l .
+Similarly, we have a unique column l′ such that a1,k1 = a1,l′ and a2,k2 = a2,l′ . Then there are m − 2
+distinct elements in the first row of column set D\{l, l′ } and m − 2 distinct elements in the second
+⌉ = m − 1 > m − 2, by the pigeon hole principle,
+row of column set D\{l, l′ }. Since ⌈ n−2(k−1)−2
+m−2
+there exist two elements x ∈ Y1 and y ∈ Y2 such that d1,2 (x, y) > 1, a contradiction.
+The proof is complete.
+Remark 3 : The best upper bound for an SHF(2w; n, m, {w, w}) with m ≥ 2w ≥ 4 is n < m2 [4].
+We improve this bound from n < m2 to n ≤ (m − 1)2 + 1.
+
+4
+
+An improved bound for SHF(
+
+Pt
+
+i=1 wi ; n, m, {w1, w2 , . . . , wt })
+
+In this section, we shall give a new bound for an SHF(w1 + w2 ; n, m, {w1 , w2 }) with w2 > w1 ≥ 2
+P
+and m ≥ w1 + w2 . Then we obtain a new bound for SHF( ti=1 wi ; n, m, {w1 , w2 , . . . , wt }).
+15
+
+Lemma 4.1 Suppose A is a representation matrix of an SHF(2 + w; n, m, {2, w}) with m ≥ 2 + w.
+If there is a pair of elements a and b such that di,j (a, b) ≥ 2, then n < m2 − m.
+Proof: Suppose, for a contradiction, that A is a representation matrix of an SHF(2 + w; m2 −
+m, m, {2, w}) with m ≥ 2 + w, and d12 (a, b) ≥ 2. Let C denote the set of columns of A, and
+B = {(i, j) : λiai,j = 1, 3 ≤ i ≤ w + 2, 1 ≤ j ≤ 2}. We distinguish the following 4 cases.
+1. |B| = 0. Then there are two columns li and li′ of A such that ai,1 = ai,li and ai,2 = ai,li′ for
+each 3 ≤ i ≤ w + 2. Let C1 = {2} ∪ {li : 3 ≤ i ≤ w + 2} and C2 = {1} ∪ {li′ : 3 ≤ i ≤ w + 2}. If
+there is a column h1 6∈ C1 or h2 6∈ C1 satisfying aw+1,2 = aw+1,h1 or aw+2,2 = aw+2,h2 respectively,
+then C1 \{lw+j } is not separated from {1, hj } for j = 1 or 2, a contradiction. Thus, for any column
+l satisfying aw+1,2 = aw+2,l or aw+2,2 = aw+2,l we have l ∈ C1 . Similarly, if aw+1,1 = aw+2,l′ or
+aw+2,1 = aw+2,l′ , we have l′ ∈ C2 . Let C1 = C\(C1 ∪ C2 ). By the pigeonhole principle, there is an
+′
+′
+element t in row w + 2 such that λw+2
+≥ ⌈ n−2w−2
+t
+m−2 ⌉ > m − 2. So there exist two columns l1 and l2
+of C1 agreeing in the last two rows. Then {1, l1′ } and C1 ∪ {l2′ }\{lw+1 , lw+2 } are not separated, a
+contradiction.
+w+2
+i
+2. |B| = 1. By Lemma 3.1, we may assume λw+2
+aw+2,1 = 1, λaw+2,2 ≥ 2 and λai,j ≥ 2, 3 ≤ i ≤
+w + 1, 1 ≤ j ≤ 2. Then there exist a column li of A such that ai,1 = ai,li for each 3 ≤ i ≤ w + 1.
+Let C1 = {2} ∪ {li : 3 ≤ i ≤ w + 1}. If there exists a column l such that aw+2,2 = aw+2,l with
+l∈
+/ C1 , then let C2 = {1, l}, so we have C1 is not separated from C2 , a contradiction. Thus, for
+any column l satisfying aw+2,2 = aw+2,l , we have l ∈ C1 . Let C1 = C\(C1 ∪ {1}). By the pigeonhole
+≥ ⌈ n−w−1
+principle, there is an element t in row w + 2 such that λw+2
+t
+m−2 ⌉ > m. So there exist two
+columns l1 and l2 of C1 agreeing in the last two rows. Then {1, l1 } and C1 ∪ {l2 }\{lw+1 } are not
+separated, a contradiction.
+
+3. |B| = 2. Let λix1 = λiy2 = 1.
+(i) i1 = i2 . By Lemma 3.1, we may assume i1 = i2 = w + 2. Then there exist a column li of A
+such that ai,1 = ai,li for each 3 ≤ i ≤ w. Let C1 = {2} ∪ {li : 3 ≤ i ≤ w}. Let C1 = C\(C1 ∪ {1}).
+n−w
+By the pigeonhole principle, there is an element t in row w + 2 such that λw+2
+≥ ⌈ m−2
+⌉ > m. So
+t
+there exist two columns l1 and l2 of C1 agreeing in the last two rows. Then {1, l1 } and C1 ∪ {l2 }
+are not separated, a contradiction.
+(ii) i1 6= i2 . By Lemma 3.1, we may assume i1 = w + 1 and i2 = w + 2. Then there exist
+a column li of A such that ai,1 = ai,li for each 3 ≤ i ≤ w. Let C1 = {2} ∪ {li : 3 ≤ i ≤ w}.
+Let C1 = C\(C1 ∪ {1}). By the pigeonhole principle, there is an element t in row w + 2 such that
+n−w
+⌉ > m − 1. So we have two columns l1 and l2 agreeing in the last two rows, and {1, l1 }
+λw+2
+≥ ⌈ m−1
+t
+and C1 ∪ {l2 } are not separable, a contradiction.
+4. |B| ≥ 3. Let 3 ≤ k ≤ w. By Lemma 3.1, we may assume that λiai,j > 1 when 3 ≤ i ≤ k
+and 1 ∈ {λiai,1 , λiai,2 } when k + 1 ≤ i ≤ w + 2. Then there exist a column li of A such that
+ai,1 = ai,li for each 3 ≤ i ≤ k. Let C1 = {2} ∪ {li : 2 < i ≤ k}, and let C1 = C\(C1 ∪ {1}). Then
+| C1 |= m2 − m − k > (m − 1)2 . From [4](Theorem 10), we have two columns sets C2 and C3
+satisfying | C2 |= 1, | C3 |= w + 1 − k, and C2 and C3 are not separable in the rows from k + 1 to
+16
+
+w + 2. Thus, we have C1 ∪ C3 is not separated from C2 ∪ {1}. The proof is complete.
+Theorem 4.2 Suppose A is a representation matrix of an SHF(2 + w; n, m, {2, w}) with w ≥ 2
+and m ≥ 2 + w, then n < m2 − m.
+Proof: We use induction on w to prove the theorem.
+1. By Theorem 3.10, for w = 2 this case satisfies.
+2. Assume the conclusion holds for w = k − 1, k ≥ 3. Suppose, for a contradiction, that an
+SHF(k + 2; m2 − m + 3, m, {2, k}) exists with A as the representation matrix. Let C denote the set
+of columns of A. By removing the first row of A, we obtain a (k + 1) × (m2 − m + 3) submatrix
+B. By inductive hypothesis, there are two sets of columns C1 and C2 in B with |C1 | = 2 and
+|C2 | = k − 1 which are not separable. Now, we consider the same column sets C1 and C2 in A. Let
+C1 = C\C1 . If there exist two columns l1 and l2 satisfying l1 ∈ C1 and l2 ∈ C1 such that a1,l1 = a1,l2 ,
+then C1 is not separated from C2 ∪ {l1 }, a contradiction; Now we have that for any two columns
+l1 ∈ C1 and l2 ∈ C1 satisfy a1,l1 6= a1,l2 . Thus, | {a1,i : i ∈ C1 } |≤ m − 1. Similarly, we have
+| {a2,i : i ∈ C1 } |≤ m − 1. By the pigeonhole principle, there is an element t in the first row such
+n−2
+⌉ > m − 1. So we have d1,2 (t, z) ≥ 2 in C1 . It contradicts Lemma 4.1. The proof is
+that λ1t ≥ ⌈ m−1
+complete.
+We use Theorem 4.2 as the inductive hypothesis to prove the following theorem. The proof
+method is similar to the Theorem 3.11.
+Theorem 4.3 If there exists an SHF(w1 + w2 ; n, m, {w1 , w2 }) with 2 ≤ w1 < w2 and m ≥ w1 + w2 ,
+then n < m2 − m.
+Remark 4 : The best upper bound for an SHF(w1 + w2 ; n, m, {w1 , w2 }) with m ≥ w1 + w2 is
+n ≤ m2 [4]. When w1 = 1 and w2 ≥ 2, this bound is tight. When w2 > w1 ≥ 2, we improve this
+bound from n ≤ m2 to n < m2 − m.
+Now, we obtain the mainly conclusion of SHFs in the following.
+Theorem 4.4 Suppose there exists an SHF(u; n, m, {w1 , w2 , . . . , wt }) with u =
+and {w1 , w2 , . . . , wt } ∈
+/ {{1, 1, 1}, {1, w}}, then n < m2 − m.
+
+Pt
+
+i=1 wi .
+
+If m ≥ u
+
+Proof: If t = 2, since {w1 , w2 , } =
+6 {1, w} we have n < m2 − m by Theorems 3.11 and 4.3. Now we
+assume t ≥ 3. By the definition of an SHF, we know that an SHF(u; n, m, {w1 , w2 , . . . , wt }) is also
+P
+an SHF(u; n, m, {w, w′ }) with w = w1 + w2 and w′ = ti=3 wi . Since {w1 , w2 , . . . , wt } =
+6 {1, 1, 1},
+′
+2
+we have w ≥ 2 and w ≥ 2. By Theorems 3.11 and 4.3, we have n < m − m.
+N
+
+Remark 5: The best upper bound for an SHF(N ; n, m, {w1 , w2 , . . . , wt }) is n ≤ rm⌈ u−1 ⌉ +(u −
+N
+P
+r)m⌊ u−1 ⌋ where u = ti=1 wi , 1 ≤ r ≤ u− 1 and N ≡ r (mod u− 1) [23]. When N = u, we improve
+this bound from n ≤ m2 + (u − 1)m to n < m2 − m.
+17
+
+References
+[1] N. Alon and U. Stav, New bounds on parent-identifying codes: the case of multiple parents,
+Combin. Probab. Comput. 13 (2004), 795-807.
+[2] M. Atici, S. S. Magliveras, D. R. Stinson, and W. D. Wei, Some recursive constructions for
+perfect hash families, J. Combin. Des. 4 (1996), 353-363.
+[3] M. Bazrafshan and T. Trung, Bounds for separating hash families, J. Combin. Theory Ser. A
+118 (2011), 1129-1135.
+[4] M. Bazrafshan and T. Trung, Improved bounds for separating hash families, Des. Codes Cryptogr. 69 (2013), 369-382.
+[5] S. R. Blackburn, Frameproof codes, SIAM J. Discrete Math. 16 (2003), 499-510.
+[6] S. R. Blackburn, T. Etzion, D. R. Stinson, and G. M. Zaverucha, A bounds on the size of
+separating hash families, J. Combin. Theory Ser. A 115 (2008), 1246-1256.
+[7] D. Boneh and J. Shaw, Collusion-free fingerprinting for digital data, IEEE Trans. Inf. Theory.
+44 (1998), 1897-1905.
+[8] C. J. Colbourn and J. H. Dinitz, Handbook of Combinatorial Designs, 2nd Ed Chapman &
+Hall/CRC,(2007).
+[9] Y. Caro and R. Yuster, Covering graphs: The covering problem solved, J. Combin. Theory Ser.
+A 83 (1998), 273-282.
+[10] R. Fuji-Hara, Perfect hash families of strength three with three rows from varieties on finite
+projective geometries, Des. Codes Cryptogr. 77 (2015), 351-356.
+[11] F. Gao and G. Ge, New Bounds on Separable Codes for Multimedia Fingerprinting, IEEE
+Trans. Inf. Theory. 60 (2014), 5257-5262.
+[12] G. Ge, C. Shangguan, and X. Wang, Some intriguing upper bounds for separating hash families,
+http://arXiv:1707.01758v1, 2017.
+[13] H. D. O. F. Gronau, R. C. Mullin, and C. Pietsch, The closure of all subsets of {3, 4, . . . , 10}
+which include 3, Ars Combin. 41 (1995) 129-161.
+[14] C. Guo, D. R. Stinson, and T. Trung, On tight bounds for binary frameproof codes, Des.
+Codes Cryptogr. 77 (2015), 301-319.
+[15] C. Guo and D. R. Stinson, A tight bound on the size of certain separating hash families,
+Australas. J. Combin. 67 (2017), 294-303.
+[16] H.Hanani, On quadruple systems, Canad. J. Math. 12 (1960), 12:145-157.
+[17] H.Hanani, Balanced incomplete block designs and related designs, Discrete Math. 11 (1975),
+255-369.
+[18] D. R.Hughes, On t-designs and groups, Amer. J. Math. 87 (1965), 761-778.
+[19] P. C. Li, G. H. J. van Rees, and R. Wei, Constructions of 2-cover-free families and related
+separating hash families, J. Combin. Des. 14 (2006), 423-440.
+[20] L. Liu and H. Shen, Explicit constructions of separating hash families from algebraic curves
+over finite fields, Des. Codes Cryptogr. 41 (2006), 221-233.
+[21] V. Roödl, On a packing and covering problem, Eur. J. Combin. 6 (1985), 69-78.
+[22] P. Sarkar and D. R. Stinson, Frameproof and IPP codes, Lecture Notes in Comput Sci. 2247
+(2001), 117-126.
+18
+
+[23] C. Shangguan and G. Ge, Separating hash families: A Johnson-type bound and new constructions, SIAM J. Discrete Math. 30 (2016), 2243-2264.
+[24] C. Shangguan, X. Wang, G. Ge, and Y. Miao, New bounds for frameproof codes, http://
+arXiv:1411.5782v1, 2014.
+[25] J. N. Staddon, D. R. Stinson, and R. Wei, Combinatorial properties of frameproof and traceability codes, IEEE Trans. Inf. Theory. 47 (2001), 1042-1049.
+[26] D. R. Stinson, T. Trung, and R.Wei, Secure frameproof codes, key distribution patterns, group
+testing algorithms and related structures, J. Statist. Plan. Inference. 86 (2000), 595-617.
+[27] D. R. Stinson, R. Wei, and K. Chen, On generalized separating hash families, J. Combin.
+Theory Ser. A 115 (2008), 105-120.
+[28] R. A. Walker II and C. J. Colbourn, Perfect hash families: constructions and existence, J.
+Math. Cryptogr. 1 (2007), 125-150.
+
+19
+
+

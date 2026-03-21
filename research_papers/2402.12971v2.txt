@@ -1,0 +1,4654 @@
+arXiv:2402.12971v2 [physics.comp-ph] 10 Oct 2024
+
+Differentiability in Unrolled Training of Neural Physics Simulators on
+Transient Dynamics
+Bjoern List, Li-Wei Chen, Kartik Bali, Nils Thuerey
+School of Computation, Information and Technology
+Technical University Munich
+Boltzmannstraße 3, 85748 Garching, Germany
+{bjoern.list, ge35mav, kartik.bali, nils.thuerey}@tum.de
+October 11, 2024
+Abstract
+Unrolling training trajectories over time strongly influences the inference accuracy of neural networkaugmented physics simulators. We analyze this in three variants of training neural time-steppers. In addition to one-step setups and fully differentiable unrolling, we include a third, less widely used variant:
+unrolling without temporal gradients. Comparing networks trained with these three modalities disentangles
+the two dominant effects of unrolling, training distribution shift and long-term gradients. We present detailed study across physical systems, network sizes and architectures, training setups, and test scenarios. It
+also encompasses two simulation modes: In prediction setups, we rely solely on neural networks to compute
+a trajectory. In contrast, correction setups include a numerical solver that is supported by a neural network.
+Spanning these variations, our study provides the empirical basis for our main findings: Non-differentiable
+but unrolled training with a numerical solver in a correction setup can yield substantial improvements over
+a fully differentiable prediction setup not utilizing this solver. The accuracy of models trained in a fully
+differentiable setup differs compared to their non-differentiable counterparts. Differentiable ones perform
+best in a comparison among correction networks as well as among prediction setups. For both, the accuracy
+of non-differentiable unrolling comes close. Furthermore, we show that these behaviors are invariant to the
+physical system, the network architecture and size, and the numerical scheme. These results motivate integrating non-differentiable numerical simulators into training setups even if full differentiability is unavailable.
+We show the convergence rate of common architectures to be low compared to numerical algorithms. This
+motivates correction setups combining neural and numerical parts which utilize benefits of both.
+
+1
+
+Introduction
+
+Our understanding of physical systems relies on capturing their dynamics in mathematical models, often representing them with a partial differential equation (PDE). Forecasting the behavior with these models thus
+involves the notoriously costly and difficult task of solving the PDE. By aiming to increase simulator efficiencies, machine learning was successfully deployed to augment traditional numerical methods for solving these
+equations. Common areas of research are network architectures [79, 44, 27, 94, 91], reduced order representations [51, 104, 3, 59, 14, 107], and training methods [93, 83, 52, 10]. Previous studies were further motivated by
+performance and accuracy boosts offered by these methods, especially on GPU architectures. Machine learning
+based simulators aim to address the limitations of classical PDE solvers in challenging scenarios with complex
+dynamics [26, 98, 13]. Computational fluid dynamics represents an application of machine learning augmented
+solvers [7, 21]. This especially includes turbulence closure modeling in Reynolds-averaged Navier-Stokes modeling [48, 114, 115, 112, 113] as well as closure models for large eddy simulation [60, 5, 50, 83, 95]. In tackling these
+challenges, various architectural advancements have recently been made. On the one hand, physics-informed
+networks have gained popularity in continuous PDE modeling [73, 21, 87], and extensions of this have been
+made to discrete representations [74, 16]. However, many learned approaches work in a purely data-driven manner on discrete trajectories. Several of these use advanced network architectures to model the time-evolution
+
+1
+
+1
+
+INTRODUCTION
+
+of the PDE, such as graph networks [66, 79] and particle simulators [103, 70], problem-tailored architectures
+[99, 84, 19], bayesian networks [109], generative adverserial networks [106], transformer models [32, 28, 42], or
+lately diffusion models [47, 49, 38]. Variations of these approaches compute the evolution in an encoded latent
+space [104, 27, 28, 14, 107, 96]. In an effort to achieve discretization-independence of the learned simulators,
+neural operators have shifted the learning task towards finding a mapping between the function spaces of the
+numerical solutions. The architectural changes that become necessary when moving to this paradigm have been
+made for convolutional architectures [75], graph networks [45] or Fourier-based features [44], among others.
+Additionally, physical knowledge is often integrated into the neural solver by keeping some classical numerical
+component as part of the solver architecture [61, 110]. In this context, the practice of training neural networks
+in combination with numerical solvers emerged. The resulting simulator is sometimes referred to as hybrid
+solver or augmented solver in literature [37, 50, 49]. Since neural network training is based on automatic differentiation, differentiable solvers are required to calculate network updates. In his setting, network optimization
+is conceptually equivalent to adjoint optimization. Here, the adjoint equation provides ”sensitivities”, which
+are referred to as ”gradients” in the discrete automatic differentiation setting [80]. Due to this similarity, early
+works utilized adjoint solvers into which networks were embedded [83, 52].
+Out of all physical systems of interest in simulations, those exhibiting transient dynamics are particularly
+challenging to model. Solutions to these systems are typically based on a time-discrete evolution of the underlying dynamics. Consequently, the simulator of such dynamics is subject to many auto-regressive invocations.
+Designing simulators that achieve stability and accuracy over long auto-regressive horizons can be challenging
+in numerical and neural settings. However, unlike numerical approaches, where unstable components such as
+dispersion errors are well studied and effective stabilizing approaches exist, little is known about the origin of
+instabilities and mitigating strategies for neural networks. As an interesting development, a stability analysis of
+echo-state networks was presented recently [54], allowing deeper insights into the behavior of recurrent networks.
+Nevertheless, stabilizing autoregressive neural simulators remains particularly difficult.
+One promising strategy is unrolling, where multi-step trajectories are evolved at training time. Um et al.
+[93] used an auto-differentiable implementation of an incompressible Navier-Stokes solver to train correction
+networks to accelerate numerical simulations of a cylinder-wake flow. Kochkov et al. [37] used a very similar
+technique also employing unrolled correction learning on the two-dimensional Kolmogorov flow. Both of these
+setups used neural network architectures based on discrete convolutions. An adjoint solver was used by Sirignano
+et al. [83] on challenging three-dimensional turbulence scenarios to train a point-wise closure model for LargeEddy simulation. These previous works all successfully deployed unrolling. In this practice, one update to the
+network weights is based on an unrolled trajectory, where the neural simulator is applied multiple times in
+an auto-regressive fashion. By design, these unrolled training trajectories are closer to the inference scenario
+than simple one-step training. This effectively reduces the data shift, which describes the difference in the
+distribution of training and inference data. By exposing autoregressive trajectories at training time, unrolling
+moves the observed training data closer toward realistic inference scenarios [105, 100]. A measurable gain in
+long-term stability of networks trained with this method was found in previous work [93, 50, 55]. By now,
+unrolling represents a widely used approach when training neural networks that predict PDE trajectories on
+their own [27], or support numerical solvers in doing so, for instance, in LES closure modeling [83, 52, 50].
+An important observation is that these previous works utilized the full backpropagation gradient for network
+optimization. In an unrolled setup including a numerical solver, this can only be calculated using differentiable
+or adjoint solvers. Since differentiability is rarely satisfied in existing code bases, this is a first limitation of
+differentiable unrolling. A resulting open question is how much the numerical solver’s differentiability assists in
+training accurate networks.
+Additionally, possible downsides of differentiable unrolling concerning gradient stability were investigated in
+recent work. While a vanishing/exploding effect is well known for recurrent networks [31], it is only sparsely
+studied for correction approaches featuring numerical and neural components. The stability of the backpropagation gradients was found to align with the Lyapunov time of the physical system for recurrent prediction
+networks [56]. Furthermore, unrolling for too many steps was associated with diminishing returns [93, 50] and
+even showed negative effects in previous work [55]. This indicates that the gradient stability of unrolled setups
+dependent on the unrolled horizon marks an important limiting factor. In practical considerations, unrolled
+setups need to balance the benefits of data shift reduction with sufficient gradient stability. The reported success of some methods used in previous work can be related to this balancing act. For instance, recent studies
+[10, 70] proposed a variant of classic truncated backpropagation in time [89]. These recent works reported a
+
+2
+
+INTRODUCTION
+
+Data shift
+
+Gradient divergence
+with-grad.
+no-grad.
+
+1
+
+1
+
+unrolling
+
+m
+
+Figure 1: Illustration of data shift and gradient divergence over unrolling; gradients of non-differentiable unrolling diverge from the true gradient landscape (blue), gradients of differentiable simulators are prone to
+explosions over long horizons (orange); shaded areas mark potential benefits over one-step learning; full gradient calculation performs best.
+positive effect on the network performance when ”warm-up” steps were introduced. A warm-up step increases
+the unrolled horizon without contributing to the learning signal since backpropagation gradients are discarded
+for these steps. This effect was reported to stabilize the trained networks. As a similar potential remedy, it was
+proposed to cut the backpropagation chain into individual sequences [50].
+Within this paper, we explore unrolling from a dynamical systems perspective. A first fundamental insight is
+that no machine-learned approximation identically fits the underlying target. For physics simulators, this means
+that the dynamics of the learned system will always differ from the target dynamics. As such, the attractors
+for the target and the learned system do not coincide entirely. Unrolling can be seen as an exploration of the
+machine-learned dynamics’ attractor at training time. In contrast to training without unrolling, this approach
+thus allows sampling from a different distribution in the solution space. An unrolled training procedure samples
+from the learned dynamics and exposes (more of) the inference attractor at training time. The difference
+between training and inference, which we referred to as data shift, is reduced. For longer horizons, more of the
+learned dynamics’ attractor is exposed, stabilizing the neural simulator.
+In principle, this would motivate ever longer horizons, as illustrated in Figure 1. However, obtaining useful gradients through unrolled dynamical systems limits this horizon in practice [17]. The differentiability of
+numerical solvers is crucial to backpropagate through solver-network chains. However, if the learned system
+exhibits chaotic behavior, backpropagating long unrolled chains can lead to instabilities in the gradient calculation itself [56]. Due to the strong non-linearities of deep-learning architectures, the auto-regressive dynamics
+of the learned simulator can show chaotic behavior in early training stages, regardless of the properties of the
+target system. A limitation to the effective unrolled horizon in fully differentiable setups was thus observed in
+previous studies [93, 50].
+A central and rarely used variant employs unrolling without backpropagating gradients through the simulator.
+We study this training variant in detail because of its high practical relevance, as it can be realized by integrating
+existing, non-differentiable solvers into a deep learning framework. The forward pass of a non-differentiable
+unrolling setup is identical to the fully differentiable setup and thus features the same attractor-fitting property.
+In the backward pass, the non-differentiability of the solver is equivalent to an operator returning a zero gradient.
+This effectively truncates the backpropagation and avoids long gradient propagation chains. While cutting
+gradients potentially has a stabilizing effect, we find that it also limits the effective unrolling horizon, albeit
+for different reasons: the computed gradient approximations diverge from the true gradient as the unrolling
+horizon increases, making the learning process less reliable. Figure 1 illustrates these gradient inaccuracies for
+both training modalities. To the best of our knowledge, extensive studies of non-differentiable unrolled training
+do not yet exist. This is despite its high relevance to the scientific computing community as an approachable
+variant integrating numerical solvers in network training.
+We analyze these two unrolling variants using standardized solver and network architectures while contrasting
+them with one-step training. This allows disentangling the effects of data shift introduced by forward unrolling
+
+3
+
+2
+
+UNROLLING PDE EVOLUTIONS
+
+and accurate long-term gradients calculated by backpropagation. Our study targets four open questions in the
+context of unrolling:
+(I) How effective is non-differentiable unrolling? The vast majority of existing numerical solvers are
+not differentiable. We investigate the effectiveness of non-differentiable unrolling and whether integrating such
+a solver into the training loop yields measurable benefits. While previous studies have provided a good intuition
+on the effectiveness of differentiable unrolling, there are no prior results on non-differentiable unrolling.
+(II) How do the unrolling variants compare? Differentiable unrolling, non-differentiable unrolling, and
+one-step learning require different levels of software engineering efforts. A comparison of these training setups
+is necessary to choose the most suitable setup for a given application.
+(III) Which benefits does correction training yield? Whether machine learning architectures should be
+trained to augment numerical codes in a corrective setup or rather constitute surrogates in a predictive setup,
+is up to scientific debate. The integration of numerical solvers as indicated in (I) and (II) has to be motivated
+by distinct benefits of such correction approaches.
+(IV) Do the effects of unrolling show in different PDEs? The concepts of unrolling and differentiablility may arise in various applications governed by different physical laws. As such, we want to investigate how
+the effects of unrolling translate between physical systems, solvers and network architectures.
+We test our findings on various physical systems with multiple network architectures, including convolutional
+and graph networks. To achieve this, we develop differentiable solvers that could serve as a benchmark in future
+studies. In this context, it is worth noting that several benchmarks and datasets have been published to
+increase comparability and promote standardization of machine-learned PDE simulators, especially in fluid
+mechanics. Datasets for advection-diffusion type PDEs [90], and measured real-world smoke clouds [22] have
+been proposed. A high-fidelity Reynolds-averaged Navier-Stokes dataset is provided in [9]. Furthermore, more
+specialized datasets focus on fluid manipulation [108], and navigation for aerial vehicles [36]. We choose three
+widely used differentiable scenarios and an additional non-differentiable case as the basis for the following
+investigation.
+
+2
+
+Unrolling PDE Evolutions
+
+Unrolling is a common strategy for learning time sequences [93, 52, 37, 50]. A first important distinction is
+whether the task at hand is a prediction or a correction task. Additionally, we formally introduce the differences
+between non-differentiable and differentiable unrolling in gradient calculation. These are then used to derive
+an intuition about the gradient effects of unrolling.
+
+2.1
+
+Evolving partial differential equations with neural networks
+
+Let us consider the general formulation of a PDE in the form of
+∂u
+= F(u, ∇u, ∇2 u, . . . ),
+∂t
+
+(1)
+
+with u representing the field variables of the physical system. From the perspective of dynamical systems, the
+state u is said to evolve on the attractor AF of the underlying PDE system. For the following analysis, we
+define an attractor A to satisfy the following conditions:
+1. The attractor A is forward invariant such that for any state ut=t0 ∈ A, the temporal evolution of this
+state is also in A such that ut>t0 ∈ A. Thus, trajectories on A cannot ”leave” this attractor and will
+further evolve within A.
+2. The attractor has a basin of attraction B(A) in the neighborhood of A for which all states u ∈ B(A)
+converge to A as t → ∞. By this property, A attracts neighboring states.
+4
+
+2.2
+
+Training Neural Simulators
+
+2
+
+UNROLLING PDE EVOLUTIONS
+
+3. There is no subset of A that satisfies the previous conditions.
+The attractor can be seen as a subspace of the phase space of u containing only those realizations of u that
+are physical under Equation (1). For an initial condition in the basin of the attractor B(A), the solution will
+converge to states on AF and further evolve within this attractor.
+The learning tasks presented in the following sections assume that we have access to a highly-resolved
+ground truth solver that produces solution trajectories that are physical under Equation (1). Its trajectories
+follow the dynamics of a PDE F and thus converge to AF for a reasonably chosen initial condition in B(AF )
+and an adequate burn-in time. The resulting dataset of spatiotemporally discrete snapshots Ū = [ū0 . . . ūN ]
+lies strictly on this attractor such that ūt ∈ AF for all t. Additionally, the physical system has a governing
+characteristic timescale tc , where tc is dependent on the underlying PDE and its characteristic hyperparameters.
+The dataset size N is typically large in comparison to this timescale.
+
+2.2
+
+Training Neural Simulators
+
+We study Neural Simulator architectures that use neural networks for evolving discretized forms of PDEs.
+Simulating a system’s fully resolved dynamics becomes prohibitively expensive in many applications. A classic
+example is turbulent flows, where modeling approaches like large-eddy simulations often replace direct numerical
+simulations. In this context, Neural Simulators can applied on a reduced representation of the dynamical state.
+A mapping between the ground truth and its reduced representation leads to
+ũt = R(ūt ),
+
+∀ūt ∈ Ū .
+
+(2)
+
+It is important to note that the reduction is not strictly necessary. If one is interested in the full dynamics,
+the reduction R becomes the identity. In our studies, the reduction depends on the physical system and will be
+specified for each system at a later stage.
+The task of a Neural Simulator is to provide a time-stepping operation on discrete data frames in accordance
+with the PDE in (1). We denote the trajectory on which the Neural Simulator operates as ut . Due to modeling
+errors, ut may not exactly fit ũt . The Neural Simulator operation gθ (u) on a sample from the dataset can then
+be denoted as
+ũt+1 ≈ ut+1 = gθ (ũt ),
+(3)
+on the dataset ũt ∈ Ũ , where θ represents the weights of the neural network. We want to stress that, at this
+point, we have not limited the structure of g in any way. However, when specifying prediction and correction
+setups, we will differentiate the construction of g, even though both fit this general operation signature.
+Prediction setups fully rely on a neural network to calculate the next timestep. Denoting the network as fθ
+leads to
+ut+1 = gθ,p (ut ) = fθ (ut ).
+(4)
+In a prediction configuration, the network fully replaces a numerical solver with the goal of improving its
+accuracy and performance. They’re also known as neural solvers or surrogates. Various previous works fit this
+description. It encompasses full state PDE predictions with a whole range of architectures including graph
+networks [79, 66], coarse-grained predictions of the full dynamics like in weather prediction [76, 39] as well as
+reduced order models or latent evolutions that operate on encoded spaces [104, 24]. We will focus on networks
+based on convolutional or graph message-passing operations. Details of the architectures are introduced with
+the physical system.
+Correction setups are also concerned with time-evolving a discretized PDE but additionally include a numerical solver S that approximates the solution by computing only parts of a timestep. The underlying assumption
+is that the solver cannot capture the full dynamics of the PDE in (1). From a machine learning perspective,
+the numerical solver introduces a powerful prior and inductive bias. A timestep gθ thus consists of the solver S
+and a neural network model fθ . The network complements the numerical solver such that
+ut+1 = gθ,c (ut ; fθ ; S).
+
+(5)
+
+These setups represent a combination of numerical and neural architectures, potentially combining the advantages of both domains. Possible applications include closure and turbulence modeling in RANS or LES,
+coarse-graining, as well as dynamical system control setups. The formulation in (5) is quite general and fits
+5
+
+2.3
+
+Unrolling dynamical systems at training time
+
+2
+
+UNROLLING PDE EVOLUTIONS
+
+many previous works. For instance, the correction networks used in previous work [93, 37] used the following
+more specific formulation
+u∗ = S(ut )
+ut+1 = fθ (u∗ ).
+
+(6)
+
+We will also use this setup for our corrections. Different approaches exist. For instance in the context of LES,
+where the subgrid-scale terms are usually embedded into the filtered equation. This leads to
+f = fθ (ut ) ≈ ∇ · τsgs
+ut+1 = S(ut , f ).
+
+(7)
+
+This closure-inspired formulation is more popular in the computational fluids community [83, 50]. In this
+context, training a neural network directly on ground truth values of τsgs is referred to as a-priori training while
+training with respect to the solution state u is frequently called a-posteriori training [80].
+For the prediction and correction setups from equation (6) and (4), respectively, the input and output
+vectors of the networks share the same solution space. While the learned mapping differs in prediction and
+correction cases, one does not necessarily need different architectures to train one or the other. Thus, we use
+different instances of identical neural network architectures in both setups. We use the same notation fθ for
+both applications to stress this property. A representative computational chain for correction and prediction
+setups using this notation is visualized in Figure 2.
+
+2.3
+
+Unrolling dynamical systems at training time
+
+In practice, Neural Simulators rarely satisfy Equation (3) exactly and rather form an approximation of the
+ground truth. Over long auto-regressive rollouts at inference time these small-scale errors accumulate and lead
+to a substantial shift in the solution, which can cause instabilities and ultimately makes the solution diverge. The
+data shift between snapshots observed at training time and those observed in inference is commonly identified as
+the cause of these instabilities [72]. When simply training on one-step trajectories as in Equation (3), only data
+sampled from the ground truth attractor AF is observed, as only data from the ground truth dataset ũ ∈ Ũ is
+supplied. The same model might then used autoregressively at inference time with ui+1 = gθ (ui ). An inference
+trajectory is then constructed as [ui+1 , gθ (ui+1 ), . . . ] . Crucially, we supply the model with self-generated
+data ui for the first time when computing this inference trajectory. Based on the fact that learned simulators
+never perfectly reproduce the ground truth, this can lead to error accumulation and unwanted behavior in the
+trajectories. This means, that the attractor of the learned dynamics Agθ includes additional states in such
+cases. These states are exposed by the auto-regressive inference rollout which feeds unseen and fundamentally
+different data to the network. Thus, the learned attractor Agθ ̸= AF .
+We study unrolling as a possible remedy for this problem. Unrolling describes the process of auto-regressively
+evolving the learned system in a training iteration. It can be formalized as
+ut+s = gθs (ũt ),
+
+(8)
+
+where gθs represents the recurrent application of s steps of gθ . When unrolling at training time from a starting
+frame ũt , multiple frames [ut+1 , ut+2 , . . . , ut+m ] are generated within one training iteration, where m denotes
+the unrolling horizon. A simple one-step training is obtained by setting m = 1. However, one-step training
+without unrolling does not guarantee that the states u observed during training sufficiently represent Agθ . In
+mathematical terms,
+∀ũt ∈ AF ∃ gθ : lim {gθ (ũ0 ), gθ (ũ1 ), ..., gθ (ũN )} =
+̸ Ag θ .
+(9)
+N →∞
+
+This means that we are not guaranteed to explore the attractor of the learned system Agθ when only those
+states are observed that are based on one discrete evolution of gθ , regardless of the dataset size N . Simple
+examples of this are networks sampled during training. A common data-augmentation approach is to perturb
+the ground truth states in Ũ with noise, in the hope that the perturbed states fit Agθ more closely [79]. While
+this approach was reported to be successful, it still does not guarantee that the observed states are from Agθ ,
+and thus, those augmented states are not necessarily closer to states observed during inference.
+6
+
+2.4
+
+Training neural networks to solve PDEs:
+
+2
+
+UNROLLING PDE EVOLUTIONS
+
+correction
+
+pure
+prediction
+
+correction tasks
+
+pure
+numerics
+
+contribution of fθ →
+
+100%
+
+prediction
+
+0%
+
+S
+fθ
+
+delity of numerical solver S →
+
+Figure 2: Left: Illustration of unrolling for a horizon m = 2, with numerical solver S and neural network fθ ,
+visualized for correction and prediction chains; importantly, it highlights differences in the gradient flow shown
+with dotted lines in the backward pass for non-differentiable (blue, no-gradient (NOG)) and differentiable
+(orange, with-gradient (WIG)) setups: note how the gradients do not flow through a time step of S for nogradient (NOG), instead they contain two shorter, disconnected backpropagation chains; Right: Contributions
+of networks and numerical solvers in possible prediction and correction paradigms
+Let us now suppose we unroll to the horizon m with gθs (ũ) and s ∈ [1, . . . , m] at training time. Based on
+the definition of the attractor Agθ it can be proven that
+\
+limfi
+{gθ0 (ũt ), gθ1 (ũt ), ..., gθm (ũt )} ⊃ Agθ ,
+(10)
+m→∞
+
+i=1..N
+
+t
+
+for sufficiently many ũ in the basin B(Agθ ). Details of the proof are provided in A. In contrast to one-step
+training without unrolling, enabling it thus exposes the inference attractor Agθ at training time for sufficiently
+large datasets and horizons m. While the horizon m is practically never chosen long enough to expose Agθ
+with a single initial condition, a sufficiently large dataset ensures that Agθ is approached from multiple angles
+and observed states from this set converge to the attractor of gθ for large enough m. Precisely the difference
+between the observed training set (sampled from AF ) and the inference attractor Agθ represents a form of data
+shift that can impede inference accuracy. The dark red curve in Figure 1 shows how this shift is thus reduced
+by choosing larger m.
+
+2.4
+
+Training neural networks to solve PDEs:
+
+Since the training procedure is largely similar for correction and prediction, we will use the generalized gθ for
+the following analysis. We will put special emphasis on the differences between correction and prediction setups
+when they arise. The general training procedure is given as
+ NX
+
+−m X
+m
+
+θ∗ = arg min
+L2 ũt+s , gθs (ũt ) .
+(11)
+θ
+
+t=1 s=1
+
+For one learning iteration, a loss value is accumulated over an unrolled trajectory. We can write this total loss
+over the unrolled trajectory as
+m
+m
+X
+X
+L=
+L2 (ũt+s , gθs (ũt )) =
+Ls ,
+(12)
+s=1
+
+s=1
+
+s
+
+where L represents the loss evaluated after a step. The simplest realization of the training procedure (11)
+utilizes the forward process with m = 1, i.e. no unrolling. We refer to this variant without unrolling as one-step
+(ONE) in the following. This approach is common practice in literature and the resulting training procedure is
+easily realized with pre-computed data. In contrast, the full backpropagation through an unrolled chain with
+m > 1 requires a differentiable solver S for the correction setup. The differentiable setup can calculate the full
+optimization gradients by propagating gradients through a simulation step, as illustrated by the orange arrows
+in Figure 2. The gradients are thus evaluated as
+ s−B
+ B
+s 
+X
+∂Ls Y ∂gθs−b
+∂gθ
+∂LsWIG
+=
+.
+(13)
+s−b−1
+∂θ
+∂gθs
+∂θ
+∂gθ
+B=1
+b=1
+7
+
+2.4
+
+Training neural networks to solve PDEs:
+
+2
+
+Table 1: Calculated gradients with unrolled step s; for correction:
+L
+ONE
+NOG
+
+∂L12
+∂fθ1
+
+L12
+P
+s
+
+WIG
+
+∂L/∂θ
+
+P
+s
+
+∂fθ1
+∂θ
+
+∂g s+1
+∂g s
+
+UNROLLING PDE EVOLUTIONS
+
+=
+
+∂fθs ∂S s
+∂S s ∂g s ;
+
+for prediction:
+
+Requires diff. S
+
+Realization
+
+no
+
+precompute
+
+Ls2
+
+P ∂Ls2 ∂fθs
+s
+s ∂fθ ∂θ
+
+no
+
+interface
+
+Ls2
+
+s ∂Ls ∂g s ∂g B
+P P
+2
+s ∂g B ∂θ
+∂g
+s B=1
+
+yes
+
+re-implement
+
+∂g s+1
+∂g s
+
+=
+
+∂fθs
+∂g s
+
+We refer to this fully differentiable setup as with-gradient (WIG). The loss contribution LsWIG originates from
+the sth step in the unrolling horizon. Gradients associated with this loss contribution are propagated to all
+previous network contributions, which results in the outer sum in equation (13). The individual network
+contributions require backpropagation through (multiple) simulator operations gθ , resulting in the chain-rule
+product in equation (13). Refer to Figure 2 for a visualization. The gradient flow through a simulator step
+∂g s+1
+
+∂f s
+
+s
+
+∂S
+= ∂Sθs ∂g
+for correction setups. Here it becomes apparent that gradients propagate
+g is caluclated as ∂gθ,c
+s
+s
+θ,c
+θ,c
+through a simulator step gθ,c . The numerical solver S is part of this operation in correction setups and needs
+to be differentiable with respect to the input state, i.e. ∂S(u)
+has to be available. The propagated gradient
+∂u
+values carry information for all network contributions lying earlier in the unrolled chain. Since there is no
+numerical solver in the prediction setup, the gradient propagation solely depends on the network and evaluates
+
+to
+
+s+1
+∂gθ,p
+s
+∂gθ,p
+
+=
+
+∂fθs
+.
+s
+∂gθ,p
+
+s
+
+To test the effect of differentiability, we introduce a second strategy for propagating the gradients ∂L
+∂θ . If
+no differentiable solver is available, optimization gradients can only propagate to the network application, not
+through the solver. The blue arrows in Figure 2 do not pass through a simulation step. In mathematical terms,
+the gradients are thus evaluated as
+∂LsNOG
+∂Ls ∂gθs
+=
+.
+(14)
+∂θ
+∂gθs ∂θ
+This setup is referred to as NOG. While gradients can still flow into the parameter space θ of an operation gθ ,
+∂g s+1
+
+they cannot pass through it. Hence, ∂gθ s := 0 holds for correction and prediction setups. Refer to Figure 2
+θ
+again for a visualization. In short, a simulator step in the NOG setup is not differentiable and yields no gradients
+with respect to previous steps. Most existing code bases in engineering and science are not fully differentiable.
+Consequentially, this NOG setup is particularly relevant, as it can be implemented using existing traditional
+numerical solvers. It is important to note a potential limitation of NOG unrolling. It only works without
+implementing additional differential operations when the ground truth information is available directly at the
+network output. For the correction formulation used within this study from equation (6), this is trivially given
+since the output of the network constitutes the new solution. If equation (7) is used without a differentiable
+solver instead, only one option exists - Moving the ground truth information to the output of the network and
+employing NOG unrolling. In the example of closure modeling, this could be achieved by explicitly filtering the
+high-resolution ground truth to derive subgrid-scale stresses [63]. However, deriving a filter is reliant on strong
+assumptions for the actual filter operation. The behavior of the resulting subgrid-scale quantities depends on
+the choice of filter [68]. Due to these approximations, a-priori derived ground-truth values for the subgridscale quantities generally are not ideal targets to maximize a-posteriori performance. This leads to a mismatch
+between the a-priori trained networks and filtered LES equations, which can make these networks ineffective
+[81]. This problem is circumvented by a-posteriori training of the subgrid-scale model, which in turn requires
+differentiable solvers. Utilizing the non-differentiable NOG strategy for closure models is thus only achievable
+with the correction formulation of equation (6).
+Figure 2 contains a visualization including the backpropagation flow through an unrolled chain. It highlights the fundamentally different nature of accumulated Jacobian terms for WIG and NOG: the former grows
+quadratically in m, i.e., inducing three terms in the example of the figure, while NOG grows linearly and induces only two Jacobian terms. The gradient calculations for our three setups, additionally including the ONE
+8
+
+2.5
+
+Gradient behavior in unrolled systems
+
+2
+
+UNROLLING PDE EVOLUTIONS
+
+variant, are further denoted in Table 1. Further detail of the gradient calculations in correction and prediction
+setups is found in B.
+
+2.5
+
+Gradient behavior in unrolled systems
+
+As WIG unrolling provides the true gradient, we can thus derive the gradient inaccuracy of the NOG setup as
+ s−B
+ B
+m X
+s−1 
+X
+∂LWIG
+∂LNOG
+∂gθ
+∂Ls Y ∂gθs−b
+−
+=
+s
+s−b−1
+∂θ
+∂θ
+∂gθ
+∂θ
+∂gθ
+s=1 B=1
+b=1
+
+(15)
+
+The long backpropagation chains used in WIG are missing in NOG unrolling and thus lead to the innermost
+product in Equation 15. At this stage, we can integrate a property of chaotic dynamics derived by [56] in
+∂gθs
+this analysis. Therein, the authors show how the Jacobians Js = ∂gs−1
+have eigenvalues larger than 1 in the
+θ
+geometric mean:
+s−B
+Y ∂g s−b
+θ
+> 1.
+(16)
+s−b−1
+∂g
+θ
+b=1
+This means that the scale of the backpropagated gradients increases with unrolling length in the WIG setup.
+Since the gradient flow through gθ is cut in the NOG approach, this also means that more information is omitted
+for long unrolling horizons, which increases the gradient inaccuracy of NOG. The largest contribution cut from
+the NOG gradients stems from the longest chains in equation (15). These long chains scale with m2 due to the
+forward and backward pass (equivalent to the maximum values of the iterants s and B in equation (15)). We
+can thus conclude that the NOG gradient inaccuracy grows with ∝ m2 , while the NOG gradients only linearly
+depend on m. For increasing unrolling lengths, the error in this surrogate gradient will outgrow the gradient
+itself. As a consequence, this approximation of the gradient computed in the NOG system diverges from the
+true (WIG) gradients for increasing m, as shown with the blue line in Figure 1. Due to the fact that numerically
+covering a characteristic timescale tc usually requires many timesteps, the NOG gradient divergence will be fast
+compared to this timescale. Using the gradient approximations used in NOG as a learning signal does not
+accurately match the loss used in training. This hinders the network optimization, which is visualized by the
+gradient divergence curve in Figure 1.
+Let us finally consider the full gradients of the WIG setup. We can use Theorem 2 from [56] stating
+lim
+
+m→∞
+
+∂gθm
+∂gθ0
+
+=∞
+
+(17)
+
+for almost all points on Agθ . The gradients of the WIG setup explode for long horizons m. As a direct
+consequence, the training of the WIG setup becomes unstable for chaotic systems when m grows. In contrast
+to the NOG gradients discussed above, it is not an inaccuracy in the computation that makes the training
+become unstable, but rather this intrinsic property of the Jacobian of chaotic dynamics. As such, the gradient
+divergence of the WIG system does not depend on the number of discrete steps like the NOG ones did, but
+is rather governed by the characteristic physical timescale tc of the learned system. Due to the fact that one
+physical timescale of a PDE system is usually discretized by numerous timesteps, the NOG gradients diverge
+earlier compared to WIG gradients for increasing m. This is indicated by the orange line below the blue one in
+Figure 1.
+It is important to note that stopping the gradient as done by the NOG approach limits some aspects of
+neural network design. While exact gradients are available for the network outputs with respect to the network
+parameters, the same is not true for the unrolled trajectory. Consequently, a sensitivity analysis with respect
+to individual network parameters or design choices [69, 111] would not be possible for the entire trajectory,
+but rather only with respect to the direct network output. Similarly, interactions between initial variables,
+parameters and the output like in [29, 92] is only possible in a fully differentiable setting.
+
+2.6
+
+Curriculum learning
+
+As illustrated above, unrolling can have negative effects on the gradient stability. This effect can even be
+amplified for newly initialized networks with random weights, where erroneous outputs make even the forward
+9
+
+2.7
+
+Summary
+
+3
+
+PHYSICAL SYSTEMS AND ARCHITECTURES
+
+Figure 3: Visualizations of our physical systems, from left to right: KS equation state over time, KOLM vorticity
+field, WAKE vorticity field, AERO local Mach number field visualization for different upstream Mach numbers
+M∞
+process unstable. As such, it is common practice to limit the unrolling horizon in the initial phases of the
+training run [93, 50]. The number of unrolled steps is then increased incrementally, which we term curriculum
+in this study. Curriculums are necessary when training with long unrolling horizons. A simple approach is to
+start with one-step learning, with longer horizons following afterward, e.g., m = [1, 2, 4].
+
+2.7
+
+Summary
+
+We can summarize the hypotheses stated above as follows: Unrolling training trajectories for data-driven
+learning of chaotic systems can be expected to reduce the data-shift, as the observed training samples converge
+to the learned attractor. At the same time, long unrollings can lead to unfavorable gradients for both NOG and
+WIG setups. This means that intermediate ranges of unrolling horizons can exist, where the benefits of reducing
+the data-shift outweigh instabilities in the gradient. Based on this trade-off, our goal is to identify preferred
+training regimes in our experiments where models can be trained to higher accuracy without destabilizing the
+learning process. We also expose the unrolling horizons and quantify the expected benefits of training with
+NOG and WIG modalities.
+
+3
+
+Physical Systems and Architectures
+
+The four physical systems shown in Figure 3 were used for our learning tests. We focus on several widely
+used and well-understood test-cases from the scientific machine learning community. All individual systems are
+parameterized to exhibit varying behavior within the dataset, and each test set contains unseen values inside
+and outside the range of the training data set.
+
+3.1
+
+Kuramoto-Sivashinsky
+
+This equation is a fourth-order chaotic PDE. It is a popular testbed for machine-learning based studies of
+chaotic systems. Its time-evolution was targeted by a series of previous works [97, 27, 84, 10, 71, 55, 49, 53].
+The domain size, which leads to more chaotic behavior and shorter Lyapunov times for larger values [23], was
+varied across training and test data sets. The ground truth solver uses an exponential RK2 integrator [18]. In
+order to create a challenging learning scenario, the base solver for correction resorts to a first-order version that
+diverges within 14 steps on average. We base most of our empirical tests on this Kuramoto-Sivashinsky (KS)
+case since it combines challenging learning tasks with a small computational footprint. The KS equation is a
+fourth-order stiff PDE governed by
+∂u ∂ 2 u ∂ 4 u
+∂u
++u
++
++
+= 0,
+(18)
+∂t
+∂x ∂x2
+∂x4
+with simulation state u, time t, and space x living in the periodic domain of size X . The dynamics exhibit a
+highly chaotic behavior. The domain was discretized with Nx = 48 grid points such that the first computational
+node lies at x0 = 0 and the last one at xNx = X ∗ (1 − 1/Nx ). The timesteps were set to 1. The physical domain
+length X is the critical parameter in the KS equation. The training dataset was computed for a range of X =
+2π ∗ [5.6, 6.4, 7.2, 8, 8.8, 9.6, 10.4]. To calculate the dataset, a randomized initial condition u0 = cos(x) + αsin(x),
+10
+
+3.1
+
+Kuramoto-Sivashinsky
+
+3
+
+PHYSICAL SYSTEMS AND ARCHITECTURES
+
+with α being sampled randomly from [−0.5, 0.5]. A sequence of 5000 steps was then recorded for each domain
+length. The numerical solves and network training were performed in PyTorch [64]. To calculate the dataset,
+a similarly randomized initial condition u0 = cos(x) + αsin(x) was used. After an initial burn-in time of 100
+steps, a sequence of 5000 steps was recorded for each domain size. The numerical solves and network training
+were performed in PyTorch [64]. The characteristic timescale of the KS system is based on the Lyapunov
+timescale of chaotic systems. This timescale ts,KS = λ11 requires knowledge of the largest Lyapunov exponent
+λ1 . We calculate this exponent using the Jacobian of the discretized PDE [67], which is readily available
+due to the differentiability of the solver. Let us denote the KS solver and its Jacobian as ut+1 = SKS (ut ),
+t+1
+∂SKS (ut )
+J t = ∂u
+. An initial perturbation ϵ0 is then propagated alongside the tangent of the trajectory
+∂ut =
+∂ut
+such that
+ϵ̃t+1 = J t ϵt ,
+
+(19)
+
+t+1
+
+ϵt+1 =
+
+ϵ̃
+.
+||ϵ̃t+1 ||
+
+(20)
+
+The largest Lyapunov exponent can then be calculated by estimating the exponential growth rate of the perturbation, which is achieved by averaging the normalization factor
+λ1 =
+
+T
+1X
+ln ||ϵ̃t ||,
+T t
+
+(21)
+
+for a sufficiently long horizon T . We use this method to calculate the average Lyapunov exponents for the range
+X used in our training dataset. Setting T = 1000 after discarding the first transient period of 100 steps for
+the calculations of u0 and ϵ0 , the average exponent evaluates to λ1 = 0.0804. The timescale of our discretized
+system is thus tc,KS = 12.4, which corresponds to ≈ 12 timesteps of the neural simulator.
+Neural Network Architectures: We use two architectures for learning tasks with the KS case: a graphbased (GCN) and a convolutional network (CNN). Similar networks were previously used on the KS equation in
+the case of GCNs [10, 20], while CNN based architectures were used in several other works [27, 84, 71, 55, 53].
+Stachenfeld et al. [84] compared several types of convolutional networks, including ResNets and U-Nets, on the
+KS as well as Navier-Stokes systems. More complex convolutional architectures on the KS system were also
+investigated by Geneva et al. [27], who proposed an encoder-decoder based CNN, or Qu et al. [71], who split
+the CNN into linear and nonlinear parts for modeling of (non-)linear PDEs. In our study, both networks types
+follow a ResNet-like structure [33], have an additive skip connection from input to output, and are parameterized
+in terms of their number of features per message-passing step or convolutional layer, respectively. They receive
+2 channels as input, a normalized domain size X and u, and produce a single channel, the updated u, as output.
+The GCN follows the hierarchical structure of directional Edge-Conv graph nets [101, 41] where each EdgeConv block is comprised of two message-passing layers with an additive skip connection. The message-passing
+concatenates node, edge, and direction features, which are fed to an MLP that returns output node features. At
+a high level, the GCN can be seen as the message-passing equivalent of a ResNet. These message-passing layers
+in the GCN and convolutional layers in the CNN are scaled in terms of whole ResBlocks, i.e., two layers with
+a skip connection and leaky ReLU activation. The networks feature additional linear encoding and decoding
+layers for input and output. The architectures for GCN and CNN were chosen such that the parameter count
+matches, as listed in Table 2.
+Network Training: Every network was trained for a total of 50000 iterations of batchsize 16. The learning
+rate was initially set to 1 × 10−4 , and a learning rate decay of factor 0.9 was deployed after every 2000 iterations
+during training. The KS systems was set up to quickly provide substantial changes in terms of simulated states.
+As a consequence, short unrollments of m = 3 were sufficient during training unless otherwise mentioned. For
+this unrollment number, no curriculum was necessary.
+For fairness across the different training variants the KS setup additionally keeps the number of training
+data samples constant for ONE versus NOG and WIG. For the latter two, unrolling means that more than one
+state over time is used for computing the learning gradient. Effectively, these two methods see m times more
+
+11
+
+3.2
+
+Wake Flow
+
+3
+
+PHYSICAL SYSTEMS AND ARCHITECTURES
+
+Table 2: KS Network Architectures and Parameter Counts; we denote the number of blocks as network depth,
+and specify the network architectures with a tuple containing (features, depth); For both GCN and CNN the
+smallest network size with a depth indicated by ”-” is a special case using a single non-linear layer with the
+listed number of features.
+Architecture:
+
+.5k*
+
+.5k
+
+2k
+
+33k
+
+.2M
+
+1M
+
+GCN (features, depth):
+GCN Parameters:
+
+(46,-)
+511
+
+(9,1)
+518
+
+(14,2)
+2007
+
+(31,8)
+33,578
+
+(63,12)
+198,770
+
+(126,16)
+1,037,615
+
+CNN (features, depth):
+CNN Parameters:
+
+(48,-)
+481
+
+(8,1)
+481
+
+(12,2)
+1897
+
+(26,8)
+33125
+
+(52,12)
+196457
+
+(104,16)
+1042705
+
+samples than ONE for each training iteration. Hence, we increased the batch size of ONE training by a factor of
+m. However, we found that this modification does not result in an improved performance for ONE in practice.
+For the tests shown in Figure 11 we varied the training data set size, reducing the number of time steps in the
+training data set to 1000, while keeping the number of training iterations constant. The largely unchanged overall
+performance indicates that the original data set could be reduced in size without impeding the performance of
+the trained models.
+Network Evaluation: We computed extra- and interpolative test sets for the domain length X . Similarly
+to the training dataset, the testset is based the same parameterization for the initial conditions. Again, the
+simulations feature a burn-in time until their dynamics are fully developed. The extrapolation uses X =
+2π ∗ [4.8, 11.2], whilst interpolation is done for X = 2π ∗ [6.8, 9.2]. For our L2 results, we selected 20 fully
+developed stated the test dataset and started autoregressive runs with the learned simulators on each X . We
+then accumulated the relative errors for sequences of 12 steps, corresponding to 1tc,KS . We averaged the losses
+over all extra- and interpolative cases and computed the standard deviation over the total set of tests.
+
+3.2
+
+Wake Flow
+
+Our second system is a two-dimensional flow around a cylinder governed by the incompressible Navier-Stokes
+equations. This classical fluid mechanics setups also frequently used in a scientific machine learning context.
+See [57, 40, 93, 65, 74, 58] for some examples. Our Wake Flow (WAKE) dataset consists of Karman-Vortex
+streets with varying Reynolds numbers, uses numerical solutions of the incompressible Navier-Stokes equations
+1 2
+∂u
++ (u · ∇)u = −∇p +
+∇ u + f,
+∂t
+Re
+∇ · u = 0,
+
+(22)
+
+with the two-dimensional velocity field u and pressure p, and an external forcing f which is set to zero in this
+case.
+Numerical Data The ground truth data was simulated with operator splitting using a Chorin-projection for
+pressure and second-order semi-Lagrangian advection [11, 25]. The training data is generated with second-order
+advection, while learning tasks use a truncated spatial resolution (4×), and first-order advection as a correction
+base solver. Simulations were run for a rectangular domain with domain size Nx , NY = [2, 1]. A cylindrical
+obstacle with a diameter of LD = 0.1 placed at (0.5, 0.5). The streamwise boundaries use a constant bulk inflow
+velocity of U = 1 at the inlet and Neumann conditions ∂u
+∂x = 0 at the outlet. Inviscid, impermeable walls were
+used for both spanwise boundaries. The Reynolds number is defined as Re = U Lν D . The physical behavior is
+varied with the Reynolds number by changing the viscosity of the fluid. The training data set contains 300 timesteps with ∆t = 1 for six Reynolds numbers Re = [97.5, 195, 390, 781.25, 1562.5, 3125] at resolution [256, 128].
+For learning tasks, these solutions are down-sampled by 4× to [64, 32]. The solver S for the correction setup
+replaces the second-order advection with first-order semi-lagrangian advection, which introduces more numerical
+dissipation [85]. The numerical solves and network training were performed in PyTorch [64]. The characteristic
+timescale of the cylinder flow tc,WAKE is based on the vortex shedding frequency fs . This frequency is calculated
+12
+
+3.3
+
+Kolmogorov Turbulence
+
+3
+
+PHYSICAL SYSTEMS AND ARCHITECTURES
+
+using the Fourier transform of a sample point downstream of the cylinder at [32,16] in the downsampled dataset.
+A time history of K = 500 steps is collected, and the dominant vortex shedding frequency is extracted by
+fs = arg max ûy [f ],
+
+where
+
+ûy [f ] =
+
+K
+X
+
+uy [k]e2πιkf /K .
+
+(23)
+
+k=0
+
+Following this analysis, the average vortex shedding frequency in our dataset is fs = 0.01 which gives a characteristic timescale of tc,WAKE = f1s = 100.
+Neural Network Architectures: This test case employs fully-convolutional residual networks [33]. Our
+setup is an extension of the networks used in Um et al. [93] with respect to parameter count. Similar networks
+are a popular choice for the WAKE flow and are used in [57, 58]. Further development by Lee et al. [40] looked
+into multiscale CNNs on a range of physical systems including WAKE flow. CNN-based encoder-decoder
+architectures for similar scenarios were studied by Peng et al. [65] and Ranande et al. [74]. Our CNNs can
+also be seen as a two-dimensional extensions of those used the KS setup: the neural networks have a ResNet
+structure, contain an additive skip connection for the output, and use a certain number of ResBlocks with a
+fixed number of features. The smallest network uses 1 ResBlock with 10 features, resulting in 6282 trainable
+parameters. The medium-sized network has 10 ResBlocks with 16 features and 66,178 parameters, while the
+large network has 20 blocks with 45 features resulting in more than 1 million (1,019,072) parameters.
+Network Training and Evaluation: The networks were trained for three steps with 30000 iterations each,
+using a batch size of 3 and a learning rate of 1 × 10−4 . The training curriculum increases the number of unrolled
+steps (parameter m of the main text) from m = 1, to m = 4 and then m = 16. Each stage applies learning rate
+decay with a factor of 1/10. Metrics are computed and accumulated over 32 steps, i.e. ca. 1/3tc,WAKE , for 8
+test cases with previously unseen Reynolds numbers: three interpolative ones Re = [2868.5, 2930, 2990] and five
+extrapolative Reynolds numbers Re = [3235, 3296, 3906, 4516.5, 4577.5].
+
+3.3
+
+Kolmogorov Turbulence
+
+Thirdly, we study a periodic two-dimensional Kolmogorov Flow (KOLM) [30] also following the incompressible
+Navier-Stokes equations. This setup is a widely used fluid flow case in scientific machine learning [37, 88, 82,
+49, 46, 43, 4].
+In contrast to the WAKE flow, KOLM introduces a forcing f in equation (22). The additive forcing causes
+the formation of a shear layer, whose instability onset develops into turbulence [30].
+Numerical data: The two-dimensional KOLM system is also governed by the incompressible Navier-Stokes
+equations, with the addition of a forcing term f . The forcing was set to f = [ax ∗sin(kx ∗y), 0]T with wavenumber
+kx = 6 and amplitude ax = 1. The domain has periodic boundary conditions in each dimension. We use a
+more involved semi-implicit numerical scheme (PISO by [35]) for this setup. Similarly to the WAKE system,
+the KOLM learning cases are based on a spatiotemporal resolution truncation with a ratio of 4× in both space
+and time, and the Reynolds number is varied across training and test cases. The physical domain size was set to
+Lx = Ly = 2π and discretized by a 128 × 128 grid. The timestep was set to ∆t̃ = 0.005 for the high-resolution
+ground truth dataset, which maintained a Courant number smaller than 0.5. Following the definition by [1], we
+calculate the Reynolds number as
+√  3
+ax Ly 2
+.
+(24)
+Re =
+ν
+2π
+The training dataset is based on a variation of the viscosity ν, which results in a Reynolds number variation
+of Re = [300, 400, 500, 700, 800, 900]. After initializing the simulations with a profile matching f ∗ 0.1 across
+the entire domain, a burn-in time of 15000∆t̃ was run for the high-res simulations. Afterward, 6000 frames
+with ∆t = 4 × ∆t̃ were added to the dataset. The numerical solves and network training were performed in
+Tensorflow [2]. To choose a characteristic timescale for the KOLM system that is consistent with the Reynolds
+number definition, we set
+r
+Ly
+tc,KOLM =
+.
+(25)
+2π ∗ ax
+13
+
+3.4
+
+KS in 3D:
+
+3
+
+PHYSICAL SYSTEMS AND ARCHITECTURES
+
+This definition leads to tc,KOLM = 1, which corresponds to 50 timesteps of the neural simulator since it uses a
+timestep of 4 × ∆t̃.
+Neural Network Architectures: The KOLM networks are also based on ResNets. Similar architectures
+were also used on a KOLM system in [37], and in [88, 43] for baseline comparison. Kochkov et al. [37] used
+it to study a range of unrolled systems, including one that is equivalent to our correction cases. Lippe et al.
+[49] used the KOLM flow as a two-dimensional testbed for their method based on convolutional U-Nets, and
+compared it to standard U-Nets, as well as CNNs in corrections setups. Azzizadenesheli et al. [4] based their
+study of neural operators on the KOLM system, and their range of networks includes operator formulations of
+graph networks as well as convolutional U-Nets. ResNets are structured into blocks, where data is processed
+through convolutions and added to a skip connection. In contrast to KS and WAKE architectures, the number
+of features varies throughout the network. Four different network sizes were deployed, details of which are listed
+in Table 3. The network sizes in the KOLM case range from 32 thousand to 1 million.
+Table 3: KOLM Network Architectures and Parameter Counts
+Architecture
+CNN,
+CNN,
+CNN,
+CNN,
+
+32k
+0.1M
+0.5M
+1M
+
+# Parameters
+32369
+115803
+461235
+1084595
+
+# ResNet Blocks
+5
+7
+7
+9
+
+Block-Features
+[8, 20, 30, 20, 8]
+[8, 16, 32, 64, 32, 16, 8]
+[16, 32, 64, 128, 64, 32, 16]
+[16, 32, 64, 128, 128, 128, 64, 32, 16]
+
+Network Training and Evaluation: A spatiotemporal downsampling of the ground truth data formed the
+basis of the training trajectories. Thus, training operated on a 4× downsampled resolution with 4 times larger
+time-steps, i.e. 32 × 32 grid with ∆t = 0.02. The networks were trained with a curriculum that incrementally
+increased the number of unrolled steps such that m = [1, 2, 4], with an accompanying learning rate schedule of
+[10−4 , 10−5 , 10−6 ]. Additionally, a learning rate decay with factor 0.9 after an epoch of 36 thousand iterations.
+For each m, 144 thousand iterations were performed. The batch size was set to 1. L2 errors are computed and
+accumulated over 250 steps, corresponding to 5tc,KOLM . The procedure is repeated for 5 test cases each and
+previously unseen Reynolds numbers: Re = 600 for interpolation and Re = 1000 for extrapolation.
+
+3.4
+
+KS in 3D:
+
+High-dimensional problems arise in many applications, such as in fluid mechanics in the form of LES. As a
+representative of higher-dimensional chaotic problems, we use a 3D extension of the KS equation. Once again,
+we vary the domain size in training and testing datasets. The KS equation in 3D describes a scalar-valued
+field u in three dimensions. Similarly to the one-dimensional counterpart, it is highly chaotic. We use a cubic
+domain of size X × X × X with periodic boundaries in all directions. The equation is given by
+2
+∂u
++ ∇u + ∇2 u + ∇4 u = 0.
+∂t
+
+(26)
+
+Numerical Data: The ground truth solver uses an exponential RK2 integrator [18]. The domain was resolved
+by 32 cells in each direction. The correction is based on a first-order integrator that diverges over 14 timesteps.
+The networks are thus tasked to stabilize the solver and close the gap to the higher-order solution.
+Network Architecture: We focus on training correction networks for this setup, and use a ResNet [33]
+architecture that represent a 3D extension of the previously used 1D and 2D variants. The network features 4
+ResNet blocks with 16 latent features, amounting to 55k parameters.
+
+14
+
+3.5
+
+AERO:
+
+4
+
+RESULTS
+
+Network Training and Evaluation: For the training dataset, the domain sizes were varied such that
+X = [12, 13, 15, 17, 19, 21, 22], and trajectories of 200 timesteps based on 5 initial conditions were run for each
+domain size. To construct an initial condition, we first draw a random superposition parameterized sin and cos
+functions, in line with the 1D case. Then, a burn-in simulation of 500 steps was run to ensure de-correlation
+from these superpositions. The resulting frame is used as an initial condition for the dataset recording. Across
+the training dataset, we estimate the characteristic timescale based on the first Lyapunov exponent to be
+tc,KS3D = 1.8. This is equivalent to 18 timesteps of size ∆t = 0.1. We trained three networks for each training
+variant, where each of the three used a different random seed to generate the initial network weights. All
+networks were trained for 50,000 steps. The unrolled versions used a horizon of m = 4. The data-generation
+procedure is repeated for interpolative and extrapolative test sets, which operate on X = [14, 16, 18, 20] and
+X = [10, 11, 23, 24] respectively. The temporal horizon for testing was chosen to be 20 timesteps, which is
+equivalent to 1.1tc,KS3D . The test losses are computed across 10 random initial conditions for each domain size.
+
+3.5
+
+AERO:
+
+As a more complex physical system, we investigate compressible flow around an aerofoil, a task centered on
+pure prediction. We utilize the open-source structured-grid code CFL3D [78, 77] to solve the compressible
+Navier-Stokes equations, thus generating our ground truth dataset. Here, we vary the Mach number Ma while
+keeping the Reynolds number constant. Details of this system are found in C.
+
+4
+
+Results
+
+Our results compare the three training methods ONE, NOG, and WIG in various scenarios. The figure titles
+mark the physical system, whilst subscripts represent the network architecture (graph: graph network, conv :
+convolutional ResNet), and superscripts differentiate between correction (corr ) and prediction (pred ) tasks. In
+the following sections, we will report on convolutional networks for the KS, WAKE, KOLM, and 3D-KS systems,
+graph networks on the KS system as well as U-nets in the Compressible Aerofoil flow (AERO) case. Additional
+U-net results for KS are presented in D.
+For each test, we train multiple models (typically 8 to 20) for each setup that differ only in terms of
+initialization (i.e. random seed). When reporting relative errors, we use the following definition for the relative
+error of a single prediction
+Ltrel =
+
+
+
+avg k(ut − ũt )
+,
+|k(ut )|∞
+
+with k(ut ) =
+
+D
+X
+
+(utc )2 ,
+
+(27)
+
+c
+
+where D denotes the number of spatial dimensions. The k operation is equivalent to calculating the kinetic
+energy for each grid cell and thus reduces the channel dimension of the data. The stepwise relative error is then
+averaged across a testing trajectory for plotting such that
+Lrel
+
+NT
+1 X
+=
+Lt
+NT t rel
+
+(28)
+
+The evaluation metrics were applied independently for outputs generated by each of the models, which are
+displayed in terms of mean and standard deviations below. This indicates the expected performance of a
+training setup and the reliability of obtaining this performance. A Welch’s test for statistical significance was
+performed for the resulting test distributions, and p-values can be found alongside the tabulated data in F.
+
+4.1
+
+Distribution Shift and Long-term Gradients
+
+We first focus on establishing a common ground between the different variants by focusing on correction tasks
+for the physical systems. Training over 400 models with different architectures, initialization, and parameter
+counts, as shown in Figure 4, reveals a first set of fundamental properties of training via unrolling: it reduces
+inference errors for graph- and convolutional networks, despite changes in dimensionality, the order of the PDE,
+and the baseline solver architecture. For the vast majority of tests, models trained with unrolling outperform
+15
+
+4.1
+
+Distribution Shift and Long-term Gradients
+
+4
+
+RESULTS
+
+the corresponding one-step baselines. Unrolling is also versatile concerning the type of the modeled correction,
+as networks were tasked to either learn truncations due to reduced convergence orders with graph networks
+(KS), or spatial grid coarsening errors via CNNs (KOLM, WAKE).
+These findings are not new [6, 93], but confirm that our setup matches previous work. They already relate to
+question (IV), i.e. that testing unrolled architectures can be performed efficiently on cheaper low-dimensional
+problems, such as the KS system. Figure 7 visualizes exemplary inference rollouts of the KOLM system, where
+differences in the learning systems emerge.
+Disentangling Contributions Next, we investigate the effect of backpropagating gradients in the unrolled
+chain of network and simulator operations. The non-differentiable NOG setup already addresses the data shift
+problem, as it exposes the learned dynamics’ attractor at training time. The inference errors are visualized
+in Figure 4. The graph-network setup on the KS is equivalent to the one studied in [10, 20], and the 1M
+model matches the one used by Brandstetter et al. [10] in terms of size and overall architecture. We present
+correction results in this section, while previous works have used these graph networks for prediction. The
+WAKE experiments match the architecture of [57] and span the network size use by Um et al. [93], who also
+studied correction setups. The closest relative to our KOLM setup can be found in the ”learned correction”
+by Kochkov et al. [37], where a convolutional ResNet with ∼ 0.2M parameters was trained in a very similar
+correction setup.
+On average, training with NOG over ONE training yields an error reduction of 33%, which answers question
+(II). For large architectures, inference accuracy increases and learned and ground truth systems become more
+alike. We believe that in these cases, their attractors are similar, and unrolling is less crucial to expose the
+learned attractor. However, NOG training still uses crude gradient approximations, which negatively influences
+training regardless of how accurate the current model is. We believe this is why the NOG variant falls behind
+for large sizes. While NOG models remain closer to the target than ONE in all other cases, the results likewise
+show that the differentiable WIG setup further improves the performance. These networks reliably produce the
+best inference accuracy. Due to the stochastic nature of the non-linear learning processes, outliers exist, such
+as the 0.5m NOG model of the KOLM system. Nonetheless, the WIG models consistently perform best and
+yield an average improvement of 92% over the ONE baseline. The conclusions from the error average can also
+be drawn from the behavior of the best-performing networks of each training variation (see D).
+Long-term Evaluations We evaluate a cross-correlation metric to measure the similarity of the data in the
+inferred trajectories to the ground truth data. We first run an autoregressive inference sequence and calculate
+the correlation as
+C t = corr(ut , ũt )
+(29)
+After calculating the correlation of inference frames to the ground truth for each timestep, we measure the time
+until the two trajectories are decorrelated. For the trajectories to be decorrelated, we define a threshold of
+
+100
+1
+
+10
+
+2
+
+10
+
+3
+
+10
+
+3
+
+10
+
+4
+
+KOLMcorr
+conv
+
+WAKEcorr
+conv
+rel
+
+rel
+
+rel
+
+10
+
+KScorr
+graph
+
+0.5k 0.5k 2k 33k 0.2M 1M
+
+10
+
+6.3k 67k 1.0M
+
+network size
+
+network size
+
+3
+
+32k 0.1M 0.5M 1M
+network size
+
+Figure 4: Inference accuracy measured in Lrel for correction setups on KS, KOLM, and WAKE systems; displayed models were trained with ONE(brown), NOG(blue), WIG(orange); across network architectures (graph
+networks for KS, conv-nets otherwise), and network sizes WIG has lowest errors; one 32k ONE model diverged
+in the KOLM case that NOG and WIG kept stable
+
+16
+
+4.1
+
+Distribution Shift and Long-term Gradients
+
+4
+
+RESULTS
+
+Figure 5: Exemplary inference trajectories for the KS system on extrapolation data for X = 70.4; trajectories of
+CNNs on the left, errors of CNNs and GCN in the middle, and on the right respectively for all training variants
+
+Figure 6: Exemplary inference trajectories for the WAKE system for the ground truth and WIG training over
+50 timesteps
+C < 0.8, and measure the timestep until at least 5 frames in the trajectory exceed this threshold, such that the
+decorrelation time becomes
+T
+X
+
+Tdecorr = min T :
+1(C t < 0.8) ≥ 5 .
+(30)
+T
+
+t=0
+
+The statistics of the reached step-counts were gathered over all test cases, as for the L2 errors. Figure 8 depicts
+the time until de-correlation between inference runs and the ground truth for the KS system. For all model sizes
+and both network architectures, WIG achieves the longest inference rollouts until the de-correlation threshold
+is reached. Similarly to the observations on the L2 metric in Figure 4, NOG is the second best option for
+small and medium-sized networks when it comes to correlation. This observation again translates between the
+network architectures.
+In addition, we studied the time until divergence for the KS system. This metric sets a high L2 threshold,
+which would correspond to a hundred-fold increase in the state of a simulation, and again measures the timesteps
+until this value is reached. It can be formalized as
+
+(31)
+Tdiv = min T : L2 (ut , ũt ) ≥ 500 .
+T
+
+Note that this metric does not measure whether there is a particular similarity to the ground truth trajectory.
+Rather, a large number of timesteps can be seen as a metric for the autoregressive stability of the network.
+Figure 9 shows this evaluation for the KS system. Here, we also show a correction networks with convolutional
+networks for the correction of the KS system. These are similar to the ones trained in [55], where convolutional
+networks of size 0.5k and smaller were used in a correction setting. The unrolled setups excel at this metric.
+Unsurprisingly, mitigating the data shift by unrolling the training trajectory stabilizes the inference runs.
+Through unrolling, the networks were trained on inference-like states. This also leads to better alignment of
+17
+
+4.1
+
+Distribution Shift and Long-term Gradients
+
+4
+
+RESULTS
+
+Figure 7: Exemplary inference trajectories over long inference horizons for Re = 1000, comparing vorticity
+values for the ground truth simulation, and corrective setups trained with ONE, NOG, and WIG; corrective
+setups used the 1M network initialized with the same seed
+
+KScorr
+graph
+
+60
+
+Tdecorr
+
+Tdecorr
+
+80
+
+40
+
+0.5k* 0.5k 2.0k 34k 0.2M 1.0M
+network size
+
+90
+80
+70
+60
+50
+40
+30
+
+KScorr
+conv
+
+0.5k* 0.5k 2k 33k 0.2M 1M 5.0M
+network size
+
+Figure 8: Number of timesteps until the threshold is reached for de-correlation
+the ground truth and the learned attractor. Figure 9 shows how models trained with ONE are most likely to
+experience instabilities. The fact that the unrolled setups are more stable indicates that the exploration of the
+learned attractor at training time improves inference performance. The most stable models were trained with
+the WIG setup, whose long-term gradients further discourage unphysical outputs that could lead to instabilities
+in long inference runs. The large networks’ divergence time comes close to the upper threshold we evaluated,
+i.e. 1000 steps.
+To conclude, our results allow for disentangling the influence of data shift and gradient divergence. As all
+training modalities, from data sets to random seeds, were kept constant, the only difference between NOG and
+WIG is the full gradient information provided to the latter. As such, we can deduce from our measurements
+that reducing the data shift contributes to the aforementioned improvement of 33%, while long-term gradient
+information yields another improvement of 15% (question II). Figure 10 highlights this by depicting the accuracy
+of the unrolled setups normalized by the respective ONE setup for different model sizes and physical systems.
+WIG yields the best L2 reductions. NOG in certain cases even performs worse with factors larger than one,
+due to its mismatch between loss landscape and gradient information, but nonetheless outperforms ONE on
+average. A crucial takeaway is that unrolling, even without differentiable solvers, provides measurable benefits
+to network training. As such, interfacing existing numerical codes with machine learning presents an attractive
+option that does not require the re-implementation of established solvers. Our results provide estimates for the
+expected gains with each of these options.
+Unrolling horizons Based on the theoretical analysis in Section 2, the learned simulations should perform
+best for moderate unrolling horizons and deteriorate when these horizons are further increased. As such, the
+18
+
+4.1
+
+Distribution Shift and Long-term Gradients
+
+800
+
+4
+
+KScorr
+graph
+
+800
+
+Tdiv
+
+Tdiv
+
+KScorr
+conv
+
+1000
+
+600
+
+RESULTS
+
+400
+
+600
+400
+
+200
+
+200
+
+0.5k* 0.5k 2.0k 34k 0.2M 1.0M
+
+0.5k* 0.5k 2k 33k 0.2M 1M 5.0M
+network size
+
+network size
+
+relative
+
+rel
+
+Figure 9: Number of timesteps until the threshold is reached for divergence
+1.5
+1.0
+
+KScorr
+graph
+
+KScorr
+conv
+
+WAKEcorr
+conv
+
+KOLMcorr
+conv
+
+0.5
+
+0.5k* 0.5k 2.0k 34k 0.2M 1.0M 0.5k* 0.5k 1.9k 33k 0.2M 1.0M 5.2M 6.3k
+network size
+
+network size
+
+67k
+
+network size
+
+1.0M 32k 0.1M 0.5M
+network size
+
+1M
+
+ONE
+Figure 10: Lrel error of NOG and WIG setups relative to the error achieved by ONE (i.e. LNOG
+and
+rel /Lrel
+WIG
+ONE
+Lrel /Lrel ); WIG training reliably produces more accurate results than NOG and ONE; shading added for
+better identification of positive/negative factors
+
+effects of unrolling on data shift and gradient divergence depend on the unrolled length m, as summarized in
+Figure 1. A long horizon diminishes the data shift, as the learned dynamics can be systematically explored
+by unrolling. At the same time, gradient inaccuracy impairs the learning signal in the NOG case, while
+exploding gradients can have a similar effect for long backpropagation chains in the WIG setup. We observe
+these effects in an experimental setup where the unrolled training horizon is varied for networks where training
+is continued from an identical starting point obtained via pre-training. The results are visualized in Figure
+11. For increasing horizons, the inference performance of NOG variants improves until a turning point is
+reached. After that, NOG performance deteriorates quickly. In the following regime, the stopped gradients
+cannot map the information gained by further reducing the data shift to an effective parameter update. The
+quality of the learning signal deteriorates. As outlined in Section 2, this divergence does not only depend on
+the underlying timescale, but is also influenced by the number of timesteps. With an increasing number of
+timesteps, more gradients are cut in the NOG system and the gradients become inaccurate. Nevertheless, it is
+worth mentioning that the divergence occurs at 6 steps, which is roughly equivalent to tc,KS /2 = 12.4/2. This
+inaccuracy effect is mitigated by allowing gradient backpropagation through the unrolled chain in the WIG
+setup. Herein, the inference accuracy benefits from even longer unrollings and only diverges for substantially
+larger m when instabilities from recurrent evaluations start to distort the direction of learning updates. As
+the unrolling horizon m significantly surpasses the timescale tc,KS = 12.4, the network optimization produces
+diminishing returns. These empirical observations confirm the theoretical analysis from Section 2.4: From this
+theoretical perspective, the chaotic timescale gives an estimate for the unrolling horizon for which gradients
+explode in the target dynamical system. However, in the early stages of the optimization when training losses
+are still high, the neural simulator is not a good representation of the target dynamics. In this case, the chaotic
+timescale of the target is not very meaningful. Thus, the training horizons can not only be determined based
+on the target dynamics, which is also reflected in our study. Here, we recommend using a curriculum instead
+as described in Section 2.6. The curriculum-based approach features an incremental increase of the unrolling
+length m at training time [93, 39]. Figure 11 shows how long unrollings in the initial training phases can hurt
+accuracy. Untrained networks are particularly sensitive since autoregressive applications can quickly lead to
+divergence of the simulation state or the propagated gradients. At the same time, learning rate scheduling is
+necessary to stabilize gradients (question IV).
+While designing unrolling horizons is not trivial, the fundamental takeaway is that there exist such horizons
+19
+
+Distribution Shift and Long-term Gradients
+
+init
+
+1e 3
+
+ONE
+
+NOG
+
+1.25
+
+6 × 10
+
+2
+
+0.75
+
+4 × 10
+
+2
+
+0.50
+
+3 × 10
+
+2
+
+0.25
+
+2 × 10
+
+2
+
+1.00
+
+init 1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+8
+m
+
+10 12
+
+14 16 18 20
+
+1-2-4 2-2-4 4-4-4
+curriculum: m0 m1 m2
+
+RESULTS
+
+no learning rate schedule
+KOLMcorr
+conv
+
+curriculum variations
+KOLMcorr
+conv
+
+WIG
+
+2
+
+rel
+
+NOG, diverged
+
+KScorr
+conv
+
+3.5
+2
+
+1.50
+
+4
+
+relative
+
+4.1
+
+3.0
+2.5
+2.0
+1.5
+1.0
+
+32k 0.1M 0.5M
+network size
+
+1M
+
+Figure 11: Left: variation of unrolling horizons m trained for the KS system; all models were pre-trained with
+the leftmost one-step setup marked as init and then finished training in their specific m parameterizations; with
+NOG training, the error increases and explodes for m > 6, which corresponds to 12 tc,KS characteristic timescales
+in our discretization; WIG remains stable for longer horizons, diverges at m > 18, i.e. for m > tc,KS ; Middle: different curriculums for the KOLM system; starting the training with large m leads to unfavorable network states;
+Right: Inference accuracy without learning rate schedule relative to with scheduling, i.e. L2no−schedule /Lschedule
+;
+2
+All models benefit from learning rate scheduling, indicated by values are larger than one, and especially for
+larger models the schedule is crucial
+for which training performance is improved for both NOG and WIG, while this effective horizon is longer for
+WIG, as illustrated in Figure 1.
+Gradient Stopping Cutting long chains of gradients was previously proposed as a remedy for training
+instabilities of unrolling [50, 10, 86]. A popular option is to discard gradients for a number of initial steps.
+This technique is referred to as ”pushforward trick” in [10] and as ”warm-up” steps in [70]. This procedure
+is similar to the unrolling variants we study. Like unrolling, it time-advances the system, thus drawing data
+from a more inference-like distribution. However, there are significant differences in the treatment of the losses
+on intermediate steps and their backpropagation gradients. In the warm-up approach, a number w of initial
+steps are discarded for loss calculation, and their gradients are stopped. Only steps after the warm-up horizon
+actually contribute to the loss and are differentiated. The loss formulation is given by
+Lw =
+
+m
+X
+
+L2 (ũt+s , gθs (ũt ))
+
+(32)
+
+s=w+1
+
+Another strategy to stabilize unrolling consists of truncating the backpropagation gradients [89]. It was reported
+to be beneficial in long unrolled physical systems [50]. In this approach, the forward process of the unrolling is
+not touched at all. However, the backpropagation paths are only evaluated in subsections of the full unrolled
+trajectory, effectively limiting the maximum length of a backpropagation path. The gradient propagation for
+unrolling horizons m split into v subsections reads as
+ s  s−B
+
+ 
+s
+X
+Y ∂g s−b  ∂g B 
+∂Lsv
+∂L
+s−1 m
+θ
+θ
+=
+,
+with
+B
+=
++ 1.
+(33)
+v
+∂θ
+∂gθs
+m/v v
+∂gθs−b−1 ∂θ
+B=Bv
+
+b=1
+
+We evaluate these methods in comparison to unrolled models trained with and without unrolling. As shown in
+Figure 12, setting w=1 can yield mild improvements over training with the full chain if no curriculum is used,
+which is in line with the results in [10, 70]. Dividing the backpropagation into subsections [50] likewise does
+not yield real improvements in our evaluation. We divided the gradient chain into two or three subsections,
+identified by the parameter v in Figure 12.
+The best performance is obtained with the full WIG setup and curriculum learning, where unrolled models
+are pre-trained with m=1 models. This can be attributed to the more accurate gradients of WIG, as all gradientstopping variants above inevitably yield a mismatch between loss landscape and learning updates (question II).
+Network Scaling Figure 4 shows clear, continuous improvements in accuracy for increasing network sizes.
+An obvious conclusion is that larger networks achieve better results. However, in the context of scientific computing, arbitrarily increasing the network size is not admissible. As neural approaches compete with established
+20
+
+Distribution Shift and Long-term Gradients
+
+m=
+
+KScorr
+conv
+
+RESULTS
+
+ONE
+NOG
+WIG
+GSw
+GSv
+init
+ini
+t
+
+1.50
+1.25
+1.00
+0.75
+0.50
+
+6
+
+rel
+
+1e 3
+
+4
+
+w=
+1
+w=
+2
+v=
+2
+v=
+3
+ini
+t
+m=
+6
+
+4.1
+
+10
+
+KScorr
+graph
+
+100
+
+KScorr
+conv
+2
+
+100
+
+2
+
+2
+
+Figure 12: Evaluation of gradient stopping techniques; m = 6 shows performance of networks trained without
+curriculum with 6 unrolling steps activated from the start; warm-up steps with w = 1 discarded steps at the
+beginning yields minor improvements; backpropagation splitting shows no improvements over the differentiable
+WIG; best performance is reached with unrolling and curriculum, starting with the init network before unrolling
+6 steps
+
+10
+
+1
+
+104
+106
+# network parameters
+
+1
+
+104
+106
+# network parameters
+
+4 × 10
+3 × 10
+2 × 10
+
+2
+2
+
+10
+
+2
+
+KOLMcorr
+conv
+
+2
+
+ONE
+NOG
+WIG
+n 1/3
+
+105
+106
+# network parameters
+
+Figure 13: Accuracy convergence over network size, correction networks converge with n−1/3
+numerical methods, applying pure neural or correction approaches always entails accuracy, efficiency, and scaling considerations. The scaling of networks towards large engineering problems on physical systems has been
+an open question. We compute a convergence rate between the test loss and the number of network parameters.
+To this end, we use an average test loss for each individual combination of network size and training setup. Here
+we use the L2 metric following the standard definition of convergence in numerical analysis [34]. This metric
+provides consistency across timesteps. Relative errors result in unequally weighted timeframes when ground
+truth solution values vary across time. This is to be avoided for the medium-range test horizons investigated
+here (40 steps in KS, 250 steps KOLM). The average is computed over the full set of random seeds used in
+our study, i.e., 8 to 20 individual training runs per variant and size depending on the physical system. The
+convergence rate estimates are based on the same test trajectories as previous evaluations like Figure 4. For the
+correction setups, we estimate the convergence rate of the correction networks with respect to the parameter
+count n to be n−1/3 , as shown in Figure 13.
+Interestingly, the measured convergence rates persist across the tested physical system and the studied
+network architectures. This convergence rate is poor compared to classic numerical solvers. Consequently,
+neural networks are best applied for their intrinsic benefits which derive from the universal approximation
+theorem [15]. They possess appealing characteristics like data-driven fitting, reduced modeling biases, and
+flexible applications. In contrast, scaling to larger problems is more efficiently achieved by numerical approaches.
+In applications, it is thus advisable to combine both methods to render the benefits of both components. In this
+light, our correction results for small and medium-sized networks have more relevance to potential applications.
+Therefore, the two main conclusions from this subchapter are as follows: Firstly, the solver part in correction
+approaches scales more efficiently than the neural network part. Secondly, it becomes apparent how network size
+dominates the accuracy metrics (question III). Thus, parameter counts need to be equal when fairly comparing
+network architectures.
+Another observation is the lack of overfitting: despite the largest KS models being heavily overparameterized
+with five million parameters for a simulation with only 48 computational cells accuracy still improves. This
+
+21
+
+Varied Learning Tasks
+
+KSpred
+conv
+
+KSpred
+graph
+
+100
+
+100
+10
+
+rel
+
+rel
+
+101
+
+4
+
+rel
+
+4.2
+
+10
+
+1
+
+0.5k 0.5k 2k 33k 0.2M 1M
+
+1
+
+0.5k 0.5k 2k 33k 0.2M 1M
+
+network size
+
+network size
+
+10
+
+1
+
+10
+
+2
+
+10
+
+3
+
+10
+
+4
+
+RESULTS
+
+WAKEpred
+conv
+
+6.3k 67k 1.0M
+network size
+
+Figure 14: Prediction setups with inference accuracy measured in terms of Lrel on KS and WAKE; NOG
+performs well for small network sizes, while WIG is show advantages for larger ones
+
+ONE
+
+NOG
+
+KSpred
+graph
+
+1/4
+
+KSpred
+conv
+
+2
+
+101
+
+n
+
+WIG
+
+100
+
+100
+
+104
+106
+# network parameters
+
+104
+106
+# network parameters
+
+Figure 15: Accuracy convergence over network size, prediction converges with n−1/4
+finding aligns with recent insights on the behavior of modern large network architectures [8].
+
+4.2
+
+Varied Learning Tasks
+
+To broaden the investigation of the unrolling variants, we vary the learning task by removing the numerical
+solver from training and inference. This yields prediction tasks where the networks directly infer the desired
+solutions. Apart from this increased difficulty, all other training modalities were kept constant, i.e., we likewise
+compare non-differentiable NOG models to full unrolling (WIG).
+Prediction The parameter count of models still dominates the accuracy but in contrast to before, the NOG
+setup performs better than both alternatives for smaller network sizes. This is shown in Figure 14. The KS
+prediction setups are comparable to [84], where convolutional ResNets of size 0.2M were trained on prediction
+tasks, albeit their networks feature an additional ”dilation” ratio, specifying a sparsely populated filter. The
+WAKE predictions are similar to [58]. The inference errors for the prediction setup are roughly an order of
+magnitude larger than the respective correction errors. This indicates that pure predictions more quickly diverge
+from the reference trajectory, especially for small network sizes. For the setups in Figure 14, NOG training
+achieves improvements of 41%, and WIG improves on this by a further 30%. In general, unrolling maintains
+strong benefits in prediction setups, but differentiability is less beneficial than in correction setups. Similarly to
+the correction task before, we use these test trajectories to estimate a convergence rate with respect to increasing
+parameter counts. Results are visualized in Figure 15. The prediction convergence rate is slightly worse but
+comparable to the correction setups.
+Smooth Transition While the learning task is typically mandated by the application, our setup allows us to
+investigate the effects of unrolling for a smooth transition from prediction to increasingly simple correction tasks,
+in line with Figure 2. This is achieved by introducing a parameterized timestep ∆t = γ∆t̄ to the correction
+setup, where ∆t̄ represents the ground truth timestep. In contrast to the previous correction setup for the KS
+equation, we use the ground truth solver S̄ for this setup. Furthermore, as in the regular KS setup, the physical
+
+22
+
+4.2
+
+Varied Learning Tasks
+
+4
+
+2.5
+
+KSgraph
+
+KSconv
+
+ONE
+NOG
+WIG
+
+1
+
+2
+
+2.0
+
+RESULTS
+
+1.5
+1.0
+
+10% 20% 30% 40% 50% 60% 70% 80% 90%
+
+10% 20% 30% 40% 50% 60% 70% 80% 90%
+
+1e-5
+
+ONE
+
+AEROpred
+unet
+
+NOG
+1.0
+
+rel
+
+6
+5
+4
+3
+
+WIG
+
+AEROpred
+unet
+
+relative
+
+rel
+
+Figure 16: Transition from prediction to correction; a smooth transition in modeling difficulty is achieved by
+varying the timestep of the numerical solver embedded in the correction step γ = ∆t/∆t̄, with the solver
+timestep ∆t and the ground truth timestep ∆t̄; results are normalized by the correction difficulty 1 − γ
+
+0.8
+
+2
+
+0.6
+
+0.5M 2M
+
+network size
+
+8M
+
+0.5M
+
+2M
+
+network size
+
+8M
+
+Figure 17: Left: Prediction of the AERO system, Lrel errors of ONE, NOG, and WIG; Right: Relative errors
+with respect to ONE
+state does not experience any reduction, such that R(ū) = ū. The only source of error between the ground
+truth and the correction setup stems from the different time step sizes and thus depends on the value of γ. We
+formalize the setup as
+ut+1 = fθ (S̄(ut ; γ∆t̄)).
+(34)
+With this setup a prediction task without any numerical solver is constructed by setting γ = 0, while γ = 1
+recovers the ground truth system where no correction is necessary. It is evident that the latter does not
+constitute a meaningful learning task, but for all values in between, the difficulty of correction tasks increases
+with decreasing γ. In other words, we transition away from pure predictions by providing the network with
+improving inputs by increasing the time step of the reference solver for correction tasks. Since the total error
+naturally decreases with simpler tasks, Figure 16 shows the performance normalized by the task difficulty 1 − γ.
+The positive effects of NOG and especially WIG training carry over across the full range of tasks. Interestingly,
+the NOG version performs best for very simple tasks on the right sides of each graph. This is most likely
+caused by a relatively small mismatch of gradients and energy landscape. As the task difficulty was changed
+by artificially varying the numerical solver’s accuracy, this mimics the effects of basing the correction setups
+on different numerical schemes. Unrolling manifests a stable performance improvement across all numerical
+accuracies, from very crude approximations (10%) to highly accurate ones that almost fit the ground truth
+on their own (90%). We also observe these effects of unrolling for different architectures in convolutional and
+graph-based networks. Thus, unrolling promises benefits for many other correction setups utilizing numerical
+solvers of with different accuracy and various neural architectures.
+Changing the Physical System As a complex, large-scale test scenario, our learning setups for the AERO
+system implement the recommendations we derived from the previous results. This dataset comprises aerofoil
+flows in the transonic regime and features shocks, fast-changing vorticial structures, and diverse samples around
+the critical Ma = 0.8. As such, we deploy a modern attention-based U-Net [62]. Figure 17 shows the inference
+evaluation of our trained models. Once again, unrolling increases accuracy at inference time. On average,
+unrolling improves the inference loss by up to 41% in the AERO case. The results reflect our research targets:
+Network size has the largest impact, and choosing the right size balances performance and accuracy (III).
+
+23
+
+4.3
+
+The Potential of No-Gradient Unrolling
+
+rel
+
+1e 3
+
+RESULTS
+
+KS3D
+conv
+ONE
+NOG
+WIG
+
+2
+
+1
+
+4
+
+55k
+
+Figure 18: Comparison of the training variants on the three-dimensional KS system, set up as a correction
+tasks with a convolutional ResNet; Lrel evaluation on the left; visualization of the system state after 20 steps
+of simulation on the right
+Additionally, our models were trained with a learning rate scheduled curriculum to achieve the best results,
+details of which are found in C. Training on the AERO system resembles the behavior of lower-dimensional
+problems, e.g. the KS system (IV). Similar to our previous prediction tasks, long-term gradients are less crucial
+but still deliver the best models (II). However, unrolling itself is essential for stable networks (I).
+Extension to three dimensions To demonstrate that unrolling is effective regardless of the system’s dimensionality, we conduct experiments on the three-dimensional KS equation. We trained a convolutional ResNet
+to correct a lower-order solver, details as previously described in Section 3.4. The results are visualized in
+Figure 18. A familiar pattern emerges as unrolled variants outperform the ONE baseline. Once again, fully
+differentiable training with WIG performs best, while non-differentiable NOG unrolling comes in second. While
+this test series focuses on a single, fixed network size, we can still observe that unrolling behaves similarly to
+the previous cases in higher dimensions.
+
+4.3
+
+The Potential of No-Gradient Unrolling
+
+Existing studies focus on fixed tasks, i.e. pure prediction tasks when no differentiable solver is available,
+and correction tasks when employing a differentiable solver. Given the large and complex implementations of
+solvers used in current scientific projects, often with decade-long histories, approaches that do not require the
+differentiability of these numerical solvers are especially attractive. Our experiments allow for quantifying the
+expected benefits when switching from a prediction task to a correction task with a non-differentiable solver.
+As illustrated in Figure 19, this enables an average 13.3-fold accuracy improvement with the same network
+architecture and size. All architectures can benefit from training with NOG utilizing a non-differentiable numerical solver. The models with 0.5k parameters for the KS perform 23.8 and 17.5 times better when supported by
+a low-fidelity solver, where the second value originates from a deeper variant of the 0.5k parameterization. The
+factor remains relatively constant for the remaining sizes, which all deploy deep architectures. Medium-sized
+networks with 2k and 33k parameters see a slight decrease in these improvements with values of 14.3 and 25.7
+respectively, while the largest networks’ accuracies improve by a factor of 30.0 and 18.9 once trained with NOG
+in a correction setup. In the KOLM case, we observe smaller relative gains from introducing a numerical solver.
+Here, the factor is 4.9 on average. This relative factor is largest for small architectures, where we observe a
+value of 6.4 for the 32k network. Similarly to the KS case, the benefits of using a numerical solver decrease for
+larger architectures. For our KOLM experiments the values are 4.19, 4.89, and 4.27 respectively. It has to be
+noted that these factors likely are specific to our setups and the used numerical solvers. However, the purpose
+of this evaluation is to illustrate the potential improvements made possible by correction unrolling. Crucially,
+only an interface between the solver and the network is sufficient for NOG correction training, the core of the
+solver can remain untouched. These experiments indicate that there could be large benefits if scientific codes
+were interfaced with machine learning (questions I, III). We believe that this training modality could be a new
+common ground for machine learning and the computational sciences. In the past, machine learning focused
+works often focused on purely predictive tasks. As our results indicate, an interface with existing numerical
+architectures is not only necessary to deploy correction models in a scientific computing environment but addi-
+
+24
+
+4.4
+
+Computational Performance
+
+10
+
+1
+
+10
+
+2
+
+10
+
+3
+
+KSconv
+
+RESULTS
+
+KOLMconv
+
+NOGcorr
+WIGpred
+
+10
+
+2
+
+10
+
+3
+
+rel
+
+rel
+
+100
+
+4
+
+0.5k* 0.5k 2k 33k 0.2M 1M
+network size
+
+32k 0.1M 0.5M 1M
+network size
+
+Figure 19: Comparison of WIG prediction and NOG correction setups on the KS system (left) and the KOLM
+flow (right)
+
+Training time
+ONE
+NOG
+WIG
+
+KScorr
+graph
+34 min.
+84 min.
+87 min.
+
+KSpred
+graph
+28 min.
+64 min.
+67 min.
+
+KOLMcorr
+conv
+3.6 h
+10 h
+16 h
+
+(a)
+
+32k
+0.1M
+0.5M
+1M
+
+Inference time (s)
+0.0377
+0.0389
+0.0391
+0.0401
+(b)
+
+Table 4: (a): Computational time required for training a single graph model for KS of size 1M for correction
+and prediction, and a convolutional model for KOLM of size 0.1M trained for a correction task; (b): Inference
+time for a single timestep of the KOLM model in a correction setting, averaged across 100 steps
+tionally unlocks further accuracy improvements when models are trained with NOG unrolling.
+
+4.4
+
+Computational Performance
+
+We measure the computational effort for both training and inference with our trained models. The ONE, NOG
+and WIG variants have different computational complexity when it comes to calculating a network update.
+ONE is the cheapest, as only one solver-network step needs to be computed. Both NOG and WIG are m-times
+more expensive in the forward pass. However, they differ in the backpropagation of gradients. The NOG setup
+does not differentiate solver operations, which makes the backpropagation pass cheaper than that of WIG. In
+principle, the gradient backpropagation of NOG setups is parallelizable across the unrolling horizon. While
+WIG requires a complete sequential backward pass through m steps, NOG calculates independent gradient
+contributions for each unrolled step. We report numbers for the training of one GCN of size 1M on the KS
+system, as well as the CNN of size 0.1M on the KOLM system in Table 4b. Here, it seems that the TensorFlow
+implementation of the KOLM setup is capable of taking advantage of this parallelization, reducing the training
+time of NOG significantly when compared to WIG.
+At inference time, ONE, NOG, and WIG training variants all pose the same computational burden since
+their call signature is entirely identical. The computational time per inference step is listed in Table 4a for
+the correction networks of KOLM setup. Since the numerical procedure used in the KOLM setup is relatively
+expensive, the inference time is dominated by the numerical solver. Switching to deeper architectures only
+results in small additional computational costs.
+
+4.5
+
+Discussion
+
+Our work has taken a task- and architecture-agnostic stance. Combined with the large scale of evaluations
+across more than three thousand models, this allows for extracting general trends. In line with the research
+targets from Section 1, we arrive at the following set of recommendations:
+(I) Non-differentiable unrolling as an alternative The mitigating effects on data shift introduced by
+unrolling can boost model performance. An unrolled but non-differentiable chain can increase performance
+
+25
+
+5
+
+CONCLUSION
+
+by 33% on average. In addition, non-differentiable neural correction based simulators do not require a new
+implementation of existing numerical solvers and thus represent an attractive alternative for fields with large
+traditional code bases. When no differentiable implementations are available, previous work typically resorts
+to pure prediction models. Instead, our results strongly encourage interfacing non-differentiable numerical
+implementations with machine learning, as doing so yields substantial accuracy improvements over prediction
+setups for identical network architectures and sizes.
+(II) Differentiable unrolling delivers the best accuracy When other hyperparameters are fixed, a differentiable unrolling strategy consistently outperforms other setups. At the cost of increased software engineering
+efforts, differentiable unrolling outperforms its one-step counterpart by 92% on average. Long-term gradients
+prove to be especially important for correction setups where neural networks correct numerical solvers.
+(III) correction approaches yield improved scaling: Our study across network sizes finds them predominant in terms of accuracy on inter- and extrapolative tests. However, we observe suboptimal convergence of
+the inference error when increasing the parameter count. These convergence rates compare poorly to the ones
+usually observed for numerical solvers. Most neural PDE simulators directly compete with numerical solvers.
+Thus, scaling to larger problems is critical for neural simulators. Unrolling can effectively train correction based
+simulators even when integrated with a non-differentiable solver. These combine the benefits of neural networks
+with the scaling properties of numerical solvers.
+(IV) Low-dimensional problems match Our results translate between physical systems. Provided the
+systems are from a similar domain, i.e. we primarily consider turbulent chaotic systems, high-level training
+behaviors translate between physical systems. This validates the approach common in other papers, where
+broad studies were conducted on low-dimensional systems and only tested on the high-dimensional target.
+While conducting these experiments, we noticed how training with multiple unrolled setups is non-trivial and
+sensitive to hyperparameters. Special care is thus required to successfully train with long unrolling. Reliable
+training setups utilize a curriculum where the unrolled number of steps slowly increases. The learning rate
+needs to be adjusted to keep the amplitude of the gradient feedback at a stable level.
+
+5
+
+Conclusion
+
+We have conducted in-depth empirical investigations of unrolling strategies for training neural PDE simulators.
+The inherent properties of unrolling were deduced from an extensive test suite spanning multiple physical
+systems, learning setups, network architectures, and network sizes. Our findings rendered four best practices
+for training autoregressive neural simulators via unrolling. Most importantly, beneficial effects of unrolling at
+training time were present regardless of the differentiability of the neural simulator. We analyzed the effective
+unrolling horizons of the differentiable WIG and non-differentiable NOG setups, and brought these into context
+with the characteristic timescale of the physical system and the number of simulation steps. At the same time,
+we have shown how the unrolling horizons in the WIG cannot be derived from the chaotic timescale of the
+target dynamics alone. The target dynamics are inadequate to measure gradient behavior in the early stages of
+the network training, which motivated the curriculum approach. This behavior becomes even more complicated
+in the NOG case, where the temporal discretization affects the gradient stability. Deriving a general rule to
+choose ideal unrolling horizons in the WIG and NOG setups could be an interesting avenue for future research.
+Additionally, our test sets and differentiable solvers are meant to serve as a benchmark: The broad range
+of network sizes for popular architectures as well as the selection of common physical systems as test cases
+yield a flexible baseline for future experiments with correction and prediction tasks. We have identified nondifferentiable unrolling as an attractive alternative to simplistic one-step training and implementations of differentiable solvers. Our results lay the foundation for assessing the gains that can be expected when deploying this
+method. Lastly, we measured convergence rates for neural networks and saw how these architectures converge
+poorly compared to numerical solvers. We concluded that deploying neural networks may thus be beneficial
+when a particular problem can benefit from their inherent properties, while grid scaling is still more efficient
+with classical approaches.
+26
+
+5
+
+CONCLUSION
+
+In the future, problem-tailored network architectures could potentially improve the scaling of neural networks. However, at the current point of research, it is advisable to combine neural and numerical approaches
+in correction setups to benefit from both. One of the applications that could benefit from this approach is
+training closure models for filtered or averaged PDEs, although non-differentiable unrolling in this context is
+restricted to correction-style formulations. At the same time, there are limitations to our scope. Our physical
+systems live in the domain of non-linear chaos and are primarily connected to fluid mechanics. Consequently,
+there is no inherent guarantee that our results will straightforwardly transfer to different domains. Additionally,
+we mentioned the relevance of our results to the scientific computing community. Our recommendations can
+help prioritize implementation efforts when designing unrolled training setups. However, we have only studied
+a subset of the relevant hyperparameters. In the context of unrolling, variations such as network width and
+depth, advanced gradient-stopping techniques, and irregularly spaced curriculums could be impactful. These
+topics are promising avenues for future research to further our understanding of autoregressive neural networks
+for scientific applications.
+Acknowledgements
+This work was supported by the ERC Consolidator Grant SpaTe (CoG-2019-863850).
+Code Availablility
+The code for the project will be made available at https://github.com/tum-pbs/unrolling.
+
+27
+
+REFERENCES
+
+REFERENCES
+
+References
+[1] Invariant recurrent solutions embedded in a turbulent two-dimensional kolmogorov flow. Journal of Fluid
+Mechanics, 722:554–595, 2013. ISSN 14697645. doi: 10.1017/jfm.2013.122.
+[2] M. Abadi et al. Tensorflow: A system for large-scale machine learning. In 12th USENIX symposium on
+operating systems design and implementation (OSDI 16), pages 265–283. USENIX Association, 2016.
+[3] Steven Atkinson and Nicholas Zabaras. Structured bayesian gaussian process latent variable model: Applications to data-driven dimensionality reduction and high-dimensional inversion. Journal of Computational
+Physics, 383:166–195, 2019. ISSN 0021-9991. doi: https://doi.org/10.1016/j.jcp.2018.12.037.
+[4] Kamyar Azizzadenesheli, Nikola Kovachki, Zongyi Li, Miguel Liu-Schiaffini, Jean Kossaifi, and Anima
+Anandkumar. Neural operators for accelerating scientific simulations and design. Nature Reviews Physics,
+pages 1–9, 2024.
+[5] H. J. Bae and P. Koumoutsakos. Scientific multi-agent reinforcement learning for wall-models of turbulent
+flows. Nature Communications, 13(1):1443, 2022.
+[6] Yohai Bar-Sinai, Stephan Hoyer, Jason Hickey, and Michael P Brenner. Learning data-driven discretizations for partial differential equations. Proceedings of the National Academy of Sciences, 116(31):15344–
+15349, 2019.
+[7] Andrea Beck and Marius Kurz. A perspective on machine learning methods in turbulence modeling.
+GAMM-Mitteilungen, 44(1):e202100002, 2021.
+[8] Mikhail Belkin. Fit without fear: remarkable mathematical phenomena of deep learning through the
+prism of interpolation. Acta Numerica, 30:203–248, 2021.
+[9] Florent Bonnet, Jocelyn Mazari, Paola Cinnella, and Patrick Gallinari. Airfrans: High fidelity computational fluid dynamics dataset for approximating reynolds-averaged navier–stokes solutions. Advances in
+Neural Information Processing Systems, 35:23463–23478, 2022.
+[10] Johannes Brandstetter, Daniel E. Worrall, and Max Welling. Message passing neural PDE solvers. In
+International Conference on Learning Representations, 2022.
+[11] Robert Bridson. Fluid Simulation for Computer Graphics. CRC Press, 2015.
+[12] Hendrik Wolter Broer and Floris Takens. Dynamical systems and chaos, volume 172. Springer, 2011.
+[13] Steven L Brunton, Bernd R Noack, and Petros Koumoutsakos. Machine learning for fluid mechanics.
+Annual review of fluid mechanics, 52:477–508, 2020.
+[14] Steven L Brunton, Marko Budišić, Eurika Kaiser, and J Nathan Kutz. Modern koopman theory for
+dynamical systems. arXiv:2102.12086, 2021.
+[15] Tianping Chen and Hong Chen. Universal approximation to nonlinear operators by neural networks with
+arbitrary activation functions and its application to dynamical systems. IEEE transactions on neural
+networks, 6(4):911–917, 1995.
+[16] Pao-Hsiung Chiu, Jian Cheng Wong, Chinchun Ooi, My Ha Dao, and Yew-Soon Ong. Can-pinn: A fast
+physics-informed neural network based on coupled-automatic–numerical differentiation method. Computer
+Methods in Applied Mechanics and Engineering, 395:114909, 2022.
+[17] S. W. Chung and J. B. Freund. An optimization method for chaotic turbulent flow. Journal of Computational Physics, 457:111077, 2022.
+[18] Steven M Cox and Paul C Matthews. Exponential time differencing for stiff systems. Journal of Computational Physics, 176(2):430–455, 2002.
+
+28
+
+REFERENCES
+
+REFERENCES
+
+[19] Emmanuel De Bézenac, Arthur Pajot, and Patrick Gallinari. Deep learning for physical processes: Incorporating prior scientific knowledge. Journal of Statistical Mechanics: Theory and Experiment, 2019(12):
+124009, 2019.
+[20] Andrzej Dulny, Andreas Hotho, and Anna Krause. Dynabench: A benchmark dataset for learning dynamical systems from low-resolution data. In Joint European Conference on Machine Learning and Knowledge
+Discovery in Databases, pages 438–455. Springer, 2023.
+[21] Karthik Duraisamy, Gianluca Iaccarino, and Heng Xiao. Turbulence modeling in the age of data. Annual
+Review of Fluid Mechanics, 51:357–377, 2019.
+[22] Marie-Lena Eckert, Kiwon Um, and Nils Thuerey. Scalarflow: a large-scale volumetric data set of realworld scalar transport flows for computer animation and machine learning. ACM Transactions on Graphics
+(TOG), 38(6):1–16, 2019.
+[23] Russell A Edson, Judith E Bunder, Trent W Mattner, and Anthony J Roberts. Lyapunov exponents of the
+kuramoto-sivashinsky pde. The ANZIAM Journal, 61(3):270–285, 2019. doi: 10.1017/S1446181119000105.
+[24] Hamidreza Eivazi, Luca Guastoni, Philipp Schlatter, Hossein Azizpour, and Ricardo Vinuesa. Recurrent neural networks and koopman-based frameworks for temporal predictions in a low-order model of
+turbulence. International Journal of Heat and Fluid Flow, 90:108816, 2021. ISSN 0142-727X. doi:
+https://doi.org/10.1016/j.ijheatfluidflow.2021.108816.
+[25] Joel H Ferziger, Milovan Perić, and Robert L Street. Computational methods for fluid dynamics. springer,
+2019.
+[26] Michael Frank, Dimitris Drikakis, and Vassilis Charissis. Machine-learning methods for computational
+science and engineering. Computation, 8(1):15, 2020.
+[27] Nicholas Geneva and Nicholas Zabaras. Modeling the dynamics of pde systems with physics-constrained
+deep auto-regressive networks. Journal of Computational Physics, 403:109056, 2020.
+[28] Nicholas Geneva and Nicholas Zabaras. Transformers for modeling physical systems. Neural Networks,
+146:272–289, 2022. doi: 10.1016/j.neunet.2021.11.022.
+[29] Muriel Gevrey, Ioannis Dimopoulos, and Sovan Lek. Two-way interaction of input variables in the sensitivity analysis of neural network models. Ecological modelling, 195(1-2):43–50, 2006.
+[30] Alexander B. Givental, Boris A. Khesin, Jerrold E. Marsden, Alexander N. Varchenko, Victor A. Vassiliev,
+Oleg Ya. Viro, and Vladimir M. Zakalyukin, editors. Kolmogorov seminar on selected questions of analysis,
+pages 144–148. Springer, 2009. doi: 10.1007/978-3-642-01742-1 8.
+[31] Ian Goodfellow, Yoshua Bengio, and Aaron Courville. Deep learning. MIT press, 2016.
+[32] Xu Han, Han Gao, Tobias Pfaff, Jian-Xun Wang, and Liping Liu. Predicting physics in mesh-reduced
+space with temporal attention. In International Conference on Learning Representations, 2021.
+[33] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition.
+In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 770–778, 2016.
+[34] Maurice Holt. Numerical methods in fluid dynamics. Springer Science & Business Media, 1984.
+[35] Raad I Issa. Solution of the implicitly discretised fluid flow equations by operator-splitting. Journal of
+computational physics, 62(1):40–65, 1986.
+[36] Steeven Janny, Aurélien Beneteau, Nicolas Thome, Madiha Nadri, Julie Digne, and Christian Wolf. Eagle:
+Large-scale learning of turbulent fluid dynamics with mesh transformers. In International Conference on
+Learning Representations, 2023.
+
+29
+
+REFERENCES
+
+REFERENCES
+
+[37] Dmitrii Kochkov, Jamie A Smith, Ayya Alieva, Qing Wang, Michael P Brenner, and Stephan Hoyer.
+Machine learning–accelerated computational fluid dynamics. Proceedings of the National Academy of
+Sciences, 118(21):e2101784118, 2021.
+[38] Georg Kohl, Li-Wei Chen, and Nils Thuerey. Turbulent flow simulation using autoregressive conditional
+diffusion models. arXiv:2309.01745, 2023.
+[39] Remi Lam, Alvaro Sanchez-Gonzalez, Matthew Willson, Peter Wirnsberger, Meire Fortunato, Ferran
+Alet, Suman Ravuri, Timo Ewalds, Zach Eaton-Rosen, Weihua Hu, et al. Learning skillful medium-range
+global weather forecasting. Science, 382(6677):1416–1421, 2023.
+[40] Sangseung Lee and Donghyun You. Data-driven prediction of unsteady flow over a circular cylinder using
+deep learning. Journal of Fluid Mechanics, 879:217–254, 2019.
+[41] Guohao Li, Matthias Muller, Ali Thabet, and Bernard Ghanem. Deepgcns: Can gcns go as deep as cnns?
+In Proceedings of the IEEE/CVF international conference on computer vision, pages 9267–9276, 2019.
+[42] Zijie Li, Kazem Meidani, and Amir Barati Farimani. Transformer for partial differential equations’ operator learning. arXiv:2205.13671, 2022.
+[43] Zijie Li, Dule Shu, and Amir Barati Farimani. Scalable transformer for pde surrogate modeling. Advances
+in Neural Information Processing Systems, 36, 2024.
+[44] Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, Burigede Liu, Kaushik Bhattacharya, Andrew
+Stuart, and Anima Anandkumar. Fourier neural operator for parametric partial differential equations.
+arXiv:2010.08895, 2020.
+[45] Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, Burigede Liu, Kaushik Bhattacharya, Andrew
+Stuart, and Anima Anandkumar. Neural operator: Graph kernel network for partial differential equations.
+arXiv preprint arXiv:2003.03485, 2020.
+[46] Zongyi Li, Hongkai Zheng, Nikola Kovachki, David Jin, Haoxuan Chen, Burigede Liu, Kamyar Azizzadenesheli, and Anima Anandkumar. Physics-informed neural operator for learning partial differential
+equations. ACM/JMS Journal of Data Science, 1(3):1–27, 2024.
+[47] Marten Lienen, Jan Hansen-Palmus, David Lüdke, and Stephan Günnemann. Generative diffusion for 3d
+turbulent flows. arXiv:2306.01776, 2023.
+[48] J. Ling, A. Kurzawski, and J. Templeton. Reynolds averaged turbulence modelling using deep neural
+networks with embedded invariance. Journal of Fluid Mechanics, 807:155–166, 2016.
+[49] Phillip Lippe, Bastiaan S Veeling, Paris Perdikaris, Richard E Turner, and Johannes Brandstetter. Pderefiner: Achieving accurate long rollouts with neural pde solvers. arXiv:2308.05732, 2023.
+[50] Björn List, Li-Wei Chen, and Nils Thuerey. Learned turbulence modelling with differentiable fluid solvers:
+physics-based loss functions and optimisation horizons. Journal of Fluid Mechanics, 949:A25, 2022. doi:
+10.1017/jfm.2022.738.
+[51] Bethany Lusch, J Nathan Kutz, and Steven L Brunton. Deep learning for universal linear embeddings of
+nonlinear dynamics. Nature communications, 9(1):1–10, 2018.
+[52] Jonathan F MacArt, Justin Sirignano, and Jonathan B Freund. Embedded training of neural-network
+subgrid-scale turbulence models. Physical Review Fluids, 6(5):050502, 2021.
+[53] Suryanarayana Maddu, Dominik Sturm, Bevan L Cheeseman, Christian L Müller, and Ivo F Sbalzarini.
+Stencil-net for equation-free forecasting from data. Scientific reports, 13(1):12787, 2023.
+[54] G. Margazoglou and L. Magri. Stability analysis of chaotic systems from data. Nonlinear Dynamics, 111
+(9):8799–8819, 2023.
+
+30
+
+REFERENCES
+
+REFERENCES
+
+[55] Hugo Melchers, Daan Crommelin, Barry Koren, Vlado Menkovski, and Benjamin Sanderse. Comparison
+of neural closure models for discretised pdes. Computers & Mathematics with Applications, 143:94–107,
+2023.
+[56] Jonas Mikhaeil, Zahra Monfared, and Daniel Durstewitz. On the difficulty of learning chaotic dynamics
+with RNNs. Advances in Neural Information Processing Systems, 35:11297–11312, 2022.
+[57] Tharindu P Miyanawala and Rajeev K Jaiman. An efficient deep learning technique for the navier-stokes
+equations: Application to unsteady wake flow dynamics. arXiv preprint arXiv:1710.09099, 2017.
+[58] Masaki Morimoto, Kai Fukami, Kai Zhang, and Koji Fukagata. Generalization techniques of neural
+networks for fluid flow estimation. Neural Computing and Applications, 34(5):3647–3669, 2022.
+[59] Changhong Mou, Birgul Koc, Omer San, Leo G Rebholz, and Traian Iliescu. Data-driven variational
+multiscale reduced order models. Computer Methods in Applied Mechanics and Engineering, 373:113470,
+2021.
+[60] G. Novati, H. L. de Laroussilhe, and P. Koumoutsakos. Automating turbulence modelling by multi-agent
+reinforcement learning. Nature Machine Intelligence, 3(1):87–96, 2021.
+[61] Atsuya Oishi and Genki Yagawa. Computational mechanics enhanced by deep learning. Computer Methods
+in Applied Mechanics and Engineering, 327:327–351, 2017.
+[62] Ozan Oktay, Jo Schlemper, Loic Le Folgoc, Matthew Lee, Mattias Heinrich, Kazunari Misawa, Kensaku
+Mori, Steven McDonagh, Nils Y Hammerla, Bernhard Kainz, et al. Attention u-net: Learning where to
+look for the pancreas. arXiv:1804.03999, 2018.
+[63] J. Park and H. Choi. Toward neural-network-based large eddy simulation: application to turbulent channel
+flow. Journal of Fluid Mechanics, 914:A16, 2021. doi: 10.1017/jfm.2020.931.
+[64] Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory Chanan, Trevor
+Killeen, Zeming Lin, Natalia Gimelshein, Luca Antiga, Alban Desmaison, Andreas Kopf, Edward Yang,
+Zachary DeVito, Martin Raison, Alykhan Tejani, Sasank Chilamkurthy, Benoit Steiner, Lu Fang, Junjie
+Bai, and Soumith Chintala. Pytorch: An imperative style, high-performance deep learning library. In
+Advances in Neural Information Processing Systems 32, pages 8024–8035. Curran Associates, Inc., 2019.
+[65] Jiang-Zhou Peng, Siheng Chen, Nadine Aubry, Zhihua Chen, and Wei-Tao Wu. Unsteady reduced-order
+model of flow over cylinders based on convolutional and deconvolutional neural network structure. Physics
+of Fluids, 32(12), 2020.
+[66] Tobias Pfaff, Meire Fortunato, Alvaro Sanchez-Gonzalez, and Peter Battaglia. Learning mesh-based
+simulation with graph networks. In International Conference on Learning Representations, 2021.
+[67] Arkady Pikovsky and Antonio Politi. Lyapunov Exponents: A Tool to Explore Complex Dynamics. Cambridge University Press, 2016.
+[68] Ugo Piomelli, William H. Cabot, Parviz Moin, and Sangsan Lee. Subgrid-scale backscatter in turbulent
+and transitional flows. Physics of Fluids A: Fluid Dynamics, 3(7):1766–1771, 07 1991. ISSN 0899-8213.
+doi: 10.1063/1.857956. URL https://doi.org/10.1063/1.857956.
+[69] Jaime Pizarroso, José Portela, and Antonio Muñoz. Neuralsens: sensitivity analysis of neural networks.
+arXiv preprint arXiv:2002.11423, 2020.
+[70] Lukas Prantl, Benjamin Ummenhofer, Vladlen Koltun, and Nils Thuerey. Guaranteed conservation of momentum for learning particle-based fluid dynamics. Advances in Neural Information Processing Systems,
+35, 2022.
+[71] Jiagang Qu, Weihua Cai, and Yijun Zhao. Learning time-dependent pdes with a linear and nonlinear
+separate convolutional neural network. Journal of Computational Physics, 453:110928, 2022.
+
+31
+
+REFERENCES
+
+REFERENCES
+
+[72] Joaquin Quiñonero-Candela, Masashi Sugiyama, Anton Schwaighofer, and Neil D Lawrence. Dataset shift
+in machine learning. Mit Press, 2022.
+[73] Maziar Raissi, Paris Perdikaris, and George E Karniadakis. Physics-informed neural networks: A deep
+learning framework for solving forward and inverse problems involving nonlinear partial differential equations. Journal of Computational physics, 378:686–707, 2019.
+[74] Rishikesh Ranade, Chris Hill, and Jay Pathak. Discretizationnet: A machine-learning based solver for
+navier–stokes equations using finite volume discretization. Computer Methods in Applied Mechanics and
+Engineering, 378:113722, 2021.
+[75] Bogdan Raonic, Roberto Molinaro, Tim De Ryck, Tobias Rohner, Francesca Bartolucci, Rima Alaifari,
+Siddhartha Mishra, and Emmanuel de Bézenac. Convolutional neural operators for robust and accurate
+learning of pdes. Advances in Neural Information Processing Systems, 36, 2024.
+[76] Stephan Rasp, Peter D Dueben, Sebastian Scher, Jonathan A Weyn, Soukayna Mouatadid, and Nils
+Thuerey. Weatherbench: a benchmark data set for data-driven weather forecasting. Journal of Advances
+in Modeling Earth Systems, 12(11):e2020MS002203, 2020.
+[77] Christopher L Rumsey. CFL3D contribution to the AIAA supersonic shock boundary layer interaction
+workshop. NASA TM–2010-216858, 2010.
+[78] Christopher Lockwood Rumsey, Robert T Biedron, and James Lee Thomas. CFL3D: its history and some
+recent applications. NASA TM–112861, 1997.
+[79] Alvaro Sanchez-Gonzalez, Jonathan Godwin, Tobias Pfaff, Rex Ying, Jure Leskovec, and Peter Battaglia.
+Learning to simulate complex physics with graph networks. In Proceedings of the 37th International
+Conference on Machine Learning, volume 119 of Proceedings of Machine Learning Research, pages 8459–
+8468. PMLR, 2020.
+[80] Benjamin Sanderse, Panos Stinis, Romit Maulik, and Shady E Ahmed. Scientific machine learning for
+closure models in multiscale problems: A review. arXiv preprint arXiv:2403.02913, 2024.
+[81] Varun Shankar, Dibyajyoti Chakraborty, Venkatasubramanian Viswanathan, and Romit Maulik. Differentiable turbulence: Closure as a partial differential equation constrained optimization, 2024. URL
+https://arxiv.org/abs/2307.03683.
+[82] Dule Shu, Zijie Li, and Amir Barati Farimani. A physics-informed diffusion model for high-fidelity flow
+field reconstruction. Journal of Computational Physics, 478:111972, 2023.
+[83] Justin Sirignano, Jonathan F MacArt, and Jonathan B Freund. Dpm: A deep learning pde augmentation
+method with application to large-eddy simulation. Journal of Computational Physics, 423:109811, 2020.
+ISSN 0021-9991.
+[84] Kimberly Stachenfeld, Drummond B Fielding, Dmitrii Kochkov, Miles Cranmer, Tobias Pfaff, Jonathan
+Godwin, Can Cui, Shirley Ho, Peter Battaglia, and Alvaro Sanchez-Gonzalez. Learned coarse models for
+efficient turbulence simulation. arXiv:2112.15275, 2021.
+[85] Jos Stam. Stable Fluids. In Proc. ACM SIGGRAPH. ACM, 1999.
+[86] Hyung Ju Suh, Max Simchowitz, Kaiqing Zhang, and Russ Tedrake. Do differentiable simulators give
+better policy gradients? In International Conference on Machine Learning, volume 162 of Proceedings of
+Machine Learning Research, pages 20668–20696. PMLR, 17–23 Jul 2022.
+[87] Luning Sun, Han Gao, Shaowu Pan, and Jian-Xun Wang. Surrogate modeling for fluid flows based on
+physics-constrained deep learning without simulation data. Computer Methods in Applied Mechanics and
+Engineering, 361:112732, 2020.
+[88] Zhiqing Sun, Yiming Yang, and Shinjae Yoo. A neural pde solver with temporal stencil modeling. In
+International Conference on Machine Learning, pages 33135–33155. PMLR, 2023.
+32
+
+REFERENCES
+
+REFERENCES
+
+[89] Ilya Sutskever. Training recurrent neural networks. University of Toronto Toronto, ON, Canada, 2013.
+[90] Makoto Takamoto, Timothy Praditia, Raphael Leiteritz, Daniel MacKinlay, Francesco Alesiani, Dirk
+Pflüger, and Mathias Niepert. Pdebench: An extensive benchmark for scientific machine learning. Advances in Neural Information Processing Systems, 35:1596–1611, 2022.
+[91] Tapas Tripura and Souvik Chakraborty. Wavelet neural operator for solving parametric partial differential equations in computational mechanics problems. Computer Methods in Applied Mechanics and
+Engineering, 404:115783, 2023.
+[92] Michael Tsang, Dehua Cheng, and Yan Liu. Detecting statistical interactions from neural network weights.
+arXiv preprint arXiv:1705.04977, 2017.
+[93] Kiwon Um, Robert Brand, Yun Raymond Fei, Philipp Holl, and Nils Thuerey. Solver-in-the-loop: Learning
+from differentiable physics to interact with iterative pde-solvers. In Advances in Neural Information
+Processing Systems, pages 6111–6122. Curran Associates, Inc., 2020.
+[94] Benjamin Ummenhofer, Lukas Prantl, Nils Thuerey, and Vladlen Koltun. Lagrangian fluid simulation
+with continuous convolutions. In International Conference on Learning Representations, 2019.
+[95] T. van Gastelen, W. Edeling, and B. Sanderse. Energy-conserving neural network for turbulence closure
+modeling. arXiv preprint arXiv:2301.13770, 2023.
+[96] P. R. Vlachas, G. Arampatzis, C. Uhler, and P. Koumoutsakos. Multiscale simulations of complex systems
+by learning their effective dynamics. Nature Machine Intelligence, 4(4):359–366, 2022.
+[97] Pantelis R Vlachas, Wonmin Byeon, Zhong Y Wan, Themistoklis P Sapsis, and Petros Koumoutsakos.
+Data-driven forecasting of high-dimensional chaotic systems with long short-term memory networks. Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences, 474(2213):20170844,
+2018.
+[98] Laura von Rueden, Sebastian Mayer, Rafet Sifa, Christian Bauckhage, and Jochen Garcke. Combining
+machine learning and simulation to a hybrid modelling approach: Current and future directions. In
+International Symposium on Intelligent Data Analysis, pages 548–560. Springer, 2020.
+[99] Rui Wang, Karthik Kashinath, Mustafa Mustafa, Adrian Albert, and Rose Yu. Towards physics-informed
+deep learning for turbulent flow prediction. In Proceedings of the 26th ACM SIGKDD International
+Conference on Knowledge Discovery & Data Mining, pages 1457–1466, 2020.
+[100] Rui Wang, Yihe Dong, Sercan O Arik, and Rose Yu. Koopman neural forecaster for time series with
+temporal distribution shifts. arXiv:2210.03675, 2022.
+[101] Yue Wang, Yongbin Sun, Ziwei Liu, Sanjay E Sarma, Michael M Bronstein, and Justin M Solomon.
+Dynamic graph cnn for learning on point clouds. ACM Transactions on Graphics (tog), 38(5):1–12, 2019.
+[102] B. L. Welch. The generalization of ‘student’s’ problem when several different population variances are
+involved. Biometrika, 34(1-2):28–35, 1947.
+[103] Henning Wessels, Christian Weißenfels, and Peter Wriggers. The neural particle method–an updated
+lagrangian physics informed neural network for computational fluid dynamics. Computer Methods in
+Applied Mechanics and Engineering, 368:113127, 2020.
+[104] Steffen Wiewel, Moritz Becher, and Nils Thuerey. Latent space physics: Towards learning the temporal
+evolution of fluid flow. In Computer graphics forum, volume 38(2), pages 71–82. Wiley Online Library,
+2019.
+[105] Olivia Wiles, Sven Gowal, Florian Stimberg, Sylvestre Alvise-Rebuffi, Ira Ktena, Krishnamurthy Dvijotham, and Taylan Cemgil. A fine-grained analysis on distribution shift. arXiv:2110.11328, 2021.
+
+33
+
+REFERENCES
+
+REFERENCES
+
+[106] Jin-Long Wu, Karthik Kashinath, Adrian Albert, Dragos Chirila, Heng Xiao, et al. Enforcing statistical constraints in generative adversarial networks for modeling chaotic dynamical systems. Journal of
+Computational Physics, 406:109209, 2020.
+[107] Tailin Wu, Takashi Maruyama, and Jure Leskovec. Learning to accelerate partial differential equations
+via latent global evolution. Advances in Neural Information Processing Systems, 35:2240–2253, 2022.
+[108] Zhou Xian, Bo Zhu, Zhenjia Xu, Hsiao-Yu Tung, Antonio Torralba, Katerina Fragkiadaki, and Chuang
+Gan. Fluidlab: A differentiable environment for benchmarking complex fluid manipulation. In International Conference on Learning Representations, 2022.
+[109] Liu Yang, Xuhui Meng, and George Em Karniadakis. B-pinns: Bayesian physics-informed neural networks
+for forward and inverse pde problems with noisy data. Journal of Computational Physics, 425:109913,
+2021.
+[110] Yuan Yin, Vincent Le Guen, Jérémie Dona, Emmanuel de Bézenac, Ibrahim Ayed, Nicolas Thome, and
+Patrick Gallinari. Augmenting physical models with deep networks for complex dynamics forecasting.
+Journal of Statistical Mechanics: Theory and Experiment, 2021(12):124012, 2021.
+[111] Huaqing Zhang, Yunqi Jiang, Jian Wang, Kai Zhang, and Nikhil R Pal. Bilateral sensitivity analysis: a
+better understanding of a neural network. International Journal of Machine Learning and Cybernetics,
+13(8):2135–2152, 2022.
+[112] X.-L. Zhang, H. Xiao, X. Luo, and G. He. Ensemble kalman method for learning turbulence models from
+indirect observation data. Journal of Fluid Mechanics, 949:A26, 2022.
+[113] X.-L. Zhang, H. Xiao, X. Luo, and G. He. Combining direct and indirect sparse data for learning
+generalizable turbulence models. Journal of Computational Physics, page 112272, 2023.
+[114] Xu-Hui Zhou, Jiequn Han, and Heng Xiao. Learning nonlocal constitutive models with neural networks.
+Computer Methods in Applied Mechanics and Engineering, 384:113927, 2021.
+[115] Xu-Hui Zhou, Jiequn Han, and Heng Xiao. Frame-independent vector-cloud neural network for nonlocal
+constitutive modeling on arbitrary grids. Computer Methods in Applied Mechanics and Engineering, 388:
+114211, 2022.
+
+34
+
+B
+
+GRADIENT CALCULATION
+
+APPENDIX
+A
+
+Unrolling on Attractors
+
+Here we provide a proof for equation (10) for a one-dimensional system. It is based on the definitions and
+remarks shown in Chapter 4 of [12]. The discrete equivalent of an ω-limit set defined therein is
+ω(u) = {y ∈ R|∀T ∈ N ∃t > T : g t (u) = y}.
+
+(35)
+
+The ω-limit set of an initial u consists of the accumulation states that the trajectory converges to for large time
+horizons. In the following, we will use the ω-limit set to show how unrolling converges to the learned dynamics
+attractor. Furthermore, it is shown that w(u) is an attractor of the dynamics Ag if there is an arbitrarily small
+neighborhood Nu such that
+\
+g t (Nu ) ⊂ ω(u) ∀t and
+g t (Nu ) = ω(u) = Ag .
+(36)
+t≥0
+
+Lemma Consider a learned simulator g : R →
+− R being autoregressively unrolled at training for m steps.
+Suppose that an attractor Ag exists for the dynamics of g, and that the system is unrolled from states u in a
+dataset U . The unrolling then converges to this attractor for large m and sufficiently many initial states in the
+basin u ∈ B(Ag ).
+Proof : An unrolled trajectory consists of traj(u) = {g s (u)|s ∈ [0, m]}. As m →
+− ∞, the trajectory includes the
+ω-limit set such that ω(u) ⊂ traj(u). Then, with sufficiently many initial states in the basin u ∈ B(Ag ) and
+using (36)
+\
+traj(u) ⊃ ω(u) = Ag
+(37)
+u
+
+B
+B.1
+
+Gradient Calculation
+Correction
+
+The network parameter optimization was defined in Equation 11. For one learning iteration, a loss was accumulated over an unrolled trajectory. We can write this total loss over the unrolled trajectory as a function of
+g(ut ) = fθ (S(ut )) such that
+s
+s
+X
+X
+L=
+L2 (ũt+τ s , g s (ut )) =
+Ls ,
+(38)
+t=1
+
+t=1
+
+where g s represents the recurrent application of multiple machine learning augmented simulation steps, and Ls
+represents the loss evaluated after that step. Note that the full backpropagation through this unrolled chain
+requires a differentiable solver for the correction setup. To test the effect of using a differentiable solver, we
+u
+introduce two different strategies for propagating the gradients ∂L
+∂θ . The differentiable setup can calculate the
+full optimization gradients by propagating gradients through the solver. The gradients are thus evaluated as
+ s−B
+
+
+s 
+X
+∂Ls
+∂Ls Y ∂g s−b ∂fθs−b ∂S s−b ∂g B ∂fθB
+=
+.
+(39)
+∂θ
+∂g s
+∂fθs−b ∂S s−b ∂g s−b−1 ∂fθB ∂θ
+B=1
+
+b=1
+
+We refer to this fully differentiable setup as WIG. In contrast, if no differentiable solver is available, optimization
+gradients can only propagate to the network application, not through the solver. The gradients are thus
+evaluated as
+∂Ls
+∂Ls ∂g s ∂fθs
+=
+.
+(40)
+∂θ
+∂g s ∂fθs ∂θ
+This setup is referred to as NOG. Most existing code bases in engineering and science are not fully differentiable.
+Consequentially, this NOG setup is particularly relevance, as it could be implemented using existing traditional
+numerical solvers.
+35
+
+B.2
+
+B.2
+
+Prediction
+
+C
+
+AERO CASE
+
+Prediction
+
+Prediction operates on the same network parameter optimization from Equation 11. The total loss over the
+unrolled trajectory is
+s
+s
+X
+X
+L=
+L2 (ũt+τ s , fθs (ut )) =
+Ls ,
+(41)
+t=1
+
+i=t
+
+fθs
+
+where
+represents the recurrent application of the network and Ls represents the loss evaluated after that
+step. To test the effect of using long-term gradients, we introduce two different strategies for propagating the
+u
+gradients ∂L
+∂θ . The differentiable setup can calculate the full optimization gradients by propagating gradients
+through the solver. The gradients are thus evaluated as
+ s−B
+ B
+s 
+X
+∂Ls
+∂Ls Y ∂fθs−b
+∂fθ
+=
+.
+s−b−1
+∂θ
+∂fθs
+∂θ
+∂fθ
+B=1
+b=1
+
+(42)
+
+We refer to this fully differentiable setup as WIG. In contrast, if no differentiable solver is available, optimization
+gradients can only propagate to the network application, not through the solver. The gradients are thus
+evaluated as
+∂Ls
+∂Ls ∂fθs
+=
+.
+(43)
+∂θ
+∂fθs ∂θ
+This setup is referred to as NOG. Most existing code bases in engineering and science are not fully differentiable.
+Consequentially, this NOG setup is particularly relevance, as it could be implemented using existing traditional
+numerical solvers.
+
+C
+
+AERO case
+
+Numerical data: The governing equations for the transonic flow over a NACA0012 airfoil are non-dimensionalized
+with the freestream variables (i.e., the density ρ∞ , speed of sound a∞ , and the chord length of the airfoil c),
+and can be expressed in tensor notation as
+∂ρui
+=0
+∂xi
+∂τxi xj
+∂ρui uj
+∂p
+=−
++
+∂xj
+∂xi
+∂xj
+∂(−qi + uj τxi xj )
+∂(ρE + p)ui
+=
+∂xi
+∂xi
+
+(44)
+
+where the shear stress (with Stokes’ hypothesis) and heat flux terms are defined as
+τxi xj = µ
+
+∂uj
+2 ∂uk
+M∞ ∂ui
+[(
++
+)−
+δij ]
+Re∞ ∂xj
+∂xi
+3 ∂xk
+
+and
+
+M∞
+∂Θ
+µ
+.
+P r Re∞ (γ − 1) ∂xi
+p
+2 c/µ ; γ is the ratio of specific heats, 1.4 for air; the
+Here, Reynolds number is defined as Re∞ = ρ∞ u2∞ + v∞
+∞
+laminar viscosity µ is obtained by Sutherland’s law (the function of temperature), and the turbulent viscosity
+µT is determined by turbulence models; laminar Prandtl number is constant, i.e. P r = 0.72. The relation
+between pressure p and total energy E is given by
+q xi = −
+
+
+
+1
+p = (γ − 1) ρE − ρui ui .
+2
+Note also that from the equation of state for a perfect gas, we have p = ρa2 /γ and temperature Θ = a2 . As we
+perform 2D high-resolution quasi-direct numerical simulations, no turbulence model is employed.
+36
+
+C
+
+AERO CASE
+
+The finite-volume method numerically solves the equations using the open-source code CFL3D. The mesh
+resolution 1024 × 256 is kept the same for cases, i.e. 256 grid cells in the wall-normal direction, 320 grid cells
+in the wake, and 384 grid cells around the airfoil surface. The convective terms are discretized with third-order
+upwind scheme, and viscous terms with a second-order central difference.
+An inflow/outflow boundary based on one-dimensional Riemann invariant is imposed at about 50c away
+from the airfoil in the (x, y) plane. The grid stretching is employed to provide higher resolution near the surface
+and in the wake region, and the minimal wall-normal grid spacing is 6 × 10−4 to ensure yn+ < 1.0. A no-slip
+adiabatic wall boundary condition is applied on the airfoil surface. The non-dimensional time step is 0.008c/U∞ .
+In the transonic regime, airflow behavior becomes more complex due to the formation of shock waves and
+supersonic and subsonic flow areas on the airfoil surfaces. When the Mach number is below M = 0.77, the
+unsteadiness in the flowfield is mainly caused by the high-frequency vortex shedding. At around M = 0.8,
+a series of compression waves coalesce to form a strong shock wave, and the flow structures are dominated
+by alternately moving shock waves along the upper and lower sides of the airfoil. For M > 0.88, the strong
+shock waves become stationary on both surfaces. To cover all possible flow regimes, the samples in the training
+dataset are generated at M = [0.75, 0.8, 0.825, 0.88, 0.9], and the test samples are performed at M = 0.725 and
+M = 0.775.
+We evaluate the vortex shedding frequency to identify the characteristic timescale of the AERO simulations.
+The frequency fs c/U∞ was individually evaluated for every hyper-parameterization in the training dataset and
+averaged to obtain a characteristic timescale tc,AERO = 1/fs = 0.455. This timescale is covered by roughly 15
+prediction steps of the neural simulator.
+The snapshots are saved at every four simulation steps (i.e., dtsampling = 0.032c/U∞ ) and spatially downsampled by 4x and 2x in the circumferential and wall-normal directions, respectively. In the case of M = 0.85,
+there are 1000 snapshots; for other cases, there are 500 snapshots.
+Neural Network Architectures: We implemented Attention U-Net [62]. It consists of three encoder blocks,
+each progressively capturing features from the input image through convolution and downsampling. Following
+the encoder blocks, there’s a bottleneck block for information compression with a higher number of channels.
+Subsequently, the architecture includes three decoder blocks, which use skip connections to integrate features
+from both the bottleneck and corresponding encoder blocks during the upscaling process. These decoder blocks
+gradually reduce the number of channels, culminating in a 1x1 convolutional output layer that generates pixelwise predictions. We train networks of varying sizes by adjusting the number of features, as indicated in Table
+5. The training was performed in PyTorch [64].
+Table 5: AERO Network Architectures and Parameter Counts
+Architecture
+
+# Parameters
+
+UNet, 0.5m
+UNet, 2.0m
+UNet, 8.1m
+
+511332
+2037956
+8137092
+
+Features in encoder & bottleneck blocks
+[16, 32, 64] [128]
+[32, 64, 128] [256]
+[64, 128, 256] [512]
+
+Network Training and Evaluation The model is trained with Adam and a mini-batch size of 5, with
+training noise, for up to 500k iterations. A learning rate of 6 × 10−4 is used for the first 250k iterations and
+then decays exponentially to 6 × 10−5 . The training curriculum increases the number of unrolled steps from
+m = 1 to m = 4 and then m = 9.
+Lrel errors are computed and accumulated over 13 prediction steps (equivalent to 52 simulator steps) of
+simulation for two test cases with previously unseen Mach numbers: M = 0.725 and M = 0.775, corresponding
+to shock-free case and near-critical condition case.
+
+37
+
+D
+
+100
+1
+
+10
+
+2
+
+10
+
+3
+
+2
+
+rel
+
+10
+
+KScorr
+graph
+
+KScorr
+graph
+100
+
+10
+
+0.5k 0.5k 2k 33k 0.2M 1M
+
+ADDITIONAL RESULTS
+
+ONE
+NOG
+WIG
+
+1
+
+0.5k* 0.5k 2.0k 34k 0.2M 1.0M
+
+network size
+
+network size
+
+KSpred
+conv
+
+101
+2
+
+rel
+
+100
+
+KSpred
+conv
+
+10
+
+1
+
+100
+
+0.5k 0.5k 2k 33k 0.2M 1M
+
+0.5k* 0.5k 1.9k 33k 0.2M 1.0M
+
+network size
+
+network size
+
+Figure 20: Metric comparison between relative and absolute error metrics
+
+D
+D.1
+
+Additional Results
+Metric Comparison
+
+The choice of metric can affect the interpretation of results. In the main evaluations of the paper, we showcase
+the results in terms of a relative error metric, which is normalized by ground truth data. Relative error
+values approaching 1 indicate that the compared trajectory de-correlates from the ground truth. This effect is
+especially pronounced in chaotic dynamics and motivates shorter evaluation horizons (e.g., 12 steps for KS). As
+a long-term stability measure, we used the divergence-time in figure 9. By putting a threshold on the L2 error,
+this metric evaluates the number of steps for which the solution remains stable. However, it does not contain
+any information about the accuracy of a solution with respect to the ground truth trajectory. The absolute L2
+metric in figure 20 can be seen as an intermediate between relative and divergence-time metrics. It depicts both
+the accuracy of a solution compared to the ground truth and the growing energies in divergent trajectories. In
+the present evaluation of the KS system, we have thus used intermediate-length horizons (40 steps).
+
+D.2
+
+Prediction on the KOLM system
+
+The networks used for the correction of the KOLM system were also trained for prediction. The results are
+visualized in Figure 21. Unsurprisingly, the overall error values are larger than for the respective correction
+setups, where an additional numerical prior supports the network. Like the other prediction and correction
+setups, the errors decrease with increasing network size. Unrolled training modalities perform best at all
+network sizes. The quantitative values of the loss metric are also tabulated in 13.
+
+D.3
+
+Interpolation and Extrapolation Tests
+
+Interpreting physical hyperparameters is necessary for models to generalize to extrapolative test cases. We want
+to test whether extrapolation to new physical hyperparameters benefits from unrolling or long-term gradients.
+In the main sections, all evaluations accumulated their results from interpolative and extrapolative test cases.
+In this section, we explicitly differentiate between interpolation and extrapolation tests. Figures 22, 23, 24, and
+25 compare the model performance on interpolative and extrapolative test cases with respect to the physical
+parameters and depicts performance relative to the ONE baseline for various model sizes. Overall accuracy
+is worse on the harder extrapolative test cases. Similarly to the combined tests from the main section WIG
+38
+
+D.4
+
+Dataset Sizes
+
+D
+
+ADDITIONAL RESULTS
+
+2
+
+KOLMpred
+conv
+10
+
+1
+
+32k 0.1M 0.5M 1M
+network size
+
+Figure 21: Comparison of L2 errors for CNN predictions on the KOLM flow
+performs best on average, both on interpolative or extrapolative data. However, the long-term gradients introduced by this method do not seem to explicitly favor inter- or extrapolation. Nonetheless, the positive aspects
+of WIG training are not constrained to interpolation, but successfully carry over to extrapolation cases.
+
+interpolation
+KScorr
+graph
+
+extrapolation
+KScorr
+graph
+
+0.5k*0.5k 2k 33k 0.2M 1M
+
+0.5k*0.5k 2k 33k 0.2M 1M
+
+2
+
+100
+10
+
+1
+
+10
+
+2
+
+relative
+
+2
+
+network size
+
+1.5
+
+interpolation
+KScorr
+graph
+
+network size
+
+extrapolation
+KScorr
+graph
+
+1.0
+0.5
+
+0.5k* 0.5k 1.9k 33k 0.2M 1.0M 0.5k* 0.5k 1.9k 33k 0.2M 1.0M
+network size
+
+network size
+
+Figure 22: Comparison of L2 errors on interpolative and extrapolation test sets for GCNs on KS
+
+D.4
+
+Dataset Sizes
+
+Unrolling connects multiple dataset frames in one trajectory. This connectedness encodes the physical relation
+between subsequent frames that ultimately has to be learned by the neural network. Given that unrolled setups
+observe more of these physical connections, one might expect that unrolling decreases the necessary dataset
+size. To test this hypothesis, we incrementally decreased the amount of training data. The number of training
+iterations was kept constant throughout the process. The models are then evaluated on our full test sets. Figure
+26 compares the L2 for variations in the training dataset size. A measurable difference in inference accuracy
+only appears for dataset sizes smaller than X% of the original dataset. While the accuracy of WIG does indeed
+
+39
+
+D.5
+
+Best performing models
+
+D
+
+ADDITIONAL RESULTS
+
+interpolation
+KScorr
+conv
+
+extrapolation
+KScorr
+conv
+
+0.5k*0.5k 2k 33k 0.2M 1M 5m
+
+0.5k*0.5k 2k 33k 0.2M 1M 5m
+
+2
+
+100
+10
+
+1
+
+10
+
+2
+
+relative
+
+2
+
+network size
+
+1.5
+
+interpolation
+KScorr
+conv
+
+network size
+
+extrapolation
+KScorr
+conv
+
+1.0
+0.5
+
+0.5k* 0.5k 1.9k 33k 0.2M 1.0M 5.2M 0.5k* 0.5k 1.9k 33k 0.2M 1.0M 5.2M
+network size
+
+network size
+
+Figure 23: Comparison of L2 errors on interpolative and extrapolation test sets for CNNs on KS
+deteriorate slightly later than NOG and especially ONE, this transition is confined to a small section of Y %
+dataset size. In practice, training a setup in this narrow dataset margin is unlikely and thus not mentioned as
+a strong benefit of unrolling.
+
+D.5
+
+Best performing models
+
+Our error measurements relied on statistical evaluations, which in turn were based on multiple randomized
+training runs. NOG and especially WIG showed clear benefits in these statistical evaluations. However, we
+must also consider the computational cost of training (differentiable) unrolled setups. Unrolling m steps with
+the NOG setup increases the computational cost of one training iteration m-fold. Differentiable training in
+the WIG setup adds even more computations due to the backpropagation through the solver. Consequently,
+training multiple models and selecting the best might be a viable approach for ONE models, where training
+costs are lower. Thus, we evaluate the best-performing models in a separate analysis. Figure 27 depicts the
+best inference L2 achieved by a given model size, architecture, and learning setup. The best ONE models are
+on par with NOG or WIG for some network sizes and architectures. However, in many other cases, the average
+unrolled WIG setup still performs better or similar to the best ONE model. In light of the fact that these
+best models were selected out of 8 (KOLM) or 20 (KS) training runs, training with unrolling is ultimately
+more resource-efficient if best performance is sought. Thus, our recommendation of training with NOG or WIG
+approaches persists.
+
+D.6
+
+Additional Architecture
+
+We tested the generalization of our findings toward attention-gated U-nets [62]. The implementation is a 1D
+version of the network used in the AERO cases introduced in Appendix C. Crucially, it features attention gates
+in its skip connections allowing the network to efficiently mix global and local structures in the output. The L2
+errors of this architecture on the KS system are visualized in Figure 28. The behavior of ONE, NOG, and WIG
+matches well with other architectures (i.e. conv and graph nets) studied in the main section. We still observe
+the best performance with fully differentiable WIG unrolling, while NOG offers slimmer benefits over ONE.
+
+40
+
+Additional Architecture
+
+10
+
+1
+
+10
+
+2
+
+interpolation
+WAKEcorr
+conv
+
+D
+
+extrapolation
+WAKEcorr
+conv
+
+relative
+
+2
+
+2
+
+D.6
+
+6.3k 67k 1.0M
+network size
+
+6.3k 67k 1.0M
+
+1.2
+1.0
+0.8
+0.6
+0.4
+
+6.3k
+
+network size
+
+ADDITIONAL RESULTS
+
+interpolation
+WAKEcorr
+conv
+
+67k
+
+network size
+
+extrapolation
+WAKEcorr
+conv
+
+1.0M6.3k
+
+67k
+
+network size
+
+1.0M
+
+Figure 24: Comparison of L2 errors on interpolative and extrapolation test sets for WAKE
+We can conclude that our observations regarding the positive effects of unrolling with and without gradients
+transfer to attention-based networks.
+
+41
+
+Additional Architecture
+
+10
+
+1
+
+10
+
+2
+
+D
+
+ADDITIONAL RESULTS
+
+interpolation
+KOLMcorr
+conv
+
+extrapolation
+KOLMcorr
+conv
+
+32k 0.1M 0.5M 1M
+
+32k 0.1M 0.5M 1M
+
+2
+
+D.6
+
+2
+
+1.0
+
+relative
+
+network size
+
+0.8
+0.6
+
+network size
+
+interpolation
+KOLMcorr
+conv
+
+32k
+
+0.1M
+
+extrapolation
+KOLMcorr
+conv
+
+0.5M
+
+network size
+
+1M 32k
+
+0.1M
+
+0.5M
+
+1M
+
+network size
+
+Figure 25: Comparison of L2 errors on interpolative and extrapolation test sets for KOLM
+
+1
+
+2 × 10
+
+1
+
+2
+
+3 × 10
+
+KScorr
+graph
+
+ONE
+NOG
+WIG
+
+40%
+
+10%
+
+2%
+
+network size
+
+0.5% 0.0125%
+
+Figure 26: Dataset size variations in percent of the full training set
+
+KScorr
+conv
+
+KScorr
+graph
+
+KOLMcorr
+conv
+2
+
+2
+
+100
+10
+
+10
+
+2
+
+1
+
+0.5k* 0.5k 2k 33k 0.2m 1m
+network size
+
+0.5k*0.5k 2k 33k 0.2m 1m 5m
+network size
+
+32k 0.1M 0.5M 1M
+network size
+
+Figure 27: L2 errors of the best performing models; the outline in the background represent the average accuracy
+
+42
+
+Additional Architecture
+
+D
+
+KScorr
+unet
+
+ADDITIONAL RESULTS
+
+ONE
+NOG
+WIG
+
+2
+
+D.6
+
+100
+
+12k 47k 1.9M
+Figure 28: Comparison of L2 errors for the U-Net architecture on the KS system
+
+43
+
+E
+
+E
+
+INFERENCE VISUALIZATIONS
+
+Inference Visualizations
+
+This section visualizes typical inference trajectories on which our evaluations were based. Due to the vast
+amount of trained models, only a very small subset of all models are visualized. The goal is to contextualize
+the results from the main paper and previous appendix evaluations. The following figures show various training
+modalities for a fixed initialization, which was randomly selected from our trained models.
+
+Figure 29: Inference error trajectory visualization of the CNN correction on the KS system for extrapolation
+on low X
+
+Figure 30: Inference error trajectory visualization of the CNN correction on the KS system for extrapolation
+on high X
+Figure 29 displays a sample inference trajectory for convolutional correction models trained with the three
+unrolling variants. The inference case is selected from the extrapolation dataset, in this case for the small
+domain size of X = 30.2, which lies outside of the training range. The difference to the reference is further
+visualized in Figure 30. Here, the distance to the target state as u − ũ is used. This error was evaluated for
+the full range of model sizes as introduced in Section 3 and listed in Table 2. The same visualization procedure
+was also done for the other extrapolation test on large domains with X = 70.4. Figures 31 and 32 similarly
+display the state trajectories and errors for a sample network. A clear trend of longer correlation horizons is
+visible in the error figures. As already expanded on in the main paper, larger architectures stay in proximity
+44
+
+E
+
+INFERENCE VISUALIZATIONS
+
+Figure 31: Inference error trajectory visualization of the GCN correction on the KS system for extrapolation
+on low X
+
+Figure 32: Inference error trajectory visualization of the GCN correction on the KS system for extrapolation
+on high X
+to the target evolution for longer inference rollouts. At the same time, unrolling reduces errors for a fixed size
+since NOG and WIG have smaller amplitudes. On the large domain sizes in Figures 31 and 32, the networks
+also show instabilities when trained with ONE or NOG.
+For the KOLM system, we visualize sample rollout trajectories for the extrapolation case of Re=1000 in
+Figure 33. The displayed horizon spans 250 timesteps. The final step of this inference rollout is further visualized
+in Figure 34 for the whole range of training setups, including unrolling variants and network sizes. Finally, a
+visualization of the solution error is provided in Figure 35. The visualizations show how those networks that
+were trained with ONE and NOG unrolling tend to misinterpret points of high vorticity and generally produce
+larger errors. As pointed out in the main sections, network size is, along with training modality, a decisive
+contributor to inference accuracy. This observation can also be made in the error visualizations in 35.
+
+45
+
+E
+
+INFERENCE VISUALIZATIONS
+
+Figure 33: Inference vorticity after 250 steps of the CNN correction on the KOLM system for interpolation on
+intermediate Re=600, reference data is shown in the left column
+
+46
+
+E
+
+INFERENCE VISUALIZATIONS
+
+Figure 34: Inference vorticity after 250 steps of the CNN correction on the KOLM system for extrapolation on
+high Re=1000, reference data is shown in the left column
+
+Figure 35: Inference vorticity after 250 steps of the CNN correction on the KOLM system for interpolation on
+intermediate Re=600, reference data is shown in the left column
+
+47
+
+F
+
+F
+
+EVALUATION DATA
+
+Evaluation Data
+
+Herein, we provide the statistical data used to generate the figures in the main paper. The error data shown is
+always gathered from evaluations on a combined test set from interpolative and extrapolative cases, as described
+in Appendix 3. For each initial frame in the test set, a trajectory is computed and errors with respect to the
+ground truth are accumulated, yielding one scalar error value per trajectory. Means and standard deviations
+are now calculated across these trajectories on a per-model-size and per-training-modality basis. Thus, the
+tables show these statistics for various model sizes, which are listed for the KS system in Table 2, for the wake
+system in Section 3.2, for the KOLM case in Table 3, and for the AERO case in Table 5. We denote the mean
+with an overline, e.g. as ONE, and the standard deviation as σ. Additionally, we perform a one-sided Welch’s
+t-test to the statistical significance of the empirical tests and their resulting distributions. For distributions
+with different means and standard deviations, [102] defines a t-test as
+|X 1 − X 2 |
+.
+t= s
+σ12
+σ22
++
+M1
+M2
+
+(45)
+
+This holds for two distributions with mean X i , standard deviation σi , and sample sizes Mi . The p-value for a
+one-sided significance test is then computed as
+p = P r(T ≤ t|H0 ),
+
+(46)
+
+giving us the probability that the null-hypotheses (i.e. both distributions are identical) is true.
+The differences in the studied training modalities are statistically significant for smaller network setups. As
+model sizes increase, the distribution of trained models becomes more similar. Our heavily overparameterized
+networks (e.g. 1.0M parameters for 48 degree of freedom KS system) all show highly accurate and stable
+predictions (see divergence time metric). Based on the theoretical considerations above, this means that the
+attractor of the learned dynamics is closely aligned with the ground truth system. These setups thus display less
+data shift and the benefits of unrolling are reduced. When these conditions in the overparameterized regime are
+met, NOG models are at a disadvantage due to their mismatch between gradients and loss landscape. However,
+these heavily oversized architectures are not practically relevant for scientific computing due to their weak
+scaling compared to numerical approaches. This evaluation confirms that for relevant, small to medium-sized
+networks our results are statistically significant and hence conclusions can be drawn.
+The tables relate to the figures as follows:
+• Figure 4 visualizes Tables 6, 8, 9
+• Figure 11 visualizes Tables 15, 16, 17
+• Figure 12 visualizes Table 18
+• Figure 14 visualizes Tables 10, 11, 12
+• Figure 16 visualizes Tables 19, 20constant
+• Figure 17 visualizes Table 14
+
+48
+
+F
+
+EVALUATION DATA
+
+Table 6: Correction GCN Lrel errors on the KS system
+
+0.5k*
+0.5k
+2k
+33k
+0.2M
+1M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+pNOG
+ONE
+
+pWIG
+ONE
+
+0.13866
+0.12246
+0.25568
+0.00913
+0.00232
+0.00130
+
+0.12531
+0.08551
+0.06132
+0.00856
+0.00270
+0.00196
+
+0.07415
+0.04125
+0.02138
+0.00563
+0.00173
+0.00132
+
+0.03573
+0.04741
+0.80377
+0.00292
+0.00065
+0.00039
+
+0.04180
+0.02651
+0.08010
+0.00418
+0.00073
+0.00048
+
+0.00884
+0.00716
+0.00746
+0.00309
+0.00082
+0.00030
+
+0.14228
+0.00212
+0.14434
+0.31063
+0.04417
+0.00001
+
+0.00000
+0.00000
+0.10011
+0.00036
+0.00788
+0.40292
+
+Table 7: Correction CNN Lrel errors on the KS system
+
+0.5k*
+0.5k
+2k
+33k
+0.2M
+1M
+2M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+pNOG
+ONE
+
+pWIG
+ONE
+
+0.11646
+0.07308
+0.04174
+0.00728
+0.00318
+0.00122
+0.00078
+
+0.09048
+0.06987
+0.03547
+0.00797
+0.00255
+0.00155
+0.00079
+
+0.05381
+0.04797
+0.02306
+0.00582
+0.00204
+0.00080
+0.00052
+
+0.02157
+0.01431
+0.01018
+0.00227
+0.00178
+0.00020
+0.00015
+
+0.01912
+0.01148
+0.00640
+0.00227
+0.00069
+0.00082
+0.00014
+
+0.00893
+0.01033
+0.00432
+0.00205
+0.00045
+0.00016
+0.00010
+
+0.00013
+0.21954
+0.01252
+0.17330
+0.07378
+0.04649
+0.42027
+
+0.00000
+0.00000
+0.00000
+0.01953
+0.00422
+0.00000
+0.00000
+
+Table 8: Correction CNN Lrel errors on the WAKE system
+
+6.3k
+67k
+1.0M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+pNOG
+ONE
+
+pWIG
+ONE
+
+0.00078
+0.00020
+0.00013
+
+0.00042
+0.00013
+0.00009
+
+0.00026
+0.00010
+0.00008
+
+0.00019
+0.00008
+0.00005
+
+0.00010
+0.00005
+0.00004
+
+0.00005
+0.00004
+0.00004
+
+0.00000
+0.00075
+0.01031
+
+0.00000
+0.00000
+0.00122
+
+Table 9: Correction CNN Lrel errors on the KOLM system
+
+32k
+0.1M
+0.5M
+1M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+pNOG
+ONE
+
+pWIG
+ONE
+
+0.00406
+0.00302
+0.00163
+0.00102
+
+0.00407
+0.00257
+0.00139
+0.00084
+
+0.00361
+0.00249
+0.00141
+0.00080
+
+0.00081
+0.00030
+0.00016
+0.00008
+
+0.00045
+0.00049
+0.00014
+0.00010
+
+0.00037
+0.00022
+0.00019
+0.00011
+
+0.48124
+0.00058
+0.00001
+0.00000
+
+0.01460
+0.00000
+0.00015
+0.00000
+
+Table 10: Prediction GCN Lrel errors on the KS system
+
+0.5k*
+0.5k
+2k
+33k
+0.2M
+1M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+pNOG
+ONE
+
+pWIG
+ONE
+
+1.84653
+5.96483
+3.30063
+0.97240
+0.19699
+0.12911
+
+3.05853
+1.34493
+0.81323
+0.20468
+0.09459
+0.09182
+
+2.59502
+2.95659
+1.02441
+0.22368
+0.06454
+0.05792
+
+0.39942
+2.59318
+1.64430
+0.78061
+0.02300
+0.01819
+
+0.95652
+0.45774
+0.10700
+0.04296
+0.00875
+0.00936
+
+0.64054
+1.65345
+0.33664
+0.02868
+0.01415
+0.01514
+
+0.00000
+0.00000
+0.00000
+0.00004
+0.00000
+0.00000
+
+0.00004
+0.00005
+0.00000
+0.00006
+0.00000
+0.00000
+
+49
+
+F
+
+EVALUATION DATA
+
+Table 11: Prediction CNN Lrel errors on the KS system
+
+0.5k*
+0.5k
+2k
+33k
+0.2M
+1M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+pNOG
+ONE
+
+pWIG
+ONE
+
+3.48794
+1.52333
+0.59395
+0.17768
+0.10441
+0.06933
+
+1.54234
+1.27744
+0.50286
+0.20454
+0.09865
+0.06417
+
+2.15773
+1.22393
+0.50700
+0.20458
+0.07651
+0.02924
+
+0.49023
+0.21687
+0.17407
+0.03064
+0.03165
+0.01334
+
+0.11446
+0.40071
+0.08076
+0.04219
+0.02102
+0.01582
+
+0.26813
+0.17834
+0.09128
+0.03852
+0.01385
+0.00596
+
+0.00000
+0.01037
+0.02017
+0.01340
+0.25063
+0.13601
+
+0.00000
+0.00001
+0.02758
+0.00964
+0.00044
+0.00000
+
+Table 12: Prediction CNN Lrel errors on the WAKE system
+
+6.3k
+67k
+1.0M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+pNOG
+ONE
+
+pWIG
+ONE
+
+408020369.94856
+0.07258
+0.00027
+
+0.01375
+0.00167
+0.00033
+
+0.00886
+0.00230
+0.00010
+
+816040738.02572
+0.12260
+0.00009
+
+0.01530
+0.00082
+0.00042
+
+0.00462
+0.00131
+0.00001
+
+0.01565
+0.00682
+0.28444
+
+0.01565
+0.00722
+0.00000
+
+Table 13: Prediction CNN L2 errors on the KOLM system
+
+32k
+0.1M
+0.5Mk
+1M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+pNOG
+ONE
+
+pWIG
+ONE
+
+0.30455
+0.11714
+0.06879
+0.04561
+
+0.27062
+0.09850
+0.06942
+0.03582
+
+0.25849
+0.10791
+0.06790
+0.03595
+
+0.09936
+0.01839
+0.01117
+0.01311
+
+0.04430
+0.00787
+0.00656
+0.00272
+
+0.03258
+0.01187
+0.00948
+0.00856
+
+0.19624
+0.00978
+0.44579
+0.02881
+
+0.11662
+0.12649
+0.43303
+0.05153
+
+Table 14: Prediction Unet L2 errors on the AERO system
+
+0.5M
+2M
+8M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+0.05046
+0.03302
+0.02892
+
+0.03143
+0.02815
+0.02392
+
+0.02975
+0.02829
+0.02388
+
+0.01302
+0.00251
+0.00505
+
+0.00420
+0.00090
+0.00153
+
+0.00221
+0.00106
+0.00204
+
+Table 15: Correction CNN L2 errors on KS system for multiple unrollings
+
+m=2
+m=3
+m=4
+m=5
+m=6
+m=8
+m=10
+m=12
+m=14
+m=16
+m=18
+m=20
+
+NOG
+
+WIG
+
+σ(NOG)
+
+σ(WIG)
+
+0.34026
+0.33358
+0.32845
+0.36300
+0.34506
+0.36041
+0.39730
+3.30768
+inf
+inf
+inf
+inf
+
+0.33344
+0.32817
+0.31876
+0.29802
+0.29201
+0.28614
+0.28358
+0.26729
+0.25408
+0.24387
+0.25749
+3.46048
+
+0.06799
+0.07953
+0.06794
+0.06534
+0.05682
+0.04762
+0.07861
+8.65391
+0.00000
+0.00000
+0.00000
+0.00000
+
+0.07425
+0.05533
+0.05780
+0.06446
+0.06101
+0.04553
+0.06345
+0.07201
+0.06418
+0.05274
+0.05718
+9.12454
+
+50
+
+F
+
+EVALUATION DATA
+
+Table 16: Correction CNN L2 errors on KOLM system for multiple curriculums
+
+1-2-4
+2-2-4
+4-4-4
+
+NOG
+
+WIG
+
+σ(NOG)
+
+σ(WIG)
+
+0.03064
+0.01046
+0.02576
+
+0.01635
+0.04140
+0.01394
+
+0.00344
+0.00084
+0.00511
+
+0.00172
+0.00506
+0.00144
+
+Table 17: Correction CNN L2 errors on KOLM system when trained without learning rate schedules
+
+32k
+0.1M
+0.5M
+1M
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+0.04860
+0.03478
+0.03090
+0.02935
+
+0.04563
+0.03701
+0.02827
+0.02244
+
+0.05165
+0.03708
+0.03057
+0.02635
+
+0.00651
+0.00271
+0.00267
+0.00965
+
+0.00528
+0.00689
+0.00320
+0.00398
+
+0.00626
+0.00433
+0.00332
+0.00394
+
+Table 18: Correction CNN L2 errors on KS system for gradient stopping variants
+
+WIG
+σ(WIG)
+
+m=6
+
+m=6init
+
+w=1
+
+w=2
+
+v=1
+
+v=2
+
+0.388526
+0.092057
+
+0.281911
+0.050417
+
+0.374733
+0.097563
+
+0.396608
+0.102014
+
+0.441374
+0.156538
+
+0.407062
+0.101093
+
+Table 19: GCN L2 errors on KS system when transitioning from prediction to correction
+
+10%
+20%
+30%
+40%
+50%
+60%
+70%
+80%
+90%
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+1.46963
+1.22752
+1.05448
+0.98373
+0.83278
+0.73871
+0.65280
+0.46519
+0.26651
+
+1.15836
+1.06870
+1.13224
+0.92035
+0.78407
+0.70152
+0.61808
+0.42852
+0.15659
+
+1.04210
+0.92173
+0.93338
+0.77333
+0.75527
+0.61906
+0.46474
+0.39318
+0.18686
+
+0.27693
+0.16561
+0.17234
+0.16078
+0.11489
+0.14414
+0.10726
+0.10353
+0.09774
+
+0.09666
+0.11952
+0.18949
+0.12198
+0.12352
+0.09365
+0.09699
+0.10320
+0.01506
+
+0.15044
+0.05283
+0.10398
+0.09403
+0.11875
+0.06889
+0.07094
+0.13866
+0.06874
+
+Table 20: CNN L2 errors on KS system when transitioning from prediction to correction
+
+10%
+20%
+30%
+40%
+50%
+60%
+70%
+80%
+90%
+
+ONE
+
+NOG
+
+WIG
+
+σ(ONE)
+
+σ(NOG)
+
+σ(WIG)
+
+1.08743
+0.98619
+0.89545
+0.81295
+0.70735
+0.55892
+0.45414
+0.33173
+0.14203
+
+1.07423
+0.97025
+0.87275
+0.81708
+0.71738
+0.60302
+0.45675
+0.28746
+0.11449
+
+1.00705
+0.85021
+0.82945
+0.72305
+0.66283
+0.55926
+0.48273
+0.31830
+0.12929
+
+0.10005
+0.12132
+0.07255
+0.13808
+0.09532
+0.12181
+0.12301
+0.08661
+0.02205
+
+0.08438
+0.10936
+0.10187
+0.10260
+0.08907
+0.10013
+0.11392
+0.06363
+0.01993
+
+0.09433
+0.07485
+0.07454
+0.06438
+0.07525
+0.05164
+0.12604
+0.07834
+0.04566
+
+51
+
+

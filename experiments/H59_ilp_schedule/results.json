@@ -1,0 +1,28 @@
+{
+  "current_makespan": 353,
+  "theoretical_min": 144,
+  "operations": 968,
+  "dependencies": 2031,
+  "main_loop_cycles": 353,
+  "counts": {
+    "alu": 94,
+    "load": 288,
+    "valu": 552,
+    "store": 32,
+    "flow": 2
+  },
+  "utilization": {
+    "alu": 2.2190745986779983,
+    "valu": 26.062322946175637,
+    "load": 40.79320113314447,
+    "store": 4.53257790368272,
+    "flow": 0.56657223796034
+  },
+  "optimal_makespan": 151,
+  "improvement_cycles": 202,
+  "improvement_pct": 57.22379603399433,
+  "gap_to_theory_cycles": 7,
+  "gap_to_theory_pct": 4.861111111111112,
+  "solver_status": "OPTIMAL",
+  "solve_time": 11.342253684997559
+}

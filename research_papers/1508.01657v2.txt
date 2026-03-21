@@ -1,0 +1,1170 @@
+Journal of Scheduling manuscript No.
+(will be inserted by the editor)
+
+A parameterized complexity view on non-preemptively scheduling
+interval-constrained jobs: few machines, small looseness, and small slack
+
+arXiv:1508.01657v2 [cs.DS] 24 Mar 2016
+
+René van Bevern · Rolf Niedermeier · Ondřej Suchý
+
+Submitted: August 7, 2015
+Accepted: March 23, 2016
+
+Abstract We study the problem of non-preemptively scheduling n jobs, each job j with a release time t j , a deadline d j ,
+and a processing time p j , on m parallel identical machines.
+Cieliebak et al (2004) considered the two constraints |d j −
+t j | ≤ λ p j and |d j − t j | ≤ p j + σ and showed the problem to
+be NP-hard for any λ > 1 and for any σ ≥ 2. We complement their results by parameterized complexity studies: we
+show that, for any λ > 1, the problem remains weakly NPhard even for m = 2 and strongly W[1]-hard parameterized
+by m. We present a pseudo-polynomial-time algorithm for
+constant m and λ and a fixed-parameter tractability result for
+the parameter m combined with σ .
+Keywords release times and deadlines · machine minimization · sequencing within intervals · shiftable intervals ·
+fixed-parameter tractability · NP-hard problem
+
+1 Introduction
+Non-preemptively scheduling jobs with release times and
+deadlines on a minimum number of machines is a well-studied problem both in offline and online variants (Chen et al
+René van Bevern is supported by grant 16-31-60007 mol a dk of the
+Russian Foundation for Basic Research (RFBR).
+Ondřej Suchý is supported by grant 14-13017P of the Czech Science
+Foundation.
+René van Bevern
+Novosibirsk State University, Novosibirsk, Russian Federation, E-mail:
+rvb@nsu.ru
+Rolf Niedermeier
+Institut für Softwaretechnik und Theoretische Informatik, TU Berlin,
+Germany, E-mail: rolf.niedermeier@tu-berlin.de
+Ondřej Suchý
+Faculty of Information Technology, Czech Technical University in
+Prague, Prague, Czech Republic, E-mail: ondrej.suchy@fit.cvut.cz
+
+2016; Chuzhoy et al 2004; Cieliebak et al 2004; Malucelli
+and Nicoloso 2007; Saha 2013). In its decision version, the
+problem is formally defined as follows:
+I NTERVAL -C ONSTRAINED S CHEDULING
+Input: A set J := {1, . . . , n} of jobs, a number m ∈ N of
+machines, each job j with a release time t j ∈ N, a deadline d j ∈ N, and a processing time p j ∈ N.
+Question: Is there a schedule that schedules all jobs onto
+m parallel identical machines such that
+1. each job j is executed non-preemptively for p j time units,
+2. each machine executes at most one job at a time, and
+3. each job j starts no earlier than t j and is finished by d j .
+For a job j ∈ J, we call the half-open interval [t j , d j ) its time
+window. A job may only be executed during its time window.
+The length of the time window is d j − t j .
+We study I NTERVAL -C ONSTRAINED S CHEDULING with
+two additional constraints introduced by Cieliebak et al (2004).
+These constraints relate the time window lengths of jobs to
+their processing times:
+Looseness If all jobs j ∈ J satisfy |d j − t j | ≤ λ p j for some
+number λ ∈ R, then the instance has looseness λ . By λ L OOSE I NTERVAL -C ONSTRAINED S CHEDULING we denote
+the problem restricted to instances of looseness λ .
+Slack If all jobs j ∈ J satisfy |d j − t j | ≤ p j + σ for some
+number σ ∈ R, then the instance has slack σ . By σ -S LACK
+I NTERVAL -C ONSTRAINED S CHEDULING we denote the
+problem restricted to instances of slack σ .
+Both constraints on I NTERVAL -C ONSTRAINED S CHEDUL ING are very natural: clients may accept some small deviation
+of at most σ from the desired start times of their jobs. Moreover, it is conceivable that clients allow for a larger deviation
+
+2
+
+for jobs that take long to process anyway, leading to the case
+of bounded looseness λ .
+Cieliebak et al (2004) showed that, even for constant λ >
+1 and constant σ ≥ 2, the problems λ -L OOSE I NTERVAL C ONSTRAINED S CHEDULING and σ -S LACK I NTERVAL C ONSTRAINED S CHEDULING are strongly NP-hard.
+Instead of giving up on finding optimal solutions and
+resorting to approximation algorithms (Chuzhoy et al 2004;
+Cieliebak et al 2004), we conduct a more fine-grained complexity analysis of these problems employing the framework of parameterized complexity theory (Cygan et al 2015;
+Downey and Fellows 2013; Flum and Grohe 2006; Niedermeier 2006), which so far received comparatively little attention in the field of scheduling with seemingly only a handful
+of publications (van Bevern et al 2015a,b; Bodlaender and
+Fellows 1995; Cieliebak et al 2004; Fellows and McCartin
+2003; Halldórsson and Karlsson 2006; Hermelin et al 2015;
+Mnich and Wiese 2015). In particular, we investigate the
+effect of the parameter m of available machines on the parameterized complexity of interval-constrained scheduling
+without preemption.
+Related work I NTERVAL -C ONSTRAINED S CHEDULING is
+a classical scheduling problem and strongly NP-hard already
+on one machine (Garey and Johnson 1979, problem SS1).
+Besides the task of scheduling all jobs on a minimum number
+of machines, the literature contains a wide body of work
+concerning the maximization of the number of scheduled
+jobs on a bounded number of machines (Kolen et al 2007).
+For the objective of minimizing the number
+p of machines,
+Chuzhoy et al (2004) developed a factor-O( log n/ log log n)approximation algorithm. Malucelli and Nicoloso (2007) formalized machine minimization and other objectives in terms
+of optimization problems in shiftable interval graphs. Online
+algorithms for minimizing the number of machines have been
+studied as well and we refer to recent work by Chen et al
+(2016) for an overview.
+Our work refines the following results of Cieliebak et al
+(2004), who considered I NTERVAL -C ONSTRAINED S CHED ULING with bounds on the looseness and the slack. They
+showed that I NTERVAL -C ONSTRAINED S CHEDULING is
+strongly NP-hard for any looseness λ > 1 and any slack σ ≥
+2. Besides giving approximation algorithms for various special cases, they give a polynomial-time algorithm for σ = 1
+and a fixed-parameter tractability result for the combined
+parameter σ and h, where h is the maximum number of time
+windows overlapping in any point in time.
+Our contributions We analyze the parameterized complexity
+of I NTERVAL -C ONSTRAINED S CHEDULING with respect
+to three parameters: the number m of machines, the looseness λ , and the slack σ . More specifically, we refine known
+
+René van Bevern et al.
+
+results of Cieliebak et al (2004) using tools of parameterized
+complexity analysis. An overview is given in Table 1.1.
+In Section 3, we show that, for any λ > 1, λ -L OOSE
+I NTERVAL -C ONSTRAINED S CHEDULING remains weakly
+NP-hard even on m = 2 machines and that it is strongly W[1]hard when parameterized by the number m of machines. In
+Section 4, we give a pseudo-polynomial-time algorithm for λ L OOSE I NTERVAL -C ONSTRAINED S CHEDULING for each
+fixed λ and m. Finally, in Section 5, we give a fixed-parameter algorithm for σ -S LACK I NTERVAL -C ONSTRAINED
+S CHEDULING when parameterized by m and σ . This is in
+contrast to our result from Section 3 that the parameter combination m and λ presumably does not give fixed-parameter
+tractability results for λ -L OOSE I NTERVAL -C ONSTRAINED
+S CHEDULING.
+2 Preliminaries
+Basic notation We assume that 0 ∈ N. For two vectors u =
+(u1 , . . . , uk ) and v = (v1 , . . . , vk ), we write u ≤ v if ui ≤ vi
+for all i ∈ {1, . . . , k}. Moreover, we write u  v if u ≤ v and
+u 6= v, that is, u and v differ in at least one component. Finally,
+1k is the k-dimensional vector consisting of k 1-entries.
+Computational complexity We assume familiarity with the
+basic concepts of NP-hardness and polynomial-time manyone reductions (Garey and Johnson 1979). We say that a
+problem is (strongly) C-hard for some complexity class C if it
+is C-hard even if all integers in the input instance are bounded
+from above by a polynomial in the input size. Otherwise, we
+call it weakly C-hard.
+In the following, we introduce the basic concepts of parameterized complexity theory, which are in more detail
+discussed in corresponding text books (Cygan et al 2015;
+Downey and Fellows 2013; Flum and Grohe 2006; Niedermeier 2006).
+Fixed-parameter algorithms The idea in fixed-parameter algorithmics is to accept exponential running times, which are
+seemingly inevitable in solving NP-hard problems, but to
+restrict them to one aspect of the problem, the parameter.
+Thus, formally, an instance of a parameterized problem Π is a pair (x, k) consisting of the input x and the
+parameter k. A parameterized problem Π is fixed-parameter tractable (FPT) with respect to a parameter k if there
+is an algorithm solving any instance of Π with size n in
+f (k) · poly(n) time for some computable function f . Such
+an algorithm is called a fixed-parameter algorithm. It is potentially efficient for small values of k, in contrast to an
+algorithm that is merely running in polynomial time for each
+fixed k (thus allowing the degree of the polynomial to depend on k). FPT is the complexity class of fixed-parameter
+tractable parameterized problems.
+
+A parameterized complexity view on non-preemptively scheduling interval-constrained jobs
+
+3
+
+Table 1.1 Overview of results on I NTERVAL -C ONSTRAINED S CHEDULING for various parameter combinations. The parameterized complexity
+with respect to the combined parameter λ + σ remains open.
+Combined
+with
+λ
+
+Parameter
+looseness λ
+
+slack σ
+
+NP-hard for any λ > 1
+(Cieliebak et al 2004)
+
+σ
+
+number m of machines
+?
+
+NP-hard for any σ ≥ 2
+(Cieliebak et al 2004)
+
+m
+
+We refer to the sum of parameters k1 +k2 as the combined
+parameter k1 and k2 .
+Parameterized intractability To show that a problem is presumably not fixed-parameter tractable, there is a parameterized analog of NP-hardness theory. The parameterized analog
+of NP is the complexity class W[1] ⊇ FPT, where it is conjectured that FPT 6= W[1]. A parameterized problem Π with
+parameter k is called W[1]-hard if Π being fixed-parameter
+tractable implies W[1] = FPT. W[1]-hardness can be shown
+using a parameterized reduction from a known W[1]-hard
+problem: a parameterized reduction from a parameterized
+problem Π1 to a parameterized problem Π2 is an algorithm
+mapping an instance I with parameter k to an instance I 0 with
+parameter k0 in time f (k) · poly(|I|) such that k0 ≤ g(k) and
+I 0 is a yes-instance for Π1 if and only if I is a yes-instance
+for Π2 , where f and g are arbitrary computable functions.
+
+3 A strengthened hardness result
+In this section, we strengthen a hardness result of Cieliebak
+et al (2004), who showed that λ -L OOSE I NTERVAL -C ON STRAINED S CHEDULING is NP-hard for any λ > 1. This
+section proves the following theorem:
+Theorem 3.1 Let λ : N → R be such that λ (n) ≥ 1 + n−c
+for some integer c ≥ 1 and all n ≥ 2.
+Then λ (n)-L OOSE I NTERVAL -C ONSTRAINED S CHED ULING of n jobs on m machines is
+(i) weakly NP-hard for m = 2, and
+(ii) strongly W[1]-hard for parameter m.
+Note that Theorem 3.1, in particular, holds for any constant
+function λ (n) > 1.
+We remark that Theorem 3.1 cannot be proved using the
+NP-hardness reduction given by Cieliebak et al (2004), which
+reduces 3-S AT instances with k clauses to I NTERVAL -C ON STRAINED S CHEDULING instances with m = 3k machines.
+Since 3-S AT is trivially fixed-parameter tractable for the
+
+W[1]-hard for parameter m for any λ > 1 (Theorem 3.1),
+weakly NP-hard for m = 2 and any λ > 1 (Theorem 3.1),
+pseudo-polynomial time for fixed m and λ (Theorem 4.1)
+fixed-parameter tractable for parameter σ + m (Theorem 5.1)
+NP-hard for m = 1 (Garey and Johnson 1979)
+
+parameter number k of clauses, the reduction of Cieliebak
+et al (2004) cannot yield Theorem 3.1.
+Instead, to prove Theorem 3.1, we give a parameterized
+polynomial-time many-one reduction from B IN PACKING
+with m bins and n items to λ (mn)-L OOSE I NTERVAL -C ON STRAINED S CHEDULING with m machines and mn jobs.
+B IN PACKING
+Input: A bin volume V ∈ N, a list a1 , . . . , an ∈ N of items,
+and a number m ≤ n of bins.
+Question: Is there a partition S1 ] · · · ] Sm = {1, . . . , n} such
+that ∑i∈Sk ai ≤ V for all 1 ≤ k ≤ m?
+Since B IN PACKING is weakly NP-hard for m = 2 bins and
+W[1]-hard parameterized by m even if all input numbers are
+polynomial in n (Jansen et al 2013), Theorem 3.1 will follow.
+Our reduction, intuitively, works as follows: for each
+of the n items ai in a B IN PACKING instance with m bins
+of volume V , we create a set Ji := { ji1 , . . . , jim } of m jobs
+that have to be scheduled on m mutually distinct machines.
+Each machine represents one of the m bins in the B IN PACK ING instance. Scheduling job ji1 on a machine k corresponds
+to putting item ai into bin k and will take B + ai time of
+machine k, where B is some large integer chosen by the
+reduction. If ji1 is not scheduled on machine k, then a job
+in Ji \ { ji1 } has to be scheduled on machine k, which will
+take only B time of machine k. Finally, we choose the latest
+deadline of any job as nB +V . Thus, since all jobs have to
+be finished by time nB +V and since there are n items, for
+each machine k, the items ai for which ji1 is scheduled on
+machine k must sum up to at most V in a feasible schedule.
+This corresponds to satisfying the capacity constraint of V of
+each bin.
+Formally, the reduction works as follows and is illustrated
+in Figure 3.1.
+Construction 3.2 Given a B IN PACKING instance I with
+n ≥ 2 items a1 , . . . , an and m ≤ n bins, and λ : N → R such
+that λ (n) ≥ 1 + n−c for some integer c ≥ 1 and all n ≥ 2,
+we construct an I NTERVAL -C ONSTRAINED S CHEDULING
+
+4
+
+René van Bevern et al.
+
+created instance
+
+B + a1
+
+B
+
+0
+
+4B + a4
+
+j11
+
+j31
+
+j12
+
+j32
+
+j13
+
+j33
+
+2B
+
+B+A
+
+j11
+feasible schedule
+
+3B + a3
+
+2B + a2
+
+j12
+j13
+
+j43
+3B
+
+j32
+j33
+
+j23
+
+M3
+
+j42
+
+j31
+
+j21
+
+M2
+
+j41
+
+j22
+j23
+2B + A
+
+j22
+
+M1
+
+j21
+
+2B + a1
+
+3B + a2
+
+3B + A
+
+4B
+
+4B +V
+
+j42
+j43
+j41
+
+3B + a1 + a3
+
+4B + a1 + a3
+= 4B + a4
+
+Fig. 3.1 Reduction from B IN PACKING with four items a1 = 1, a2 = a3 = 2, a4 = 3, bin volume V = 3, and m = 3 bins to 3/2-L OOSE I NTERVAL C ONSTRAINED S CHEDULING. That is, Construction 3.2 applies with c = 1, A = 8, and B = 3 · 4 · 8 = 96. The top diagram shows (not to scale) the
+jobs created by Construction 3.2. Herein, the processing time of each job is drawn as a rectangle of corresponding length in an interval being the
+job’s time window. The bottom diagram shows a feasible schedule for three machines M1 , M2 , and M3 that corresponds to putting items a1 and a3
+into the first bin, item a2 into the second bin, and a4 into the third bin.
+
+instance with m machines and mn jobs as follows. First, let
+n
+
+A := ∑ ai
+
+and
+
+B := (mn)c · A ≥ 2A.
+
+i=1
+
+If V > A, then I is a yes-instance of B IN PACKING and we
+return a trivial yes-instance of I NTERVAL -C ONSTRAINED
+S CHEDULING.
+Otherwise, we have V ≤ A and construct an instance of
+I NTERVAL -C ONSTRAINED S CHEDULING as follows: for
+each i ∈ {1, . . . , n}, we introduce a set Ji := { ji1 , . . . , jim } of
+jobs. For each job j ∈ Ji , we choose the release time
+t j := (i − 1)B,
+the processing time
+p j :=
+
+(
+B + ai
+B
+
+if j = ji1 ,
+
+if j 6= ji1 ,
+
+(3.1)
+
+d j :=
+
+if i < n,
+
+iB +V
+
+if i = n.
+
+This concludes the construction.
+
+In the remainder of this section, we show that Construction 3.2 is correct and satisfies all structural properties that
+allow us to derive Theorem 3.1.
+First, we show that Construction 3.2 indeed creates an I N TERVAL -C ONSTRAINED S CHEDULING instance with small
+looseness.
+Lemma 3.4 Given a B IN PACKING instance with n ≥ 2 items
+and m bins, Construction 3.2 outputs an I NTERVAL -C ON STRAINED S CHEDULING instance with
+
+and the deadline
+(
+iB + A
+
+Remark 3.3 Construction 3.2 outputs an I NTERVAL -C ON STRAINED S CHEDULING instance with agreeable deadlines,
+that is, the deadlines of the jobs have the same relative order
+as their release times. Thus, in the offline scenario, all hardness results of Theorem 3.1 will also hold for instances with
+agreeable deadlines.
+In contrast, agreeable deadlines make the problem significantly easier in the online scenario: Chen et al (2016)
+showed an online-algorithm with constant competitive ratio
+for I NTERVAL -C ONSTRAINED S CHEDULING with agreeable deadlines, whereas there is a lower bound of n on the
+competitive ratio for general instances (Saha 2013).
+
+(i) at most m machines and mn jobs and
+(ii) looseness λ (mn).
+t
+u
+
+Proof It is obvious that the output instance has at most
+mn jobs and m machines and, thus, (i) holds.
+
+A parameterized complexity view on non-preemptively scheduling interval-constrained jobs
+
+Towards (ii), observe that mn ≥ n ≥ 2, and hence, for
+each i ∈ {1, . . . , n} and each job j ∈ Ji , (3.1) yields
+|d j − t j | (iB + A) − (i − 1)B B + A
+A
+≤
+=
+= 1+
+pj
+B
+B
+B
+A
+= 1+
+= 1 + (mn)−c ≤ λ (mn).
+(mn)c · A
+
+t
+u
+
+We now show that Construction 3.2 runs in polynomial time
+and that, if the input B IN PACKING instance has polynomially
+bounded integers, then so has the output I NTERVAL -C ON STRAINED S CHEDULING instance.
+Lemma 3.5 Let I be a B IN PACKING instance with n ≥
+2 items a1 , . . . , an and let amax := max1≤i≤n ai . Construction 3.2 applied to I
+(i) runs in time polynomial in |I| and
+(ii) outputs an I NTERVAL -C ONSTRAINED S CHEDULING
+instance whose release times and deadlines are bounded
+by a polynomial in n + amax .
+Proof We first show (ii), thereafter we show (i).
+(ii) It is sufficient to show that the numbers A and B
+in Construction 3.2 are bounded polynomially in n + amax
+since all release times and deadlines are computed as sums
+and products of three numbers not larger than A, B, or n.
+Clearly, A = ∑ni=1 ai ≤ n · max1≤i≤n ai , which is polynomially
+bounded in n + amax . Since mn ≤ n2 , also B = (mn)c · A is
+polynomially bounded in n + amax .
+(i) The sum A = ∑n1=1 ai is clearly computable in time
+polynomial in the input length. It follows that also B = (mn)c ·
+A is computable in polynomial time.
+t
+u
+
+5
+
+It is easy to verify that this is indeed a feasible schedule.
+(⇐) Assume that I 0 is a yes-instance for I NTERVAL -C ON STRAINED S CHEDULING. Then, there is a feasible schedule
+for I 0 . We define a partition S1 ] · · · ] Sm = {1, . . . , n} for I
+as follows. For each k ∈ {1, . . . , m}, let
+Sk := {i ∈ {1, . . . , n} | ji1 is scheduled on machine k}. (3.2)
+Since, for each i ∈ {1, . . . , n}, the job ji1 is scheduled on
+exactly one machine, this is indeed a partition. We show
+that ∑i∈Sk ai ≤ V for each k ∈ {1, . . . , m}. Assume, towards a
+contradiction, that there is a k such that
+
+∑ ai > V.
+
+(3.3)
+
+i∈Sk
+
+By (3.1), for each i ∈ {1, . . . , n}, the jobs in Ji have the same
+release time, each has processing time at least B, and the
+length of the time window of each job is at most B + A ≤
+B + B/2 < 2B. Thus, in any feasible schedule, the execution
+times of the m jobs in Ji mutually intersect. Hence, the jobs
+in Ji are scheduled on m mutually distinct machines. By the
+pigeonhole principle, for each i ∈ {1, . . . , n}, exactly one
+job ji∗ ∈ Ji is scheduled on machine k. We finish the proof by
+showing that,
+∀i ∈ {1, . . . , n}, job ji∗ is not finished before
+time iB + ∑ a j .
+
+(3.4)
+
+j∈Sk , j≤i
+
+This claim together with (3.3) then yields that job jn∗ is not
+finished before
+
+nB + ∑ a j = nB + ∑ a j > nB +V,
+It remains to prove that Construction 3.2 maps yes-instances
+j∈Sk , j≤n
+j∈Sk
+of B IN PACKING to yes-instances of I NTERVAL -C ONSTRAINED
+which contradicts the schedule being feasible, since jobs in Jn
+S CHEDULING, and no-instances to no-instances.
+have deadline nB +V by (3.1). It remains to prove (3.4). We
+Lemma 3.6 Given a B IN PACKING instance I with m bins
+proceed by induction.
+and the items a1 , . . . , an , Construction 3.2 outputs an I N The earliest possible execution time of j1∗ is, by (3.1),
+0
+TERVAL -C ONSTRAINED S CHEDULING instance I that is a
+time 0. The processing time of j1∗ is B if j1∗ 6= j11 , and B + a1
+yes-instance if and only if I is.
+otherwise. By (3.2), 1 ∈ Sk if and only if j11 is scheduled
+on machine k, that is, if and only if j1∗ = j11 . Thus, job j1∗ is
+Proof (⇒) Assume that I is a yes-instance for B IN PACKING.
+not finished before B + ∑ j∈Sk , j≤i a j and (3.4) holds for i = 1.
+Then, there is a partition S1 ] · · · ] Sm = {1, . . . , n} such that
+Now, assume that (3.4) holds for i−1. We prove it for i. Since
+∑i∈Sk ai ≤ V for each k ∈ {1, . . . , m}. We construct a feasible
+∗
+ji−1
+is not finished before (i − 1)B + ∑ j∈Sk , j≤i−1 a j , this is
+schedule for I 0 as follows. For each i ∈ {1, . . . , n} and k such
+the
+earliest
+possible execution time of ji∗ . The processing
+that i ∈ Sk , we schedule ji1 on machine k in the interval
+∗
+time of ji is B if ji∗ 6= ji1 and B + ai otherwise. By (3.2),
+"
+!
+i ∈ Sk if and only if ji∗ = ji1 . Thus, job ji∗ is not finished
+(i − 1)B + ∑ a j , iB + ∑ a j + ai
+before iB + ∑ j∈Sk , j≤i a j and (3.4) holds.
+t
+u
+j∈Sk , j<i
+
+j∈Sk , j<i
+
+and each of the m − 1 jobs Ji \ { ji1 } on a distinct machine ` ∈
+{1, . . . , m} \ {k} in the interval
+"
+!
+(i − 1)B + ∑ a j
+j∈S` , j<i
+
+,
+
+iB + ∑ a j .
+j∈S` , j<i
+
+We are now ready to finish the proof of Theorem 3.1.
+Proof (of Theorem 3.1) By Lemmas 3.4 to 3.6, Construction 3.2 is a polynomial-time many-one reduction from B IN
+PACKING with n ≥ 2 items and m bins to λ (mn)-L OOSE I N TERVAL -C ONSTRAINED S CHEDULING , where λ : N → R
+
+6
+
+René van Bevern et al.
+
+such that λ (n) ≥ 1 + n−c for some integer c ≥ 1 and all n ≥ 2.
+We now show the points (i) and (ii) of Theorem 3.1.
+(i) follows since B IN PACKING is weakly NP-hard for m =
+2 (Jansen et al 2013) and since, by Lemma 3.4(i), Construction 3.2 outputs instances of λ (mn)-L OOSE I NTERVAL -C ON STRAINED S CHEDULING with m machines.
+(ii) follows since B IN PACKING is W[1]-hard parameterized by m even if the sizes of the n items are bounded by a
+polynomial in n (Jansen et al 2013). In this case, Construction 3.2 generates λ (mn)-L OOSE I NTERVAL -C ONSTRAINED
+S CHEDULING instances for which all numbers are bounded
+polynomially in the number of jobs by Lemma 3.5(ii). Moreover, Construction 3.2 maps the m bins of the B IN PACKING
+instance to the m machines of the output I NTERVAL -C ON STRAINED S CHEDULING instance.
+t
+u
+Concluding this section, it is interesting to note that Theorem 3.1 also shows W[1]-hardness of λ -L OOSE I NTERVAL C ONSTRAINED S CHEDULING with respect to the height
+parameter considered by Cieliebak et al (2004):
+Definition 3.7 (Height) For an I NTERVAL -C ONSTRAINED
+S CHEDULING instance and any time t ∈ N, let
+St := { j ∈ J | t ∈ [t j , d j )}
+denote the set of jobs whose time window contains time t.
+The height of an instance is
+h := max |St |.
+t∈N
+
+Proposition 3.8 Let λ : N → R be such that λ (n) ≥ 1 + n−c
+for some integer c ≥ 1 and all n ≥ 2.
+Then λ (n)-L OOSE I NTERVAL -C ONSTRAINED S CHED ULING of n jobs on m machines is W[1]-hard parameterized
+by the height h.
+Proof Proposition 3.8 follows in the same way as Theorem 3.1; one additionally has to prove that Construction 3.2
+outputs I NTERVAL -C ONSTRAINED S CHEDULING instances
+of height at most 2m. To this end, observe that, by (3.1), for
+each i ∈ {1, . . . , n}, there are m jobs released at time (i − 1)B
+whose deadline is no later than iB + A < (i + 1)B since
+A ≤ B/2. These are all jobs created by Construction 3.2. Thus,
+St contains only the m jobs released at time bt/Bc · B and the
+m jobs released at time bt/B − 1c · B, which are 2m jobs in
+total.
+t
+u
+Remark 3.9 Proposition 3.8 complements findings of Cieliebak et al (2004), who provide a fixed-parameter tractability result for I NTERVAL -C ONSTRAINED S CHEDULING parameterized by h + σ : our result shows that their algorithm
+presumably cannot be improved towards a fixed-parameter
+tractability result for I NTERVAL -C ONSTRAINED S CHEDUL ING parameterized by h alone.
+
+4 An algorithm for bounded looseness
+In the previous section, we have seen that λ -L OOSE I N S CHEDULING for any λ > 1 is
+strongly W[1]-hard parameterized by m and weakly NP-hard
+for m = 2. We complement this result by the following theorem, which yields a pseudo-polynomial-time algorithm for
+each constant m and λ .
+
+TERVAL -C ONSTRAINED
+
+Theorem 4.1 λ -L OOSE I NTERVAL -C ONSTRAINED S CHED ULING is solvable in `O(λ m) · n + O(n log n) time, where ` :=
+max j∈J |d j − t j |.
+The crucial observation for the proof of Theorem 4.1 is the
+following lemma. It gives a logarithmic upper bound on the
+height h of yes-instances (as defined in Definition 3.7). To
+prove Theorem 4.1, we will thereafter present an algorithm
+that has a running time that is single-exponential in h.
+Lemma 4.2 Let I be a yes-instance of λ -L OOSE I NTER S CHEDULING with m machines and
+` := max j∈J |d j − t j |. Then, I has height at most
+
+
+log `
+2m ·
++1 .
+log λ − log(λ − 1)
+
+VAL -C ONSTRAINED
+
+Proof Recall from Definition 3.7 that the height of an I NTER VAL -C ONSTRAINED S CHEDULING instance is maxt∈N |St |.
+We will show that, in any feasible schedule for I and at
+any time t, there are at most N jobs in St that are active on
+the first machine at some time t 0 ≥ t, where
+N≤
+
+log `
++ 1.
+log λ − log(λ − 1)
+
+(4.1)
+
+By symmetry, there are at most N jobs in St that are active
+on the first machine at some time t 0 ≤ t. Since there are
+m machines, the total number of jobs in St at any time t, and
+therefore the height, is at most 2mN.
+It remains to show (4.1). To this end, fix an arbitrary
+time t and an arbitrary feasible schedule for I. Then, for
+any d ≥ 0, let J(t +d) ⊆ St be the set of jobs that are active on
+the first machine at some time t 0 ≥ t but finished by time t + d.
+We show by induction on d that
+(
+0
+if d = 0,
+|J(t + d)| ≤
+(4.2)
+log d
+− log(1−1/λ
++
+1
+if
+d ≥ 1.
+)
+If d = 0, then |J(t + 0)| = 0 and (4.2) holds. Now, consider
+the case d ≥ 1. If no job in J(t + d) is active at time t + d − 1,
+then J(t + d) = J(t + d − 1) and (4.2) holds by the induction
+hypothesis. Now, assume that there is a job j ∈ J(t + d) that
+is active at time t + d − 1. Then, d j ≥ t + d and, since j ∈ St ,
+t j ≤ t. Hence,
+pj ≥
+
+|d j − t j | |t + d − t|
+d
+≥
+= .
+λ
+λ
+λ
+
+A parameterized complexity view on non-preemptively scheduling interval-constrained jobs
+
+It follows that
+|J(t + d)| ≤ 1 + |J(t + d − dd/λ e)|.
+
+(4.3)
+
+Thus, if d − dd/λ e = 0, then |J(t + d)| ≤ 1 + |J(t)| ≤ 1 and
+(4.2) holds. If d − dd/λ e > 0, then, by the induction hypothesis, the right-hand side of (4.3) is
+log(d − dd/λ e)
++1
+log(1 − 1/λ )
+log(d(1 − 1/λ ))
++1
+≤ 1−
+log(1 − 1/λ )
+log d + log(1 − 1/λ )
+= 1−
++1
+log(1 − 1/λ )
+log d
+=−
++ 1,
+log(1 − 1/λ )
+≤ 1−
+
+and (4.2) holds. Finally, since ` = max1≤ j≤n |d j − t j |, no job
+in St is active at time t + `. Hence, we can now prove (4.1)
+using (4.2) by means of
+log `
+N ≤ |J(t + `)| ≤ −
++1
+log(1 − 1/λ )
+log `
+=−
+ +1
+log λ λ−1
+log `
+=−
++1
+log(λ − 1) − log λ
+log `
+=
++ 1.
+log λ − log(λ − 1)
+
+t
+u
+
+Proof It is well-known that (1 − 1/λ )λ < 1/e for any λ ≥ 1.
+Hence, λ logb (1 − 1/λ ) = logb (1 − 1/λ )λ < logb 1/e ≤ −1,
+that is, −λ logb (1 − 1/λ ) ≥ 1. Thus,
+1
+≤ λ.
+− logb (1 − 1/λ )
+
+(a) If t ≥ 1 and S ⊆ St−1 , then set T [t, S, b] := T [t − 1, S0 , b0 ],
+where
+
+(b) Otherwise, set T [t, S, b] := 1 if and only if at least one of
+the following two cases applies:
+i) there is a machine i ∈ {1, . . . , m} such that bi > −`
+and T [t, S, b0 ] = 1, where b0 := (b01 , . . . , b0m ) with
+(
+bi − 1 if i0 = i,
+0
+bi0 :=
+bi0
+if i0 6= i,
+or
+ii) there is a job j ∈ S and a machine i ∈ {1, . . . , m}
+such that bi > 0, t + bi ≤ d j , t + bi − p j ≥ t j , and
+T [t, S \ { j}, b0 ] = 1, where b0 := (b01 , . . . , b0m ) with
+(
+bi − p j if i0 = i,
+0
+bi0 :=
+bi0
+if i0 6= i.
+Note that, since j ∈ St , one has t j ≥ t − ` by definition of `. Hence, b0i ≥ −` is within the allowed
+range {−`, . . . , `}.
+
+Finally,
+1
+1
+=
+− logb (1 − 1/λ ) − logb ( λ −1 )
+λ
+1
+=
+.
+− logb (λ − 1) + logb λ
+
+To compute T , first, set T [0, 0,
+/ b] := 1 for every vector b ∈
+{−`, . . . , `}m . Now we compute the other entries of T by
+increasing t, for each t by increasing b, and for each b by S
+with increasing cardinality. Herein, we distinguish two cases.
+
+b0i := min{bi + 1, `} for each i ∈ {1, . . . , m}.
+
+Proposition 4.3 For any λ ≥ 1 and any b ∈ (1, e], it holds
+that
+1
+≤ λ.
+logb λ − logb (λ − 1)
+
+and
+
+Algorithm 4.4 We solve I NTERVAL -C ONSTRAINED S CHED ULING using dynamic programming. First, for an I NTERVAL C ONSTRAINED S CHEDULING instance, let ` := max j∈J |d j −
+t j |, let St be as defined in Definition 3.7, and let St< ⊆ J be
+the set of jobs j with d j ≤ t, that is, that have to be finished
+by time t.
+We compute a table T that we will show to have the
+following semantics. For a time t ∈ N, a subset S ⊆ St of jobs
+and a vector b = (b1 , . . . , bm ) ∈ {−`, . . . , `}m ,
+
+1 if all jobs in S ∪ St< can be scheduled so
+
+
+
+that machine i is idle from time t + bi
+T [t, S, b] =
+for each i ∈ {1, . . . , m},
+
+
+
+0 otherwise.
+
+S0 := S ∪ (St−1 ∩ St< ) and b0 := (b01 , . . . , b0m ) with
+
+The following proposition gives some intuition on how the
+bound behaves for various λ .
+
+1
+≤1
+−λ logb (1 − 1/λ )
+
+7
+
+Finally, we answer yes if and only if T [tmax , Stmax , 1m · `] = 1,
+where tmax := max j∈J t j .
+t
+u
+t
+u
+
+Towards our proof of Theorem 4.1, Lemma 4.2 provides a
+logarithmic upper bound on the height h of yes-instances of
+I NTERVAL -C ONSTRAINED S CHEDULING. Our second step
+towards the proof of Theorem 4.1 is the following algorithm,
+which runs in time that is single-exponential in h. We first
+present the algorithm and, thereafter, prove its correctness
+and running time.
+
+Lemma 4.5 Algorithm 4.4 correctly decides I NTERVAL -C ON STRAINED S CHEDULING .
+Proof We prove the following two claims: For any time 0 ≤
+t ≤ tmax , any set S ⊆ St , and any vector b = (b1 , . . . , bm ) ∈
+{−`, . . . , `}m ,
+if T [t, S, b] = 1, then all jobs in S ∪St< can be scheduled so that machine i is idle from time t + bi for
+each i ∈ {1, . . . , m},
+
+(4.4)
+
+8
+
+René van Bevern et al.
+
+and
+if all jobs in S ∪ St< can be scheduled so that
+machine i is idle from time t + bi for each i ∈
+{1, . . . , m}, then T [t, S, b] = 1.
+
+(4.5)
+
+From (4.4) and (4.5), the correctness of the algorithm easily
+follows: observe that, in any feasible schedule, all machines
+are idle from time tmax + ` and all jobs J ⊆ Stmax ∪ St<max are
+scheduled. Hence, there is a feasible schedule if and only if
+T [tmax , Stmax , 1m · `] = 1. It remains to prove (4.4) and (4.5).
+First, we prove (4.4) by induction. For T [0, 0,
+/ b] = 1,
+(4.4) holds since there are no jobs to schedule. We now
+prove (4.4) for T [t, S, b] under the assumption that it is true
+for all T [t 0 , S0 , b0 ] with t 0 < t or t 0 = t and b0  b.
+If T [t, S, b] is set to 1 in Algorithm 4.4(a), then, for S0
+and b0 as defined in Algorithm 4.4(a), T [t − 1, S0 , b0 ] = 1.
+<
+By the induction hypothesis, all jobs in S0 ∪ St−1
+can be
+scheduled so that machine i is idle from time t − 1 + b0i ≤
+<
+t +bi . Moreover, S∪St< = S0 ∪St−1
+since S0 = S∪(St−1 ∩St< ).
+Hence, (4.4) follows.
+If T [t, S, b] is set to 1 in Algorithm 4.4(bi), then one has
+T [t, S, b0 ] = 1 for b0 as defined in Algorithm 4.4(bi). By the
+induction hypothesis, all jobs in S ∪ St< can be scheduled so
+that machine i0 is idle from time t + b0i0 ≤ t + bi0 , and (4.4)
+follows.
+If T [t, S, b] is set to 1 in Algorithm 4.4(bii), then T [t, S \
+{ j}, b0 ] = 1 for j and b0 as defined in Algorithm 4.4(bii).
+By the induction hypothesis, all jobs in (S \ { j}) ∪ St< can
+be scheduled so that machine i0 is idle from time t + b0i0 . It
+remains to schedule job j on machine i in the interval [t +
+b0i ,t + bi ), which is of length exactly p j by the definition of b0 .
+Then, machine i is idle from time t +bi and any machine i0 6= i
+is idle from time t + b0i0 = t + bi0 , and (4.4) follows.
+It remains to prove (4.5). We use induction. Claim (4.5)
+clearly holds for t = 0, S = 0,
+/ and any b ∈ {−`, . . . , `}m by
+the way Algorithm 4.4 initializes T . We now show (4.5)
+provided that it is true for t 0 < t or t 0 = t and b0  b.
+<
+If S ⊆ St−1 , then S ∪ St< = S0 ∪ St−1
+for S0 as defined in
+<
+Algorithm 4.4(a). Moreover, since no job in S0 ∪ St−1
+can be
+active from time t − 1 + ` by definition of `, each machine i
+is idle from time t − 1 + min{bi + 1, `} = t − 1 + b0i , for b0 =
+(b01 , . . . , b0m ) as defined in Algorithm 4.4(a). Hence, T [t −
+1, S0 , b0 ] = 1 by the induction hypothesis, Algorithm 4.4(a)
+applies, sets T [t, S, b] := T [t − 1, S0 , b0 ] = 1, and (4.5) holds.
+If some machine i is idle from time t + bi − 1, then, by
+the induction hypothesis, T [t, S, b0 ] = 1 in Algorithm 4.4(bi),
+the algorithm sets T [t, S, b] := 1, and (4.5) holds.
+In the remaining case, every machine i is busy at time t +
+bi − 1 and K := S \ St−1 6= 0.
+/ Thus, there is a machine i
+executing a job from K. For each job j0 ∈ K, we have t j0 ≥ t.
+Since machine i is idle from time t + bi and executes j0 , one
+has bi > 0. Let j be the last job scheduled on machine i. Then,
+since machine i is busy at time t + bi − 1, we have d j ≥ t +
+
+bi > t and j ∈
+/ St< . Hence, j ∈ St . Since machine i is idle from
+time t + bi , we also have t + bi − p j ≥ t j . Now, if we remove j
+from the schedule, then machine i is idle from time t +bi − p j
+and each machine i0 6= i is idle from time t + b0i0 = t + bi0 .
+Thus, by the induction hypothesis, T [t, S \ { j}, b0 ] = 1 in
+Algorithm 4.4(bii), the algorithm sets T [t, S, b] := 1, and
+(4.5) holds.
+t
+u
+Lemma 4.6 Algorithm 4.4 can be implemented to run in
+O(2h · (2` + 1)m · (h2 m + hm2 ) · n` + n log n) time, where ` :=
+max j∈J |d j − t j | and h is the height of the input instance.
+Proof Concerning the running time of Algorithm 4.4, we first
+bound tmax . If tmax > n`, then there is a time t ∈ {0, . . . ,tmax }
+such that St = 0/ (cf. Definition 3.7). Then, we can split the
+instance into one instance with the jobs St< and into one
+instance with the jobs J \ St< . We answer “yes” if and only if
+both of them are yes-instances. Henceforth, we assume that
+tmax ≤ n`.
+In a preprocessing step, we compute the sets St and St−1 ∩
+<
+St , which can be done in O(n log n + hn + tmax ) time by
+sorting the input jobs by deadlines and scanning over the
+input time windows once: if no time window starts or ends at
+time t, then St is simply stored as a pointer to the St 0 for the
+last time t 0 where a time window starts or ends.
+Now, the table T of Algorithm 4.4 has at most (tmax +
+1) · 2h · (2` + 1)m ≤ (n` + 1) · 2h · (2` + 1)m entries. A table
+entry T [t, S, b] can be accessed in O(m + h) time using a
+carefully initialized trie data structure (van Bevern 2014)
+since |S| ≤ h and since b is a vector of length m.
+To compute an entry T [t, S, b], we first check, for each
+job j ∈ S, whether j ∈ St−1 . If this is the case for each j, then
+Algorithm 4.4(a) applies. We can prepare b0 in O(m) time
+and S0 in O(h) time using the set St−1 ∩ St< computed in the
+preprocessing step. Then, we access the entry T [t − 1, S0 , b0 ]
+in O(h + m) time. Hence, (a) takes O(h + m) time.
+If Algorithm 4.4(a) does not apply, then we check whether
+Algorithm 4.4(bi) applies. To this end, for each i ∈ {1, . . . , m},
+we prepare b0 in O(m) time and access T [t, S, b0 ] in O(h + m)
+time. Hence, it takes O(m2 + hm) time to check (bi).
+To check whether Algorithm 4.4(bii) applies, we try
+each j ∈ S and each i ∈ {1, . . . , m} and, for each, prepare b0
+in O(m) time and check T [t, S \ { j}, b0 ] in O(h + m) time.
+Thus (bii) can be checked in O(h2 m + hm2 ) time.
+t
+u
+With the logarithmic upper bound on the height h of yesinstances of I NTERVAL -C ONSTRAINED S CHEDULING given
+by Lemma 4.2 and using Algorithm 4.4, which, by Lemma 4.6,
+runs in time that is single-exponential in h for a fixed number m of machines, we can now prove Theorem 4.1.
+Proof (of Theorem 4.1) We use the following algorithm. Let
+
+
+log `
+h := 2m ·
++1 .
+log λ − log(λ − 1)
+
+A parameterized complexity view on non-preemptively scheduling interval-constrained jobs
+
+If, for any time t ∈ N, we have |St | > h, then we are facing
+a no-instance by Lemma 4.2 and immediately answer “no”.
+This can be checked in O(n log n) time: one uses the interval
+graph coloring problem to check whether we can schedule
+the time windows of all jobs (as intervals) onto h machines.
+Otherwise, we conclude that our input instance has height
+at most h. We now apply Algorithm 4.4, which, by Lemma 4.6,
+runs in O(2h · (2` + 1)m · (h2 m + hm2 ) · n` + n log n) time.
+Since, by Proposition 4.3, h ∈ O(λ m log `), this running time
+is `O(λ m) h · n + O(n log n).
+t
+u
+A natural question is whether Theorem 4.1 can be generalized
+to λ = ∞, that is, to I NTERVAL -C ONSTRAINED S CHED ULING without looseness constraint. This question can be
+easily answered negatively using a known reduction from
+3-PARTITION to I NTERVAL -C ONSTRAINED S CHEDULING
+given by Garey and Johnson (1979):
+Proposition 4.7 If there is an `O(m) · poly(n)-time algorithm
+for I NTERVAL -C ONSTRAINED S CHEDULING, where ` :=
+max j∈J |d j − t j |, then P = NP.
+Proof Garey and Johnson (1979, Theorem 4.5) showed that
+I NTERVAL -C ONSTRAINED S CHEDULING is NP-hard even
+on m = 1 machine. In their reduction, ` ∈ poly(n). A supposed `O(m) · poly(n)-time algorithm would solve such instances in polynomial time.
+t
+u
+5 An algorithm for bounded slack
+So far, we considered I NTERVAL -C ONSTRAINED S CHED ULING with bounded looseness λ . Cieliebak et al (2004)
+additionally considered I NTERVAL -C ONSTRAINED S CHED ULING for any constant slack σ .
+Recall that Cieliebak et al (2004) showed that λ -L OOSE
+I NTERVAL -C ONSTRAINED S CHEDULING is NP-hard for
+any constant λ > 1 and that Theorem 3.1 shows that having a small number m of machines does make the problem
+significantly easier.
+Similarly, Cieliebak et al (2004) showed that σ -S LACK
+I NTERVAL -C ONSTRAINED S CHEDULING is NP-hard already for σ = 2. Now we contrast this result by showing
+that σ -S LACK I NTERVAL -C ONSTRAINED S CHEDULING is
+fixed-parameter tractable for parameter m + σ . More specifically, we show the following:
+Theorem 5.1 σ -S LACK I NTERVAL -C ONSTRAINED S CHED ULING is solvable in time
+
+
+O (σ + 1)(2σ +1)m · n · σ m · log σ m + n log n .
+Similarly as in the proof of Theorem 4.1, we first give an
+upper bound on the height of yes-instances of I NTERVAL C ONSTRAINED S CHEDULING as defined in Definition 3.7.
+To this end, we first show that each job j ∈ St has to occupy
+some of the (bounded) machine resources around time t.
+
+9
+
+Lemma 5.2 At any time t in any feasible schedule for σ S LACK I NTERVAL -C ONSTRAINED S CHEDULING, each job
+j ∈ St is active at some time in the interval [t − σ ,t + σ ].
+Proof If the time window of j is entirely contained in [t −
+σ ,t + σ ], then, obviously, j is active at some time during the
+interval [t − σ ,t + σ ].
+Now, assume that the time window of j is not contained
+in [t − σ ,t + σ ]. Then, since j ∈ St , its time window contains t by Definition 3.7 and, therefore, one of t − σ or t + σ .
+Assume, for the sake of contradiction, that there is a schedule such that j is not active during [t − σ ,t + σ ]. Then j is
+inactive for at least σ + 1 time units in its time window—
+a contradiction.
+t
+u
+Now that we know that each job in St has to occupy machine
+resources around time t, we can bound the size of St in the
+amount of resources available around that time.
+Lemma 5.3 Any yes-instance of σ -S LACK I NTERVAL -C ON STRAINED S CHEDULING has height at most (2σ + 1)m.
+Proof Fix any feasible schedule for an arbitrary yes-instance
+of σ -S LACK I NTERVAL -C ONSTRAINED S CHEDULING and
+any time t. By Lemma 5.2, each job in St is active at some
+time in the interval [t −σ ,t +σ ]. This interval has length 2σ +
+1. Thus, on m machines, there is at most (2σ + 1)m available
+processing time in this time interval. Consequently, there can
+be at most (2σ + 1)m jobs with time intervals in St .
+t
+u
+We finally arrive at the algorithm to prove Theorem 5.1.
+Proof (of Theorem 5.1) Let h := (2σ + 1)m. In the same
+way as for Theorem 4.1, in O(n log n) time we discover that
+we face a no-instance due to Lemma 5.3 or, otherwise, that
+our input instance has height at most h. In the latter case,
+we apply the O(n · (σ + 1)h · h log h)-time algorithm due to
+Cieliebak et al (2004).
+t
+u
+
+6 Conclusion
+Despite the fact that there are comparatively few studies on
+the parameterized complexity of scheduling problems, the
+field of scheduling indeed offers many natural parameterizations and fruitful challenges for future research. Notably,
+Marx (2011) saw one reason for the lack of results on “parameterized scheduling” in the fact that most scheduling
+problems remain NP-hard even for a constant number of machines (a very obvious and natural parameter indeed), hence
+destroying hope for fixed-parameter tractability results with
+respect to this parameter. In scheduling interval-constrained
+jobs with small looseness and small slack, we also have been
+confronted with this fact, facing (weak) NP-hardness even
+for two machines.
+
+10
+
+The natural way out of this misery, however, is to consider
+parameter combinations, for instance combining the parameter number of machines with a second one. In our study, these
+were combinations with looseness and with slack (see also
+Table 1.1). In a more general perspective, this consideration
+makes scheduling problems a prime candidate for offering
+a rich set of research challenges in terms of a multivariate
+complexity analysis (Fellows et al 2013; Niedermeier 2010).
+Herein, for obtaining positive algorithmic results, research
+has to go beyond canonical problem parameters, since basic
+scheduling problems remain NP-hard even if canonical parameters are simultaneously bounded by small constants, as
+demonstrated by Kononov et al (2012).1
+Natural parameters to be studied in future research on I N TERVAL -C ONSTRAINED S CHEDULING are the combination
+of slack and looseness—the open field in our Table 1.1—and
+the maximum and minimum processing times, which were
+found to play an important role in the online version of the
+problem (Saha 2013).
+Finally, we point out that our fixed-parameter algorithms
+for I NTERVAL -C ONSTRAINED S CHEDULING are easy to
+implement and may be practically applicable if the looseness,
+slack, and number of machines is small (about three or four
+each). Moreover, our algorithms are based on upper bounds
+on the height of an instance in terms of its number of machines, its looseness, and slack. Obviously, this can also be
+exploited to give lower bounds on the number of required machines based on the structure of the input instance, namely, on
+its height, looseness, and slack. These lower bounds may be
+of independent interest in exact branch and bound or approximation algorithms for the machine minimization problem.
+References
+van Bevern R (2014) Towards optimal and expressive kernelization for
+d-Hitting Set. Algorithmica 70(1):129–147
+van Bevern R, Chen J, Hüffner F, Kratsch S, Talmon N, Woeginger GJ
+(2015a) Approximability and parameterized complexity of multicover by c-intervals. Information Processing Letters 115(10):744–
+749
+van Bevern R, Mnich M, Niedermeier R, Weller M (2015b) Interval
+scheduling and colorful independent sets. Journal of Scheduling
+18(5):449–469
+Bodlaender HL, Fellows MR (1995) W[2]-hardness of precedence
+constrained k-processor scheduling. Operations Research Letters
+18(2):93–97
+Chen L, Megow N, Schewior K (2016) An O(log m)-competitive algorithm for online machine minimization. In: Proceedings of the
+27th Annual ACM-SIAM Symposium on Discrete Algorithms
+(SODA’16), SIAM, pp 155–163
+1 The results of Kononov et al (2012) were obtained in context of a
+multivariate complexity analysis framework described by Sevastianov
+(2005), which is independent of the framework of parameterized complexity theory considered in our work: it allows for systematic classification of problems as polynomial-time solvable or NP-hard given concrete
+constraints on a set of instance parameters. It is plausible that this framework is applicable to classify problems as FPT or W[1]-hard as well.
+
+René van Bevern et al.
+Chuzhoy J, Guha S, Khanna S, Naor J (2004) Machine minimization
+for scheduling jobs with interval constraints. In: Proceedings of
+the 45th Annual Symposium on Foundations of Computer Science
+(FOCS’04), pp 81–90
+Cieliebak M, Erlebach T, Hennecke F, Weber B, Widmayer P (2004)
+Scheduling with release times and deadlines on a minimum number
+of machines. In: Exploring New Frontiers of Theoretical Informatics, IFIP International Federation for Information Processing, vol
+155, Springer, pp 209–222
+Cygan M, Fomin FV, Kowalik L, Lokshtanov D, Marx D, Pilipczuk M,
+Pilipczuk M, Saurabh S (2015) Parameterized Algorithms. Springer
+Downey RG, Fellows MR (2013) Fundamentals of Parameterized Complexity. Springer
+Fellows MR, McCartin C (2003) On the parametric complexity of
+schedules to minimize tardy tasks. Theoretical Computer Science
+298(2):317–324
+Fellows MR, Jansen BMP, Rosamond FA (2013) Towards fully multivariate algorithmics: Parameter ecology and the deconstruction
+of computational complexity. European Journal of Combinatorics
+34(3):541–566
+Flum J, Grohe M (2006) Parameterized Complexity Theory. Springer
+Garey MR, Johnson DS (1979) Computers and Intractability: A Guide
+to the Theory of NP-Completeness. Freeman
+Halldórsson MM, Karlsson RK (2006) Strip graphs: Recognition and
+scheduling. In: Proceedings of the 32nd International Workshop on
+Graph-Theoretic Concepts in Computer Science (WG’06), Springer,
+LNCS, vol 4271, pp 137–146
+Hermelin D, Kubitza JM, Shabtay D, Talmon N, Woeginger G (2015)
+Scheduling two competing agents when one agent has significantly
+fewer jobs. In: Proceedings of the 10th International Symposium
+on Parameterized and Exact Computation (IPEC’15), Leibniz International Proceedings in Informatics (LIPIcs), vol 43, Schloss
+Dagstuhl–Leibniz-Zentrum für Informatik, pp 55–65
+Jansen K, Kratsch S, Marx D, Schlotter I (2013) Bin packing with fixed
+number of bins revisited. Journal of Computer and System Sciences
+79(1):39–49
+Kolen AWJ, Lenstra JK, Papadimitriou CH, Spieksma FCR (2007)
+Interval scheduling: A survey. Naval Research Logistics 54(5):530–
+543
+Kononov A, Sevastyanov S, Sviridenko M (2012) A complete 4parametric complexity classification of short shop scheduling problems. Journal of Scheduling 15(4):427–446
+Malucelli F, Nicoloso S (2007) Shiftable intervals. Annals of Operations
+Research 150(1):137–157
+Marx D (2011) Fixed-parameter tractable scheduling problems. In:
+Packing and Scheduling Algorithms for Information and Communication Services (Dagstuhl Seminar 11091)
+Mnich M, Wiese A (2015) Scheduling and fixed-parameter tractability.
+Mathematical Programming 154(1-2):533–562
+Niedermeier R (2006) Invitation to Fixed-Parameter Algorithms. Oxford
+University Press
+Niedermeier R (2010) Reflections on multivariate algorithmics and
+problem parameterization. In: Proceedings of the 27th International Symposium on Theoretical Aspects of Computer Science
+(STACS’10), Schloss Dagstuhl–Leibniz-Zentrum für Informatik,
+Leibniz International Proceedings in Informatics (LIPIcs), vol 5,
+pp 17–32
+Saha B (2013) Renting a cloud. In: Annual Conference on Foundations of Software Technology and Theoretical Computer Science
+(FSTTCS) 2013, Schloss Dagstuhl–Leibniz-Zentrum für Informatik, Leibniz International Proceedings in Informatics (LIPIcs),
+vol 24, pp 437–448
+Sevastianov SV (2005) An introduction to multi-parameter complexity
+analysis of discrete problems. European Journal of Operational
+Research 165(2):387–397
+
+

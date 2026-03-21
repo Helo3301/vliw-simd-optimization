@@ -1,0 +1,656 @@
+Natural and Engineering Sciences
+
+23
+
+Volume 1, No. 1, 23-31, 2016
+
+Grayscale Image Authentication using Neural Hashing
+Yakup Kutlu1 and Apdullah Yayık2*
+1
+
+Department of Computer Engineering, Faculty of Electrical and Electronics, İskenderun
+Technical University, Hatay, Turkey
+2
+Turkish Army Forces
+
+Abstract
+Many different approaches for neural network based hash functions have been proposed.
+Statistical analysis must correlate security of them. This paper proposes novel neural hashing
+approach for gray scale image authentication. The suggested system is rapid, robust, useful
+and secure. Proposed hash function generates hash values using neural network one-way
+property and non-linear techniques. As a result security and performance analysis are
+performed and satisfying results are achieved. These features are dominant reasons for
+preferring against traditional ones.
+Keywords:
+Image Authentication, Cryptology, Hash Function, Statistical and Security Analysis.
+Article history:
+Received 22 January 2016, Accepted 02 February 2016, Available online 03 February 2016
+
+Introduction
+Cryptography uses mathematical techniques for information security. Information security is
+now a compulsory component of commercial applications, military communications and also
+social media implementations. So it can be said that cryptography is, furthermore, the most
+significant part of communication security (Arvandi et al. 2006). It maintains the
+condentiality that is the core of information security. Any cryptography requires condentiality,
+authentication, integrity and non-repudiation from those authorized to have it. Authentication
+relates to the identication of two parties entering into communication, while integrity
+addresses the unauthorized modification of an element inserted into the system (Sağıroğlu &
+Özkaya 2007). To date, there has been a large number of studies intended to advance robust
+cryptosystems and use them in communications. It is a novel and growing technique to
+*
+
+Corresponding Author :Apdullah YAYIK, email: ayayik@kkk.tsk.tr
+
+Natural and Engineering Sciences
+
+24
+
+perform the non-linear property of neural network to create secure hash function. Hash
+functions converts major definitions to minor values. As an input any message can be used,
+and as an output fixed length value is produced. Most popular hash functions are MD-5 (R.
+Rivest: 1992), SHA-2 that is by NSA (National Security Agency) and published in 2002 by
+the NIST as a U.S FIPS (Federal Information processing Standard) and SHA-3 that is based
+on an instance of the KECCAK algorithm that NIST selected as the winner of the
+Cryptographic Hash Algorithm Competition in 2013. Hash functions are used for data
+integrity and digital signature. Digital signature signs data in order to prove the accuracy of
+data and ID of sender. Hash function is digest of message which is attached to original
+message. Any modifying in original message makes hash function disabled. In other words;
+hash function is an information generating process from any message using mathematical
+techniques. Generated digital information is called message digest. Recycling of hash function
+must be almost impossible, so hash function must not inspire anyone about original message.
+It must be impossible to predict different messages whose hash values are the same. Hash
+value of every message is different, so any modifying in the original message makes digital
+signature invalid. Cryptography needs functions like this because they are able to provide
+safety communications (Soyalıç 2005). Hash functions are also used in Network and Internet
+Security. Any domain controlled PC client password is saved in _le server manager as its hash
+value, so administrator cannot do see clients original passwords. Also any malicious access to
+server database cannot capture client’s original passwords. Up to now, there have been lots of
+studies to advance robust machine learning based hash-functions and use them in
+communications (Zou & Xiao 2009; Lian et al. 2007; YAYIK & KUTLU n.d.; Yayık & Kutlu
+2013; Huang 2011). Near past and recently there is relatively much interest in using neural
+networks for cryptography (Lian et al. 2006) . Statistical analysis for sensitivity of SHA-2
+secure hash algorithm and neural based hash function are nearly same (Sumangala et al.
+2011), so it can be said that neural network will be used in cryptology in near future. There
+are many different approaches for image hash function algorithms. In 2011, Radon Transform
+based image fingerprinting (hashing) is proposed (Seo et al. 2004). Monga and Evans
+extracted vital image features using wavelet-based feature detection algorithm in order to
+advance image hashing system (Monga et al. 2006). In 2006, rotation invariance of FourierMellin transform and controlled randomization based image hashing algorithm is introduced
+(Swaminathan et al. 2006). In last two decades neural network based hash function is studied
+by some researchers (Zou & Xiao 2009; Lian et al. 2007; YAYIK & KUTLU n.d.; Yayık &
+Kutlu 2013; Sumangala et al. 2011). Common feature of these neural network based related
+works is considering gray scale images or texts. In this paper, secure and robust neural image
+hash function for gray scale image, which uses non-linearity. Then, many experiments are
+performed to validate its security and statistical requirements. The rest of this paper is
+organized as follows. Section 2 describes proposed image hash function. Section 3 presents
+experimental results and performance analysis. Finally conclusion is given in Section 4.
+Materials and Methods
+Proposed Model
+In the proposed hash function neural network shown in Figure 1. is used which has three
+layers that carries out ideal hash functions confusion, diffusion and compression properties.
+
+Natural and Engineering Sciences
+
+25
+
+Figure 1. Neural Network Structure.
+
+Let
+
+the
+
+layer
+
+inputs
+
+and
+
+C  ( C 0 C 1 C 3 ..... C 8 ), D  ( D 0 D 1 D 3 ..... D 8 ), H  ( H
+
+and
+defines as;
+f1 , f 2
+
+f3
+
+, let weight and biases be,
+
+outputs
+0
+
+H 1H
+
+2
+
+.... H
+
+w 1 , w 2 , w 3 , b1 , b 2
+
+32
+
+and
+
+)
+
+be P
+
+ ( P 0 P1 P 2 .... P 512 )
+
+,
+
+, let transfer functions be
+b3
+
+so neural network can be
+
+H  f 3 (w 3 * D  b3 )
+ f 3 (w 3 f 2 (w 2C  b2 )  b3
+ f 3 ( w 3 f 2 ( w 2 f 1 ( w 1 P  b1 )  b 2  b 3
+
+Here w 1 is of 8 x 512 size,
+f 3 are sigmoid functions.
+
+w2
+
+of 32 x 8 size,
+
+b2
+
+of 8x1 size and
+
+b3
+
+of 32x1 size,
+
+f1 , f 2
+
+and
+
+Block Hash
+Neural network based hash function is depicted in Figure 2.
+H
+
+r
+
+ H
+
+r1
+
+ H
+
+r2
+
+ H
+
+r3
+
+.... H
+
+i
+
+(1)
+
+Each dimensions are passed through the block hash and 32x512 sized is performed. XOR
+values of consecutive rows are calculated in order to obtain 1x512 binary value (1).
+
+Figure 2. Block Hash.
+
+Natural and Engineering Sciences
+
+26
+
+Performance Analysis
+In this section, whether suggested hash function validates statistical and security requirements
+or not is analyzed. So that, statistical distribution, diffusion and confusion, collision resistance
+and meet-in-the-middle analysis are performed.
+Statistical Distribution of Hash Value
+
+Security of hash function is directly proportional with uniform distribution of hash value.
+Figure 3 illustrates 2D graphs of pixel values of the original image localized.
+
+Figure 3. 2D graphs of pixel values of the original image localized.
+
+Statistical Analyses of Diffusion and Confusion
+
+Binary format of hash value consists of only 0 and 1 bits, while hexadecimal hash value
+consists of 16 different characters. Because of this changes in binary hash value must be
+nearly 50% (as shown in Table 3), in contrast changes in hexadecimal value must be nearly
+100%, for each modification. Otherwise diffusion property do not satisfy. In order to control
+binary and hexadecimal hash value changes following steps are applied: 1. Calculate original
+image binary and hexadecimal hash value 2. Change value of image 10 pixels randomly. 3.
+Calculate modified image binary and hexadecimal hash value. 4. Compare and find
+differences between original and modified images binary and hexadecimal hash values. 5.
+Repeat 1-4 process Q times. In Figure 4, binary sensitivity of hash value is presented. As it is
+mentioned binary sensitivity is nearly 50% that satisfies diffusion of hash value. Also, almost
+100% hexadecimal sensitivity mean the algorithm has very strong capability of robustness.
+Statistical parameters for binary sensitivity are defined below: Mean number of bits changed:
+B 
+
+1
+N
+
+(2)
+
+N
+
+
+i 1
+
+Bi
+
+Natural and Engineering Sciences
+
+27
+
+Mean changed probability:
+(3)
+
+P  ( B / 512 )  100 %
+
+Standard deviation of number of bits changed:
+B 
+
+N
+
+1
+N 1
+
+
+
+(Bi  B )
+
+(4)
+
+2
+
+1
+
+Standard deviation of changed probability:
+P 
+
+Where
+
+1
+N 1
+
+
+
+N
+1
+
+(5)
+
+2
+
+( B i / 128  P )
+
+ 100 %
+
+N 
+
+Q  256 , 512
+
+character number of binary hash value ( 256 ).
+,1024 , 2048 is performed and results are listed in Table 1.
+
+Through
+
+tests
+
+One Way Property
+Neural Networks most important and intriguing property that makes them useful for
+applications is their generalization capabilities that is their ability to produce reasonable
+outputs when they are fed with inputs not previously encountered. If targets' size is so
+different from inputs' size it is difficult to compute target from input, while it is easy to
+compute input from target. Due to this property neural network can be used in hash functions
+Desai2013. Parallel implementation is a significant property of neural networks. Each layer is
+paralleled. So, they can implement certain functionality independently.
+
+Figure 4. Binary Sensitivity.
+
+Natural and Engineering Sciences
+
+28
+
+According to this, ANN are available for data progressing Neural networks has ability to
+make relationship using training function with non-linear and complicated values. Confusion
+is a special property caused by the nonlinear structure of neural networks. This property
+makes the output depend on the input in a nonlinear and complicated manner. It means that, a
+bit of output depends on all the bits of the input in a complicated way. Thus, it is difficult to
+determine the exact input. The confusion property of neural networks makes them a potential
+choice for cipher designing.
+Table 1 Statistics of the number of bit changed.
+Q=256
+210
+
+Q=512
+229
+
+Q=1024
+228
+
+Q=2048
+227
+
+Mean
+223,50
+
+280
+
+280
+
+290
+
+286
+
+284,00
+
+254,6
+
+254,87
+
+254,87
+
+255,21
+
+254,89
+
+∆B
+
+8,57
+
+8,37
+
+8,80
+
+8,70
+
+8,61
+
+P min
+
+41,06
+
+44,72
+
+44,53
+
+44,33
+
+43,66
+
+P max
+_
+P%
+
+54,68
+
+54,68
+
+56,64
+
+55,85
+
+55,46
+
+49,72
+
+49,77
+
+49,77
+
+49,84
+
+49,78
+
+∆P %
+
+4,92
+
+4,92
+
+4,92
+
+4,93
+
+4,92
+
+B min
+B max
+_
+B
+
+Analysis of Collision Resistance
+
+Experimenters must make sure that each bit of original image effects hash value, after
+generating hash value. In other words hash value must be fully depended on the original
+image. Single bit change in image do not affects hash value that means vital information
+security vulnerability. So in this paper, collision resistance analyze is performed Q times as
+follows: 1. Generate hash value of original image (described in section 3.2) and store in
+ASCII format. 2. Randomly change least bits in original image 3. Generate hash value of new
+modified version of original image and store in ASCII format 4. Compare hash values
+generated in 1 and 3. Find and count same ASCII values at the same location.(3) Plot of
+distribution of the number of collision hits is illustrated in Figure 5.
+
+Natural and Engineering Sciences
+
+29
+
+Number of equal pixel values at the same location
+
+Collision Resistance Analyse
+100
+95
+90
+85
+80
+75
+70
+65
+60
+55
+50
+45
+40
+35
+30
+25
+20
+15
+10
+5
+0
+
+0
+
+128 256 384
+
+512 640 768 896 1024 1152 1280 1408 1536 1664 1792 1920 2048
+Number of Iteration
+
+Figure 5. Binary Sensitivity.
+Figure 5. Maximum, minimum, mean values and standard deviations are listed in Table.
+
+Maximum, minimum, mean values and standard deviations are listed in Table 2.
+Table 2. Collision Resistance Statistical Parameters
+Iteration
+
+Maximum
+
+Minimum
+
+Mean
+
+256
+512
+1024
+2048
+
+15
+16
+15
+16
+
+1
+2
+1
+1
+
+7,39
+7,45
+7,59
+7,52
+
+Standard
+Error
+2,31
+2,31
+2,27
+2,20
+
+Meet-In-The-Middle Attack.
+A meet-in-the middle attack is a technique of cryptanalysis against a block cipher introduced
+in 1977 (Diffie & Hellman 1977). It is a passive attack; it may allow the attacker to read
+messages without authorization, but against most cryptosystems it does not allow him to alter
+messages or send his own (Vanstone et al. 1996). The attacker must be able to calculate
+possible values of the same intermediate variable (the middle) in two independent ways,
+starting either from the original or from the hash value. The attacker calculates some possible
+values each way and compares the results.
+If original image is M
+
+ (M
+
+0
+
+M 1M
+
+using meet-in-the-middle attack is
+
+2
+
+..... M
+
+n 1
+
+M ' (M
+
+M
+
+0
+
+n
+
+)
+
+its hash value 
+
+M 1M
+
+2
+
+..... M
+
+n 1
+
+M
+
+n
+
+')
+
+H
+
+. Expected image found
+
+its hash value 
+
+words attack process is replacing M n with M n ' . But attacker cannot create
+relation with hash value described in previous sections.
+
+M
+
+n
+
+'
+
+H
+
+. In other
+
+that is not in
+
+Natural and Engineering Sciences
+
+30
+
+Results and Conclusions
+Secure hash function based machine learning techniques is presented and analyzed here.
+Proposed algorithm is efficient to require diffusion and confusion properties due to neural
+network information transfer process inspired from real biological systems. Analyses and
+experiments explained in this paper reveals that hash function satisfies sensitivity, minimum
+collision hit requirements and powerful against attacks like meet-in-the-middle.
+Figure 3, uniform distribution of hexadecimal hash value against local distribution of original
+image means high randomness that requires confusion. Figure 4, nearly 50% difference of
+binary format of hash value means high sensitivity that requires diffusion. But Figure 4 is not
+sufficient only by itself. In order to correlate Figure 4, statistically approaches are shown in
+Table 1. When looping sensitivity testing process as Q times, average 254, minimum 224,
+maximum 284 bits of 512 bits differs with minor standard deviation (8.61) and minimum
+43.66%, maximum 55.46%, average 49.78% of 512 bits differs with minor standard deviation
+(4.92). These results satisfy sensitivity of neural network based hash function.
+Calculation of same ASCII hash values at the same location that is called collision resistance
+is performed as Q times. Figure 5. illustrates collision resistance when Q = 2048. When
+looping collision resistance testing process as Q times, average 7 bit same ASCII values are
+found at the same location that can be ignored due to minority. So these results satisfy
+collision resistance of neural network based hash function. As a result; this system can be
+used in communication applications especially in military applications.
+References
+Arvandi, M. et al., 2006. Symmetric Cipher Design Using Recurrent Neural Networks.
+International Joint Conference on Neural Networks, pp.2039–2046.
+Diffie, W. & Hellman, M.E., 1977. Special Feature Exhaustive Cryptanalysis of the NBS
+Data Encryption Standard. Computer, 10(6), pp.74–84.
+Huang, Z., 2011. A more secure parallel keyed hash function based on chaotic neural
+network. Communications in Nonlinear Science and Numerical Simulation, 16(8),
+pp.3245–3256. Available at: http://dx.doi.org/10.1016/j.cnsns.2010.12.009.
+Lian, S. et al., 2006. Hash function based on chaotic neural networks. 2006 IEEE
+International Symposium on Circuits and Systems, p.4. Available at:
+http://ieeexplore.ieee.org/lpdocs/epic03/wrapper.htm?arnumber=1692566.
+Lian, S., Sun, J. & Wang, Z., 2007. One-way Hash Function Based on Neural Network.
+CoRR.
+Monga, V., Evans, B.L. & Member, S., 2006. Perceptual Image Hashing Via Feature Points :
+Performance Evaluation and Tradeoffs. IEEE TRANSACTIONS ON IMAGE
+PROCESSING, 15(11), pp.3453–3466.
+
+Natural and Engineering Sciences
+
+31
+
+R. Rivest:, 1992. The MD5 Message Digest Algorithm. MIT Laboratory for Computer
+Science and RSA Data Security, Inc.
+Sağıroğlu, S. & Özkaya, N., 2007. Neural Solutions for Information Security. Journal of
+Polytechnic, 10(1), pp.21–25.
+Seo, J.S. et al., 2004. A robust image fingerprinting system using the Radon transform. Signal
+Processing: Image Communication, 19, pp.325–339.
+Soyalıç, S., 2005. Cryptographic Hash Functions And Its Applications. Erciyes University
+Natural and Applied Sciences M. S. Thesis.
+Sumangala, G. et al., 2011. Performance Analayis of Sha-2 Algorithm With And Without
+using Artificial Neural Networks. World Journal of Science and Technology, 1(12), pp.12–
+20.
+Swaminathan, A. et al., 2006. Robust and Secure Image Hashing. IEEE TRANSACTIONS ON
+INFORMATION FORENSICS AND SECURITY, 1(2), pp.215–230.
+Vanstone, S.A.., A.J.Menezes; & P.C.Oorshot, 1996. Handbook of Applied Cryptography,
+Boca Raton: CRC Press.
+YAYIK, A. & KUTLU, Y., NEURAL NETWORK BASED CRYPTOGRAPHY. Neural
+Network
+World,
+24(2),
+pp.177–192.
+Available
+at:
+http://cat.inist.fr/?aModele=afficheN&cpsidt=28602655 [Accessed October 9, 2015].
+Yayık, A. & Kutlu, Y., 2013. Yapay Sinir Ağları ile Kriptoloji Uygulaması. Mustafa Kemal
+Üniversitesi.
+Zou, A. & Xiao, X., 2009. An Asynchronous Encryption Arithmetic Based on Laguerre
+Chaotic Neural Networks. 2009 WRI Global Congress on Intelligent Systems, pp.36–39.
+Available at: http://ieeexplore.ieee.org/lpdocs/epic03/wrapper.htm?arnumber=5209334
+[Accessed June 22, 2013].
+
+
