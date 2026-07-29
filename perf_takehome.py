@@ -36,6 +36,19 @@ from problem import (
 )
 
 
+def _flag(name: str, default: bool) -> bool:
+    return os.environ.get(name, str(int(default))) != "0"
+
+
+# Engine-balance knobs. VALU (6 slots/cycle) is the binding engine; ALU (12
+# slots/cycle) is nearly empty. Each flag moves one class of elementwise vector
+# op off the VALU and onto the ALU as VLEN scalar ops. Env-overridable so the
+# balance point can be swept; the defaults are the tuned settings.
+ALU_BIT = _flag("PTH_ALU_BIT", True)   # `& 1` branch-bit extraction
+ALU_XOR = _flag("PTH_ALU_XOR", True)   # XOR of val with the gathered/selected node
+ALU_ADD = _flag("PTH_ALU_ADD", True)   # branch and deferred-address adds
+
+
 def _vec_range(base: int, length: int = VLEN) -> range:
     return range(base, base + length)
 
@@ -294,7 +307,9 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
             best_ordered = ordered_idx[:]
 
     # Shot 85: Multi-phase SA with wide blocks and chain refinement
-    if n > 10:
+    # PTH_NO_SA=1 skips annealing for fast iteration on op-count changes; the
+    # priority-ordering result is a stable proxy (SA is worth ~20-40 cycles).
+    if n > 10 and not os.environ.get("PTH_NO_SA"):
         import random as _rng
         _rng_state = _rng.getstate()
 
@@ -392,6 +407,22 @@ class KernelBuilder:
     def emit(self, engine: str, slot: tuple):
         self.slots.append((engine, slot))
 
+    def emit_velem(self, op: str, dest: int, a1: int, a2: int, on_alu: bool):
+        """Emit an elementwise vector op on either the VALU or the ALU.
+
+        A VALU slot is 8 lanes of exactly the work one ALU slot does on one
+        lane, so any elementwise vector op can be spelled as VLEN scalar ALU
+        ops. VALU has 6 slots/cycle and is the binding engine; ALU has 12 and
+        sits nearly empty. Spilling non-critical vector ops onto the ALU costs
+        8/12 of a cycle of ALU capacity to buy back 1/6 of a cycle of VALU,
+        which is a win right up until the ALU itself saturates.
+        """
+        if on_alu:
+            for lane in range(VLEN):
+                self.emit("alu", (op, dest + lane, a1 + lane, a2 + lane))
+        else:
+            self.emit("valu", (op, dest, a1, a2))
+
     def alloc_scratch(self, name=None, length=1):
         addr = self.scratch_ptr
         if name is not None:
@@ -462,6 +493,19 @@ class KernelBuilder:
             else:
                 v_shift = self.scratch_vconst(val3, f"v_hash_shift_{hi}")
                 v_hash_shifts.append(v_shift)
+
+        # Stage 2+3 fusion. Stage 3 is (s2 + C3) ^ (s2 << 9) where s2 = a*33 + C2.
+        # Both operands are affine in `a` over Z/2^32, so each is one multiply_add
+        # and s2 never has to be materialized:
+        #   t1 = a*33    + (C2 + C3)          == s2 + C3
+        #   t2 = a*16896 + ((C2 << 9) mod 2^32) == s2 << 9   (<<9 == *512)
+        # 3 VALU ops where the original needed 4, and the two FMAs are independent
+        # of each other so the dependency chain shortens as well.
+        _C2, _C3 = HASH_STAGES[2][1], HASH_STAGES[3][1]
+        _SH3 = HASH_STAGES[3][4]
+        v_s23_add_c = self.scratch_vconst((_C2 + _C3) % 2**32, "v_s23_add_c")
+        v_s23_shl_m = self.scratch_vconst((FMA_MULTIPLIERS[2] << _SH3) % 2**32, "v_s23_shl_m")
+        v_s23_shl_c = self.scratch_vconst((_C2 << _SH3) % 2**32, "v_s23_shl_c")
 
         NUM_PRELOADED = 15  # Theory 214: levels 0-3 = 1+2+4+8 = 15 nodes
         v_tree = []
@@ -547,9 +591,8 @@ class KernelBuilder:
                 self.emit("valu", ("^", desk['tmp1'], desk['val'], v_hash_consts[1]))
                 self.emit("valu", (">>", desk['tmp2'], desk['val'], v_hash_shifts[1]))
                 self.emit("valu", ("^", desk['val'], desk['tmp1'], desk['tmp2']))
-                self.emit("valu", ("multiply_add", desk['val'], desk['val'], v_fma_mult[2], v_hash_consts[2]))
-                self.emit("valu", ("+", desk['tmp1'], desk['val'], v_hash_consts[3]))
-                self.emit("valu", ("<<", desk['tmp2'], desk['val'], v_hash_shifts[3]))
+                self.emit("valu", ("multiply_add", desk['tmp1'], desk['val'], v_fma_mult[2], v_s23_add_c))
+                self.emit("valu", ("multiply_add", desk['tmp2'], desk['val'], v_s23_shl_m, v_s23_shl_c))
                 self.emit("valu", ("^", desk['val'], desk['tmp1'], desk['tmp2']))
                 self.emit("valu", ("multiply_add", desk['val'], desk['val'], v_fma_mult[4], v_hash_consts[4]))
                 self.emit("valu", ("^", desk['tmp1'], desk['val'], v_hash_consts[5]))
@@ -558,20 +601,20 @@ class KernelBuilder:
 
         def emit_branch(desk_idx):
             d = desks[desk_idx]
-            self.emit("valu", ("&", d['tmp1'], d['val'], v_one))
+            self.emit_velem("&", d['tmp1'], d['val'], v_one, ALU_BIT)
             self.emit("valu", ("multiply_add", d['idx'], d['idx'], v_two, v_one))
-            self.emit("valu", ("+", d['idx'], d['idx'], d['tmp1']))
+            self.emit_velem("+", d['idx'], d['idx'], d['tmp1'], ALU_ADD)
 
         def emit_branch_addr_tracking(desk_idx):
             """Branch that updates addr instead of idx. addr_new = 2*addr + (1-fp) + bit"""
             d = desks[desk_idx]
-            self.emit("valu", ("&", d['tmp1'], d['val'], v_one))
+            self.emit_velem("&", d['tmp1'], d['val'], v_one, ALU_BIT)
             self.emit("valu", ("multiply_add", d['addr'], d['addr'], v_two, v_1_minus_fp))
-            self.emit("valu", ("+", d['addr'], d['addr'], d['tmp1']))
+            self.emit_velem("+", d['addr'], d['addr'], d['tmp1'], ALU_ADD)
 
         def emit_xor_with_node(desk_idx, node_vec):
             d = desks[desk_idx]
-            self.emit("valu", ("^", d['val'], d['val'], node_vec))
+            self.emit_velem("^", d['val'], d['val'], node_vec, ALU_XOR)
 
         # Theory 222: Fused rounds 0+1+2+3 with deferred idx computation
         def emit_rounds_0_1_2_3_fused(group_desks):
@@ -581,7 +624,7 @@ class KernelBuilder:
             emit_hash_interleaved(group_desks)
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("&", desk['bit0'], desk['val'], v_one))
+                self.emit_velem("&", desk['bit0'], desk['val'], v_one, ALU_BIT)
 
             # === Round 1 === (vselect for node selection)
             for d in group_desks:
@@ -589,12 +632,12 @@ class KernelBuilder:
                 self.emit("flow", ("vselect", desk['node_val'], desk['bit0'], v_tree[2], v_tree[1]))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
             for d in group_desks:
                 desk = desks[d]
                 # Theory 222: only extract bit1, defer idx computation to R3
-                self.emit("valu", ("&", desk['bit1'], desk['val'], v_one))
+                self.emit_velem("&", desk['bit1'], desk['val'], v_one, ALU_BIT)
 
             # === Round 2 === (3 vselect cascade using bit1 register)
             for d in group_desks:
@@ -604,12 +647,12 @@ class KernelBuilder:
                 self.emit("flow", ("vselect", desk['node_val'], desk['bit0'], desk['node_val'], desk['tmp2']))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
             # Theory 222: extract bit2 into idx (safe from hash clobbering)
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("&", desk['idx'], desk['val'], v_one))  # bit2 in idx (safe)
+                self.emit_velem("&", desk['idx'], desk['val'], v_one, ALU_BIT)  # bit2 in idx (safe)
 
             # === Round 3 === (7-vselect cascade for level-3 node)
             # Select tree[7 + 4*bit0 + 2*bit1 + bit2] from tree[7..14]
@@ -628,7 +671,7 @@ class KernelBuilder:
                 self.emit("flow", ("vselect", desk['node_val'], desk['bit0'], desk['node_val'], desk['tmp2']))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
             # Theory 222: Deferred addr computation from bit0/bit1/bit2/bit3
             # addr = fp + 15 + 8*bit0 + 4*bit1 + 2*bit2 + bit3
@@ -636,11 +679,11 @@ class KernelBuilder:
             # Computed as: s = FMA(bit0, 2, bit1) -> FMA(s, 2, bit2) -> FMA(s, 2, bit3) -> ADD(s, fp+15)
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("&", desk['tmp1'], desk['val'], v_one))  # bit3 -> tmp1
+                self.emit_velem("&", desk['tmp1'], desk['val'], v_one, ALU_BIT)  # bit3 -> tmp1
                 self.emit("valu", ("multiply_add", desk['addr'], desk['bit0'], v_two, desk['bit1']))  # s = 2*bit0 + bit1
                 self.emit("valu", ("multiply_add", desk['addr'], desk['addr'], v_two, desk['idx']))   # s = 2*s + bit2 (idx=bit2)
                 self.emit("valu", ("multiply_add", desk['addr'], desk['addr'], v_two, desk['tmp1']))  # s = 2*s + bit3
-                self.emit("valu", ("+", desk['addr'], desk['addr'], v_fp_plus_15))  # addr = s + fp + 15
+                self.emit_velem("+", desk['addr'], desk['addr'], v_fp_plus_15, ALU_ADD)  # addr = s + fp + 15
 
         # Theory 222: Fused rounds 11+12+13+14 with deferred idx computation
         def emit_rounds_11_12_13_14_fused(group_desks):
@@ -649,7 +692,7 @@ class KernelBuilder:
             emit_hash_interleaved(group_desks)
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("&", desk['bit0'], desk['val'], v_one))
+                self.emit_velem("&", desk['bit0'], desk['val'], v_one, ALU_BIT)
 
             # === Round 12 === (vselect for node selection)
             for d in group_desks:
@@ -657,12 +700,12 @@ class KernelBuilder:
                 self.emit("flow", ("vselect", desk['node_val'], desk['bit0'], v_tree[2], v_tree[1]))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
             for d in group_desks:
                 desk = desks[d]
                 # Theory 222: only extract bit1, defer idx computation to R14
-                self.emit("valu", ("&", desk['bit1'], desk['val'], v_one))
+                self.emit_velem("&", desk['bit1'], desk['val'], v_one, ALU_BIT)
 
             # === Round 13 === (3 vselect cascade using bit1 register)
             for d in group_desks:
@@ -672,12 +715,12 @@ class KernelBuilder:
                 self.emit("flow", ("vselect", desk['node_val'], desk['bit0'], desk['node_val'], desk['tmp2']))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
             # Theory 222: extract bit2 into idx (safe from hash clobbering)
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("&", desk['idx'], desk['val'], v_one))  # bit2 in idx (safe)
+                self.emit_velem("&", desk['idx'], desk['val'], v_one, ALU_BIT)  # bit2 in idx (safe)
 
             # === Round 14 === (7-vselect cascade for level-3 node)
             # bit2 is now in idx (not tmp1!)
@@ -695,29 +738,29 @@ class KernelBuilder:
                 self.emit("flow", ("vselect", desk['node_val'], desk['bit0'], desk['node_val'], desk['tmp2']))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
             # Theory 222: Deferred addr computation from bit0/bit1/bit2/bit3
             # bit2 is in idx (preserved through hash)
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("&", desk['tmp1'], desk['val'], v_one))  # bit3 -> tmp1
+                self.emit_velem("&", desk['tmp1'], desk['val'], v_one, ALU_BIT)  # bit3 -> tmp1
                 self.emit("valu", ("multiply_add", desk['addr'], desk['bit0'], v_two, desk['bit1']))  # s = 2*bit0 + bit1
                 self.emit("valu", ("multiply_add", desk['addr'], desk['addr'], v_two, desk['idx']))   # s = 2*s + bit2 (idx=bit2)
                 self.emit("valu", ("multiply_add", desk['addr'], desk['addr'], v_two, desk['tmp1']))  # s = 2*s + bit3
-                self.emit("valu", ("+", desk['addr'], desk['addr'], v_fp_plus_15))  # addr = s + fp + 15
+                self.emit_velem("+", desk['addr'], desk['addr'], v_fp_plus_15, ALU_ADD)  # addr = s + fp + 15
 
         def emit_gather_round_interleaved(group_desks):
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("+", desk['addr'], v_forest_p, desk['idx']))
+                self.emit_velem("+", desk['addr'], v_forest_p, desk['idx'], ALU_ADD)
             for d in group_desks:
                 desk = desks[d]
                 for lane in range(VLEN):
                     self.emit("load", ("load", desk['node_val'] + lane, desk['addr'] + lane))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
             for d in group_desks:
                 emit_branch(d)
@@ -733,7 +776,7 @@ class KernelBuilder:
             # XOR
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             # Hash
             emit_hash_interleaved(group_desks)
             # Branch (updates addr, not idx)
@@ -750,9 +793,8 @@ class KernelBuilder:
                 self.emit("valu", ("^", desk['tmp1'], desk['val'], v_hash_consts[1]))
                 self.emit("valu", (">>", desk['tmp2'], desk['val'], v_hash_shifts[1]))
                 self.emit("valu", ("^", desk['val'], desk['tmp1'], desk['tmp2']))
-                self.emit("valu", ("multiply_add", desk['val'], desk['val'], v_fma_mult[2], v_hash_consts[2]))
-                self.emit("valu", ("+", desk['tmp1'], desk['val'], v_hash_consts[3]))
-                self.emit("valu", ("<<", desk['tmp2'], desk['val'], v_hash_shifts[3]))
+                self.emit("valu", ("multiply_add", desk['tmp1'], desk['val'], v_fma_mult[2], v_s23_add_c))
+                self.emit("valu", ("multiply_add", desk['tmp2'], desk['val'], v_s23_shl_m, v_s23_shl_c))
                 self.emit("valu", ("^", desk['val'], desk['tmp1'], desk['tmp2']))
                 self.emit("valu", ("multiply_add", desk['val'], desk['val'], v_fma_mult[4], v_hash_consts[4]))
                 self.emit("valu", ("^", desk['tmp1'], desk['val'], v_c5_xor_t0))
@@ -767,7 +809,7 @@ class KernelBuilder:
                     self.emit("load", ("load", desk['node_val'] + lane, desk['addr'] + lane))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_r10_folded(group_desks)
 
         def emit_round_15_final_interleaved(group_desks):
@@ -779,7 +821,7 @@ class KernelBuilder:
                     self.emit("load", ("load", desk['node_val'] + lane, desk['addr'] + lane))
             for d in group_desks:
                 desk = desks[d]
-                self.emit("valu", ("^", desk['val'], desk['val'], desk['node_val']))
+                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
 
         def emit_tile_interleaved(tile_idx):
