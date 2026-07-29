@@ -48,6 +48,10 @@ ALU_BIT = _flag("PTH_ALU_BIT", True)   # `& 1` branch-bit extraction
 ALU_XOR = _flag("PTH_ALU_XOR", True)   # XOR of val with the gathered/selected node
 ALU_ADD = _flag("PTH_ALU_ADD", True)   # branch and deferred-address adds
 
+# Threshold on "downstream load ops" above which a non-load op is treated as
+# urgent address arithmetic that must not stall the load pipeline.
+_DL_THRESH = int(os.environ.get("PTH_DL_THRESH", "16"))
+
 
 def _vec_range(base: int, length: int = VLEN) -> range:
     return range(base, base + length)
@@ -171,6 +175,38 @@ def _schedule_slots_greedy(slots):
     return [c for c in cycles if c]
 
 
+_SIDE_EFFECTING_FLOW = frozenset(
+    ("halt", "pause", "trace_write", "jump", "jump_indirect",
+     "cond_jump", "cond_jump_rel", "coreid")
+)
+
+
+def _strip_dead(slots):
+    """Drop ops whose results nothing ever reads.
+
+    Backward liveness over scratch addresses. Stores and control flow are
+    always kept (they are the observable effects); anything else survives only
+    if some kept op downstream reads an address it writes. This mostly catches
+    input that the algorithm has since made redundant -- the per-desk index
+    vector is loaded from memory but every element provably starts at the tree
+    root, so the level-3 fusion overwrites it before any read.
+    """
+    n = len(slots)
+    live = set()
+    keep = [False] * n
+    for i in range(n - 1, -1, -1):
+        engine, slot = slots[i]
+        reads, writes = _slot_rw(engine, slot)
+        effect = engine in ("store", "debug") or (
+            engine == "flow" and slot[0] in _SIDE_EFFECTING_FLOW
+        )
+        if effect or any(w in live for w in writes):
+            keep[i] = True
+            live.difference_update(writes)
+            live.update(reads)
+    return [s for s, k in zip(slots, keep) if k]
+
+
 def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple]]]:
     """Priority-based topological reordering + greedy scheduling."""
     import heapq
@@ -263,6 +299,35 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
         if not computed_df[i]:
             compute_df(i)
 
+    # Compute downstream load count. Once the elementwise vector work moves onto
+    # the ALU the load engine becomes the binding one (2 slots/cycle against
+    # ~2.2k gather loads), so the same reasoning that made downstream-VALU win
+    # applies to loads: ops feeding long load chains — the address arithmetic —
+    # have to be scheduled early or the load pipeline starves.
+    downstream_load = [0] * n
+    computed_dl = [False] * n
+
+    def compute_dl(start):
+        stack = [(start, False)]
+        while stack:
+            v, processed = stack.pop()
+            if computed_dl[v]:
+                continue
+            if processed:
+                for s in succs[v]:
+                    downstream_load[v] = max(downstream_load[v],
+                        downstream_load[s] + (1 if slots[s][0] == 'load' else 0))
+                computed_dl[v] = True
+                continue
+            stack.append((v, True))
+            for s in succs[v]:
+                if not computed_dl[s]:
+                    stack.append((s, False))
+
+    for i in range(n - 1, -1, -1):
+        if not computed_dl[i]:
+            compute_dl(i)
+
     # Try multiple priority strategies
     priority_fns = [
         # VALU first
@@ -277,6 +342,15 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
         # dv>28 (wider threshold)
         lambda i: ((0, -downstream_valu[i]) if slots[i][0] != 'valu' and downstream_valu[i] > 28
                    else (1 if slots[i][0] == 'valu' else 2,), i),
+        # Load-fed: non-load ops feeding long load chains first, then loads
+        lambda i: ((0, -downstream_load[i]) if slots[i][0] != 'load' and downstream_load[i] > _DL_THRESH
+                   else (1 if slots[i][0] == 'load' else 2,), i),
+        # Load-fed, then downstream-VALU as the tiebreak among the rest
+        lambda i: ((0, -downstream_load[i]) if slots[i][0] != 'load' and downstream_load[i] > _DL_THRESH
+                   else (1,) if slots[i][0] == 'load'
+                   else (2, -downstream_valu[i]), i),
+        # Pure downstream-load ordering, no engine class split
+        lambda i: (-downstream_load[i], -downstream_valu[i], i),
     ]
 
     # Shot 81: Collect ALL priority orderings (not just best) for SA starting points
@@ -301,6 +375,8 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
         result = _schedule_slots_greedy(ordered)
         greedy_cycles = len(result)
         all_orderings.append((greedy_cycles, ordered_idx[:], result))
+        if os.environ.get("PTH_VERBOSE_SCHED"):
+            print(f"  priority strategy {len(all_orderings)-1}: {greedy_cycles} cycles")
         if greedy_cycles < best_cycles:
             best_cycles = greedy_cycles
             best_result = result
@@ -317,6 +393,14 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
                     _temp=5.0, _cool=0.9995, _max_block=16):
             _rng.seed(_seed)
             _cur_order = _start_order[:]
+            # Persistent position table. A block reversal only moves the ops
+            # inside the block, so the legality test needs an override dict for
+            # those and can read every other position straight out of _pos.
+            # Rebuilding all n positions per iteration (the previous approach)
+            # dominated the whole anneal once the op count passed ~10k.
+            _pos = [0] * n
+            for _p, _oi in enumerate(_cur_order):
+                _pos[_oi] = _p
             _cur_cycles = _start_cycles
             _best_c = _start_cycles
             _best_o = _start_order[:]
@@ -326,37 +410,35 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
                 _bs = _rng.randint(2, _max_block)
                 _ps = _rng.randrange(max(1, n - _bs))
                 _pe = min(_ps + _bs, n)
-                _block = _cur_order[_ps:_pe]
-                _rev = _block[::-1]
-                _pm = {}
-                for _p in range(len(_cur_order)):
-                    _pm[_cur_order[_p]] = _p
+                _old = _cur_order[_ps:_pe]
+                _rev = _old[::-1]
+                _new = {}
                 for _ii, _oi in enumerate(_rev):
-                    _pm[_oi] = _ps + _ii
+                    _new[_oi] = _ps + _ii
                 _valid = True
-                for _ii, _oi in enumerate(_rev):
-                    _np = _ps + _ii
+                for _oi, _np in _new.items():
                     for _pr in preds[_oi]:
-                        if _pm[_pr] >= _np:
+                        if _new.get(_pr, _pos[_pr]) >= _np:
                             _valid = False
                             break
                     if not _valid:
                         break
                     for _sc in succs[_oi]:
-                        if _pm[_sc] <= _np:
+                        if _new.get(_sc, _pos[_sc]) <= _np:
                             _valid = False
                             break
                     if not _valid:
                         break
                 if not _valid:
                     continue
-                _old = _cur_order[_ps:_pe]
-                _cur_order[_ps:_pe] = _old[::-1]
+                _cur_order[_ps:_pe] = _rev
                 _nr = _schedule_slots_greedy([slots[i] for i in _cur_order])
                 _nc = len(_nr)
                 _delta = _nc - _cur_cycles
                 if _delta < 0 or _rng.random() < 2.718 ** (-_delta / max(_temperature, 0.01)):
                     _cur_cycles = _nc
+                    for _oi, _np in _new.items():
+                        _pos[_oi] = _np
                     if _cur_cycles < _best_c:
                         _best_c = _cur_cycles
                         _best_o = _cur_order[:]
@@ -366,8 +448,10 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
                 _temperature *= _cool
             return _best_c, _best_o, _best_r
 
-        # Phase 1: SA from best priority orderings (skip fn0=VALU-first, gives 1504)
-        for _greedy_c, _start_order, _start_result in all_orderings[1:]:
+        # Phase 1: SA from the most promising priority orderings. Weak starts
+        # never win and each one costs a full anneal, so rank first.
+        _sa_starts = sorted(all_orderings, key=lambda o: o[0])[:3]
+        for _greedy_c, _start_order, _start_result in _sa_starts:
             for _sa_seed in [24, 42]:
                 _bc, _bo, _br = _run_sa(_start_order, _greedy_c, _sa_seed,
                                         _n_iters=5000, _max_block=16)
@@ -474,6 +558,11 @@ class KernelBuilder:
         self.emit("valu", ("-", v_1_minus_fp, v_one, v_forest_p))
 
         # Shot 63: v_fp_plus_1 removed (unused - emit_branch_idx_to_addr not called)
+
+        # v_1_minus_2fp = 1 - 2*forest_p, for recovering the final tree index
+        # from the tracked gather address at round 15.
+        v_1_minus_2fp = self.alloc_vec("v_1_minus_2fp")
+        self.emit("valu", ("-", v_1_minus_2fp, v_1_minus_fp, v_forest_p))
 
         # Theory 222: Precompute v_fp_plus_15 for deferred addr computation
         v_fp_plus_15 = self.alloc_vec("v_fp_plus_15")
@@ -823,6 +912,17 @@ class KernelBuilder:
                 desk = desks[d]
                 self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR)
             emit_hash_interleaved(group_desks)
+            # Final index. reference_kernel2 writes both inp_values and
+            # inp_indices, so the last round still has to produce the index it
+            # would have branched to. `addr` is forest_p + idx, so
+            #   idx_next = 2*idx + 1 + bit = 2*addr + (1 - 2*forest_p) + bit.
+            # Round 15 leaves elements at level 5 (idx <= 62), far below
+            # n_nodes, so the reference's wrap-to-zero cannot trigger here.
+            for d in group_desks:
+                desk = desks[d]
+                self.emit_velem("&", desk['tmp1'], desk['val'], v_one, ALU_BIT)
+                self.emit("valu", ("multiply_add", desk['idx'], desk['addr'], v_two, v_1_minus_2fp))
+                self.emit_velem("+", desk['idx'], desk['idx'], desk['tmp1'], ALU_ADD)
 
         def emit_tile_interleaved(tile_idx):
             tile_offset = tile_idx * NUM_DESKS * VLEN
@@ -893,7 +993,9 @@ class KernelBuilder:
         # Shot 57: Merge init+main phases for unified scheduling,
         # then re-inject pause at cycle 1 (init doesn't modify output).
         if len(phases) >= 2 and phases[0] and phases[1]:
-            merged = phases[0] + phases[1]
+            # Strip on the merged program: liveness has to see both phases,
+            # since init writes constants the main body reads.
+            merged = _strip_dead(phases[0] + phases[1])
             merged_instrs = _schedule_slots(merged)
             self.instrs = merged_instrs[:1]
             self.instrs.append({"flow": [("pause",)]})
