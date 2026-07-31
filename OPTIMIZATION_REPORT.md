@@ -1,7 +1,28 @@
 # Optimization Report: VLIW SIMD Tree Traversal + Hash Kernel
 
-**Final result: 1,311 cycles** (verified correct across 20+ random seeds)
-**Speedup: 112.7x** over 147,734-cycle baseline
+> **Superseded — read `README.md` for current results.** Three corrections to
+> what follows:
+>
+> 1. **The headline number does not reproduce.** `tests/submission_tests.py` on
+>    the commit this describes gives **1,316** cycles, not 1,311. The current
+>    kernel is at **1,204**.
+> 2. **"Correct" here means values only.** The kernel this describes wrote wrong
+>    values to all 256 entries of `inp_indices`. `reference_kernel2` updates
+>    both arrays each round; the submission tests compare only `inp_values`, so
+>    the defect passed 9/9. Fixed in the current kernel and verified on both
+>    arrays.
+> 3. **§3.3's "This is irreducible" is false.** Hash stages 2 and 3 fuse into
+>    3 VALU ops instead of 4, because both operands of stage 3 are affine in
+>    stage 2's input over Z/2³². 11 ops per hash, not 12. §4.2's conclusion that
+>    further progress "likely requires reducing total VALU ops" was right; its
+>    premise that the hash could not supply them was not.
+>
+> The analysis below is otherwise accurate for the state it describes, and its
+> account of the algorithmic phase (level-3 tree fusion, addr-tracking, desk
+> interleaving) still describes the kernel's structure.
+
+**Result described here: 1,316 cycles** (values only; indices were wrong)
+**Speedup: 112.2x** over 147,734-cycle baseline
 **Submission tests: 9/9 passing** (including the `< 1363` threshold)
 
 ```
