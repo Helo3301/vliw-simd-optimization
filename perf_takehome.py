@@ -54,6 +54,10 @@ ALU_ADD = _flag("PTH_ALU_ADD", True)   # branch and deferred-address adds
 # search that is expected to pay.
 _SA_ITERS = int(os.environ.get("PTH_SA_ITERS", "1500"))
 
+# Emission order: 0 = round-block major (all groups march in lockstep),
+# N>0 = run groups through all 16 rounds N at a time.
+EMIT_CHUNK = int(os.environ.get("PTH_EMIT_CHUNK", "2"))
+
 # Threshold on "downstream load ops" above which a non-load op is treated as
 # urgent address arithmetic that must not stall the load pipeline.
 _DL_THRESH = int(os.environ.get("PTH_DL_THRESH", "24"))
@@ -966,18 +970,54 @@ class KernelBuilder:
             for g in range(num_full_groups):
                 all_groups.append(list(range(g * GROUP_SIZE, (g + 1) * GROUP_SIZE)))
 
-            # Shot 66: Interleave groups at round-block level for better scheduling
-            for group_desks in all_groups:
-                emit_rounds_0_1_2_3_fused(group_desks)
-            for group_desks in all_groups:
+            def emit_all_rounds(gs):
+                emit_rounds_0_1_2_3_fused(gs)
                 for _rnd in range(4, 10):
-                    emit_gather_round_addr_tracking(group_desks)
-            for group_desks in all_groups:
-                emit_round_10_optimized(group_desks)
-            for group_desks in all_groups:
-                emit_rounds_11_12_13_14_fused(group_desks)
-            for group_desks in all_groups:
-                emit_round_15_final_interleaved(group_desks)
+                    emit_gather_round_addr_tracking(gs)
+                emit_round_10_optimized(gs)
+                emit_rounds_11_12_13_14_fused(gs)
+                emit_round_15_final_interleaved(gs)
+
+            # Emission order. "block" walks a round-block across every group
+            # before moving on, so all 16 desks march in lockstep (Shot 66,
+            # chosen back when VALU was the binding engine). "group" runs each
+            # chunk of groups through all 16 rounds before starting the next,
+            # which lets the scheduler software-pipeline: one chunk's fused
+            # rounds -- which contain no loads at all -- can overlap another
+            # chunk's gathers, and load-starved cycles are now the entire gap
+            # between the schedule and the load floor.
+            if EMIT_CHUNK:
+                # Groups march in lockstep within a chunk, chunks run one after
+                # another. chunk=1 is pure group-major; chunk=len(all_groups)
+                # reproduces the old all-in-lockstep order.
+                for _i in range(0, len(all_groups), EMIT_CHUNK):
+                    chunk = all_groups[_i:_i + EMIT_CHUNK]
+                    if len(chunk) == 1:
+                        emit_all_rounds(chunk[0])
+                        continue
+                    for gd in chunk:
+                        emit_rounds_0_1_2_3_fused(gd)
+                    for gd in chunk:
+                        for _rnd in range(4, 10):
+                            emit_gather_round_addr_tracking(gd)
+                    for gd in chunk:
+                        emit_round_10_optimized(gd)
+                    for gd in chunk:
+                        emit_rounds_11_12_13_14_fused(gd)
+                    for gd in chunk:
+                        emit_round_15_final_interleaved(gd)
+            else:
+                for group_desks in all_groups:
+                    emit_rounds_0_1_2_3_fused(group_desks)
+                for group_desks in all_groups:
+                    for _rnd in range(4, 10):
+                        emit_gather_round_addr_tracking(group_desks)
+                for group_desks in all_groups:
+                    emit_round_10_optimized(group_desks)
+                for group_desks in all_groups:
+                    emit_rounds_11_12_13_14_fused(group_desks)
+                for group_desks in all_groups:
+                    emit_round_15_final_interleaved(group_desks)
 
             for d in range(NUM_DESKS):
                 self.emit("store", ("vstore", addr_tmp[d*2], desks[d]['idx']))
