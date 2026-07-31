@@ -48,9 +48,15 @@ ALU_BIT = _flag("PTH_ALU_BIT", True)   # `& 1` branch-bit extraction
 ALU_XOR = _flag("PTH_ALU_XOR", True)   # XOR of val with the gathered/selected node
 ALU_ADD = _flag("PTH_ALU_ADD", True)   # branch and deferred-address adds
 
+# Annealing budget. With the load engine binding rather than the VALU, block
+# reversals no longer find anything the priority orderings missed (measured:
+# 1204 either way), so the budget is sized as cheap insurance rather than as a
+# search that is expected to pay.
+_SA_ITERS = int(os.environ.get("PTH_SA_ITERS", "1500"))
+
 # Threshold on "downstream load ops" above which a non-load op is treated as
 # urgent address arithmetic that must not stall the load pipeline.
-_DL_THRESH = int(os.environ.get("PTH_DL_THRESH", "16"))
+_DL_THRESH = int(os.environ.get("PTH_DL_THRESH", "24"))
 
 
 def _vec_range(base: int, length: int = VLEN) -> range:
@@ -454,7 +460,7 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
         for _greedy_c, _start_order, _start_result in _sa_starts:
             for _sa_seed in [24, 42]:
                 _bc, _bo, _br = _run_sa(_start_order, _greedy_c, _sa_seed,
-                                        _n_iters=5000, _max_block=16)
+                                        _n_iters=_SA_ITERS, _max_block=16)
                 if _bc < best_cycles:
                     best_cycles = _bc
                     best_ordered = _bo
@@ -462,9 +468,9 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
 
         # Phase 2: Chain SA - refine from best with diverse seeds
         if best_ordered is not None:
-            for _sa_seed in [1, 7, 13, 17, 31, 53, 97, 127]:
+            for _sa_seed in [1, 7, 13, 17]:
                 _bc, _bo, _br = _run_sa(best_ordered, best_cycles, _sa_seed,
-                                        _n_iters=5000, _temp=5.0, _cool=0.9990, _max_block=16)
+                                        _n_iters=_SA_ITERS, _temp=5.0, _cool=0.9990, _max_block=16)
                 if _bc < best_cycles:
                     best_cycles = _bc
                     best_ordered = _bo
