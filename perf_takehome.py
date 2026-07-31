@@ -54,6 +54,11 @@ ALU_ADD = _flag("PTH_ALU_ADD", True)   # branch and deferred-address adds
 # search that is expected to pay.
 _SA_ITERS = int(os.environ.get("PTH_SA_ITERS", "1500"))
 
+# Desks live at once. 16 desks x 8 lanes x 2 tiles covers the 256-element
+# batch. Fewer desks shrinks the register file (8 vectors each) and so frees
+# scratch, at the cost of tiles and in-flight parallelism.
+NUM_DESKS_CFG = int(os.environ.get("PTH_DESKS", "16"))
+
 # Emission order: 0 = round-block major (all groups march in lockstep),
 # N>0 = run groups through all 16 rounds N at a time.
 EMIT_CHUNK = int(os.environ.get("PTH_EMIT_CHUNK", "2"))
@@ -627,7 +632,10 @@ class KernelBuilder:
         # All diff vectors removed: R1/R12 use vselect, R2/R13 use 3 vselect
         # (saves 3 VALU SUB ops and 24 scratch slots)
 
-        NUM_DESKS = 16
+        tree_pre_addr = [None] + [self.alloc_scratch(f"tpa_{i}") for i in range(1, NUM_PRELOADED)]
+        tree_pre_val = [None] + [self.alloc_scratch(f"tpv_{i}") for i in range(1, NUM_PRELOADED)]
+
+        NUM_DESKS = NUM_DESKS_CFG
         desks = []
         for d in range(NUM_DESKS):
             desk = {
@@ -937,8 +945,15 @@ class KernelBuilder:
         def emit_tile_interleaved(tile_idx):
             tile_offset = tile_idx * NUM_DESKS * VLEN
 
-            for d in range(NUM_DESKS):
-                self.emit("load", ("const", offset_regs[d], tile_offset + d * VLEN))
+            # Per-desk element offsets. These used to be 16 `const` ops per
+            # tile, but `const` issues on the load engine -- the binding one --
+            # so 32 of the kernel's load slots were being spent on values that
+            # are just an arithmetic progression. One const seeds the tile and
+            # the ALU, which has slack, walks the rest.
+            self.emit("load", ("const", offset_regs[0], tile_offset))
+            _c_vlen = self.scratch_const(VLEN)
+            for d in range(1, NUM_DESKS):
+                self.emit("alu", ("+", offset_regs[d], offset_regs[d - 1], _c_vlen))
 
             for d in range(NUM_DESKS):
                 self.emit("alu", ("+", addr_tmp[d*2], self.scratch["inp_indices_p"], offset_regs[d]))
@@ -951,10 +966,17 @@ class KernelBuilder:
                     self.emit("load", ("vload", desks[d]['val'], addr_tmp[d*2+1]))
                 # Now G0 can start R0 (tree[0] already loaded)
                 # Load tree[1..14] and remaining desks
+                # Each preload gets its own address and value register. Sharing
+                # tmp_addr/tmp_scalar across all 14 made node i+1's address add
+                # wait on node i's broadcast (write-after-read on the shared
+                # register), serialising the whole preload into a ~14-deep
+                # chain at the point where nothing else can run: no gather
+                # address exists until rounds 0-3 have hashed, so this latency
+                # lands squarely in the pipeline fill.
                 for i in range(1, NUM_PRELOADED):
-                    self.emit("alu", ("+", tmp_addr, self.scratch["forest_values_p"], tree_idx_consts[i]))
-                    self.emit("load", ("load", tmp_scalar, tmp_addr))
-                    self.emit("valu", ("vbroadcast", v_tree[i], tmp_scalar))
+                    self.emit("alu", ("+", tree_pre_addr[i], self.scratch["forest_values_p"], tree_idx_consts[i]))
+                    self.emit("load", ("load", tree_pre_val[i], tree_pre_addr[i]))
+                    self.emit("valu", ("vbroadcast", v_tree[i], tree_pre_val[i]))
                 for d in range(4, NUM_DESKS):
                     self.emit("load", ("vload", desks[d]['idx'], addr_tmp[d*2]))
                     self.emit("load", ("vload", desks[d]['val'], addr_tmp[d*2+1]))
@@ -1023,8 +1045,10 @@ class KernelBuilder:
                 self.emit("store", ("vstore", addr_tmp[d*2], desks[d]['idx']))
                 self.emit("store", ("vstore", addr_tmp[d*2+1], desks[d]['val']))
 
-        emit_tile_interleaved(0)
-        emit_tile_interleaved(1)
+        n_tiles = batch_size // (NUM_DESKS * VLEN)
+        assert n_tiles * NUM_DESKS * VLEN == batch_size, "batch must tile evenly"
+        for _t in range(n_tiles):
+            emit_tile_interleaved(_t)
 
         phases = []
         current_phase = []
