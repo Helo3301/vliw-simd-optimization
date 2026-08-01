@@ -158,6 +158,12 @@ with no gathers left anywhere to issue — its own round 15 depends on its round
 Reordering cannot help a queue that is already backed up, which is why five further priority
 orderings, nine chunk plans and a cycle-driven list scheduler all failed to move it.
 
+The annealer agrees. Raising its budget 16x, from 1,500 iterations to 25,000, moves the result from
+1,138 to **1,137** — one cycle, for 44 minutes of build time instead of 4. The search space is that
+flat, which is what being 38 cycles from a hard bound looks like when the residual is structural
+rather than reorderable. `PTH_SA_ITERS=25000` reproduces it if you want the cycle; the default is
+deliberately the fast build.
+
 ## Reproduction
 
 ```bash
