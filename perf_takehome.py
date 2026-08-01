@@ -397,10 +397,15 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
             best_result = result
             best_ordered = ordered_idx[:]
 
-    # Shot 85: Multi-phase SA with wide blocks and chain refinement
-    # PTH_NO_SA=1 skips annealing for fast iteration on op-count changes; the
-    # priority-ordering result is a stable proxy (SA is worth ~20-40 cycles).
-    if n > 10 and not os.environ.get("PTH_NO_SA"):
+    # Simulated annealing, OFF by default.
+    #
+    # It contributes nothing at the default budget -- 1138 cycles with or
+    # without -- because the load engine binds and no reordering conjures load
+    # slots that do not exist. Leaving it on cost ~170s of build time per
+    # iteration against ~1s without, roughly 145x of iteration throughput, for
+    # zero cycles. PTH_SA=1 re-enables it; PTH_SA=1 PTH_SA_ITERS=25000 reaches
+    # 1137 in about 44 minutes.
+    if n > 10 and os.environ.get("PTH_SA") and not os.environ.get("PTH_NO_SA"):
         import random as _rng
         _rng_state = _rng.getstate()
 
