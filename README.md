@@ -116,7 +116,8 @@ exist. Its budget is sized as insurance, which keeps the build at a few minutes.
 |------|--------|
 | Spilling hash ops to the ALU (as the branch-bit / node-XOR / address adds were) | Monotonically worse: 1,141 / 1,148 / 1,156 / 1,182 / 1,220 as the offloaded fraction rises. The earlier spills sit at round boundaries with slack; the hash shifts sit **on the critical path**, and one VALU op becomes 8 ALU ops that must all retire before the dependent XOR. The ALU is a throughput reservoir, not a latency substitute. |
 | Fusing round 4 (only 16 distinct nodes) to cut 256 gather loads | Dead on economics, not just registers. It trades −254 loads (floor 1,053 → 926) for +280 VALU (floor 1,014 → **1,061**) and +224 flow (→930), so the binding floor *regresses*. Absorbing the VALU cost needs exactly the ALU spill the row above rules out. |
-| The "C5 deferred fold" — restructure hash stage 5 so the next round's node XOR folds into the constant | Worth nothing here. The XOR it would eliminate is already on the ALU, which is not binding on any window. |
+| The "C5 deferred fold" — restructure hash stage 5 so the next round's node XOR folds into the constant | Built and verified correct. It does work: stage 5 drops from 3 VALU ops to 2 (`w = s4 ^ (s4>>16)`, with C5 absorbed into pre-XORed `C5^tree[j]` constants and the branch bit coming out complemented), taking the hash to **10 VALU ops — its true ISA floor**. VALU 6,083 → 5,910. **Zero cycles**, because VALU is not the binding engine and its floor was already 39 cycles under load's. Not kept: real algebra, dead headroom. |
+| Partial level-4 fusion — fuse round 4's 16-way node choice for a *fraction* of desks, sized to the flow engine's idle capacity | Built and verified correct at 8 fractions; **monotonically worse**, 1,139 → 1,313. The floor model was right and irrelevant: at 16/32 desks fused it moved the bound from 1,054 to **992** exactly as predicted (load 2,107→1,983, flow 706→946), and actual cycles rose 46 while starved cycles doubled, 88 → 196. Flow is 1 slot/cycle **globally**, so a 15-vselect cascade is 15 cycles of serial latency no other desk can overlap, landing in round 4's dependency chain between the address computation and the hash. The gather it replaces is 8 loads at 2/cycle that interleave freely across desks. Idle flow is not spare capacity; it is a 1-wide serial resource. |
 | Deferring each chunk's round-15 gather to fill the tail | Identical 1,138 — the scheduler was already placing those gathers optimally. |
 | Ramped chunk plans (`1,3`, `1,1,2`, `1,2,1`, `1,1,1,1`, `2,1,1`, `1,2`, `1,2,2`, …) | Best ties uniform width 2; most are worse. A narrower leading chunk does reach its first gather sooner, but its shorter gather phase then fails to hide the next chunk's fill. |
 | Cycle-driven list scheduler, critical-path priority | 2,076 cycles; even program-order priority gave 1,379 against 1,218. Aggressive reordering fights the anti-dependency web from per-desk register reuse. |
@@ -138,6 +139,12 @@ structural costs plus a small residue:
 
 Moving the floor itself means cutting gather loads: 2,048 of the 2,106 are gathers, 8 rounds × 256
 elements. Every route to reducing them is priced out above.
+
+A note on method, since it cost a round to learn: the per-engine floor (ops ÷ slots-per-cycle) was a
+reliable guide right up until it wasn't. It is a **necessary** condition, not a sufficient one. It
+says nothing about *where* in the dependency graph an engine's work is forced to sit, and for the
+1-slot/cycle flow engine that distinction is the whole story — capacity spread over a thousand
+cycles is worthless if the ops all have to issue inside one serial chain.
 
 ## Reproduction
 
