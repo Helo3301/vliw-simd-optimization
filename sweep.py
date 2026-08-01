@@ -28,9 +28,16 @@ DB = os.path.join(HERE, "sweep_results.json")
 
 # name -> list of values to sample from. All defaults reproduce 1138 cycles.
 SPACE = {
-    "PTH_ALU_BIT":     ["0", "1"],
-    "PTH_ALU_XOR":     ["0", "1"],
-    "PTH_ALU_ADD":     ["0", "1"],
+    # Per-context spill placement. The global flags were the whole story until
+    # ALU_ADD flipped; these let each context choose independently.
+    "PTH_ALU_BIT_G":   ["0", "1"],
+    "PTH_ALU_BIT_F":   ["0", "1"],
+    "PTH_ALU_XOR_G":   ["0", "1"],
+    "PTH_ALU_XOR_F":   ["0", "1"],
+    "PTH_ALU_ADD_G":   ["0", "1"],
+    "PTH_ALU_ADD_F":   ["0", "1"],
+    "PTH_ALU_ADD_15":  ["0", "1"],
+    "PTH_HASH_LAYOUT": ["0", "1"],
     "PTH_EMIT_CHUNK":  ["1", "2", "3", "4"],
     "PTH_DL_THRESH":   [str(v) for v in (4, 8, 12, 16, 20, 24, 28, 32, 40, 48, 64)],
     "PTH_HASH_ORDER":  [str(v) for v in range(24)],
@@ -42,7 +49,9 @@ SPACE = {
     "PTH_PRIO_B":      ["0", "1", "2", "3"],
 }
 BASELINE = {k: v[0] for k, v in SPACE.items()}
-BASELINE.update({"PTH_ALU_BIT": "1", "PTH_ALU_XOR": "1", "PTH_ALU_ADD": "1",
+BASELINE.update({"PTH_ALU_BIT_G": "1", "PTH_ALU_BIT_F": "1", "PTH_ALU_XOR_G": "1",
+                 "PTH_ALU_XOR_F": "1", "PTH_ALU_ADD_G": "0", "PTH_ALU_ADD_F": "0",
+                 "PTH_ALU_ADD_15": "0", "PTH_HASH_LAYOUT": "0",
                  "PTH_EMIT_CHUNK": "2", "PTH_DL_THRESH": "24",
                  "PTH_R10_ORDER": "-1", "PTH_PRIO_TL": "-1"})
 
