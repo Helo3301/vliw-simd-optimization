@@ -126,25 +126,37 @@ exist. Its budget is sized as insurance, which keeps the build at a few minutes.
 
 ## Where the remaining time goes
 
-1,138 cycles against a 1,053-cycle load floor. The 85-cycle gap decomposes almost entirely into two
-structural costs plus a small residue:
+Earlier versions of this section quoted a "floor" that was really a conditional: *given this op
+mix*, some engine needs N cycles. That is not a bound on the problem, and it moved every time the op
+mix did. Here are bounds that are actually derived, weakest scope first.
 
-- **52 cycles of cold start**, running **VALU at 97.4%** while the load engine sits at 5.8%. No
-  gather address exists until rounds 0–3 have hashed, and that work is now
-  throughput-bound — 8 desks × 4 rounds × 11 VALU ops ÷ 6 slots. It cannot overlap with load work
-  because at program start no load work exists that isn't dependency-blocked. The ALU has ~25 vector
-  ops of headroom in that window, worth ~4 cycles before the critical-path penalty above eats them.
-- **13 cycles of drain** — hash, final index, store after the last gather.
-- **~20 cycles** scattered across chunk transitions.
+**≥854 cycles, for any program.** The hash is 512 vector-hashes of 10 VALU ops each (10 is the ISA
+floor: stages 0/2/4 are one `multiply_add`, stages 2+3 fuse into 3, stage 5 folds to 2, and stage 1's
+`(a^C1)^(a>>19)` cannot fold its constant in either direction). 5,120 ÷ 6 slots = 854. This alone
+refutes any target below it — including the 768 implied by counting only the unavoidable gathers.
 
-Moving the floor itself means cutting gather loads: 2,048 of the 2,106 are gathers, 8 rounds × 256
-elements. Every route to reducing them is priced out above.
+**~1,044 cycles, for any program, by joint placement.** Solving for the best split of every work
+class across the engines that can host it — rather than reading each engine's floor off the current
+mix — gives 1,044 whether rounds 4 and 15 are gathered (load-bound) or fused (ALU-bound). The two
+strategies land within one cycle of each other, which is why every attempt to trade between them
+came out neutral-to-negative.
 
-A note on method, since it cost a round to learn: the per-engine floor (ops ÷ slots-per-cycle) was a
-reliable guide right up until it wasn't. It is a **necessary** condition, not a sufficient one. It
-says nothing about *where* in the dependency graph an engine's work is forced to sit, and for the
-1-slot/cycle flow engine that distinction is the whole story — capacity spread over a thousand
-cycles is worthless if the ops all have to issue inside one serial chain.
+**1,100 cycles, for this op set under any schedule.** Using only the dependency graph: the earliest
+dependency-feasible cycle of each load, sorted, gives `max over k of (est_k + (N−k)/2)` = 1,087, plus
+a 13-cycle tail after the last gather. The binding term is at k=42 — after the first 42 loads clear
+the pipeline fill at cycle 55, the remaining 2,064 still need 1,032 cycles at 2/cycle.
+
+**1,138 achieved**, so 38 cycles of headroom against the tightest bound.
+
+Those 38 are not scattered inefficiency. 97.8% of gather loads issue *later* than their earliest
+legal cycle and 624 are ≥10 cycles late — the load engine carries a deep backlog nearly everywhere,
+which is what a saturated bottleneck looks like. The residual is the moments the queue runs dry: the
+pipeline fill (55 cycles, already inside the bound, and irreducible since no gather address exists
+until four hash chains retire) and the program's tail, where the last chunk runs fused rounds 11–14
+with no gathers left anywhere to issue — its own round 15 depends on its round 14.
+
+Reordering cannot help a queue that is already backed up, which is why five further priority
+orderings, nine chunk plans and a cycle-driven list scheduler all failed to move it.
 
 ## Reproduction
 
