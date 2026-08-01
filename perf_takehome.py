@@ -64,6 +64,14 @@ ALU_XOR_F = _flag("PTH_ALU_XOR_F", False)      # node XOR, fused rounds -> VALU
 ALU_ADD_G = _flag("PTH_ALU_ADD_G", True)       # branch add, gather rounds -> ALU
 ALU_ADD_F = _flag("PTH_ALU_ADD_F", ALU_ADD)    # deferred address add, fused
 ALU_ADD_15 = _flag("PTH_ALU_ADD_15", True)     # final index add, round 15 -> ALU
+# Double-buffer the per-desk gathered-node register. Round r's gather writes
+# node_val and round r's XOR reads it, so round r+1's gather cannot issue until
+# that XOR retires -- a write-after-read edge sitting directly on the load path,
+# created purely by reusing one register. Alternating two buffers by round
+# parity removes it. This is partial register renaming: a cheap probe of whether
+# the full virtual-value rewrite would pay.
+NODE_DBL = _flag("PTH_NODE_DBL", False)
+
 # Structural layout knobs.
 HASH_LAYOUT = int(os.environ.get("PTH_HASH_LAYOUT", "0"))   # 0 desk-major, 1 stage-major
 GATHER_LOOP = int(os.environ.get("PTH_GATHER_LOOP", "0"))   # 0 group-major, 1 round-major
@@ -684,7 +692,8 @@ class KernelBuilder:
                 'tmp1': self.alloc_vec(f"v_tmp1_{d}"),
                 'tmp2': self.alloc_vec(f"v_tmp2_{d}"),
                 'bit0': self.alloc_vec(f"v_bit0_{d}"),
-                'bit1': self.alloc_vec(f"v_bit1_{d}"),  # Theory 214: save bit1 for level-3 vselect
+                'bit1': self.alloc_vec(f"v_bit1_{d}"),
+                'node_val2': self.alloc_vec(f"v_node2_{d}") if NODE_DBL else None,  # Theory 214: save bit1 for level-3 vselect
             }
             desks.append(desk)
 
@@ -902,18 +911,20 @@ class KernelBuilder:
             for d in group_desks:
                 emit_branch(d)
 
-        def emit_gather_round_addr_tracking(group_desks):
+        def nbuf(desk, rnd):
+            if NODE_DBL and rnd % 2 and desk['node_val2'] is not None:
+                return desk['node_val2']
+            return desk['node_val']
+
+        def emit_gather_round_addr_tracking(group_desks, rnd=0):
             """Gather round using addr-tracking: addr is already the gather address"""
-            # No addr computation needed - addr is already ready from previous branch!
-            # Gather
             for d in group_desks:
                 desk = desks[d]
                 for lane in _lane_seq():
-                    self.emit("load", ("load", desk['node_val'] + lane, desk['addr'] + lane))
-            # XOR
+                    self.emit("load", ("load", nbuf(desk, rnd) + lane, desk['addr'] + lane))
             for d in group_desks:
                 desk = desks[d]
-                self.emit_velem("^", desk['val'], desk['val'], desk['node_val'], ALU_XOR_G)
+                self.emit_velem("^", desk['val'], desk['val'], nbuf(desk, rnd), ALU_XOR_G)
             # Hash
             emit_hash_interleaved(group_desks)
             # Branch (updates addr, not idx)
@@ -1017,7 +1028,7 @@ class KernelBuilder:
             def emit_all_rounds(gs):
                 emit_rounds_0_1_2_3_fused(gs)
                 for _rnd in range(4, 10):
-                    emit_gather_round_addr_tracking(gs)
+                    emit_gather_round_addr_tracking(gs, _rnd)
                 emit_round_10_optimized(gs)
                 emit_rounds_11_12_13_14_fused(gs)
                 emit_round_15_final_interleaved(gs)
@@ -1044,7 +1055,7 @@ class KernelBuilder:
                         emit_rounds_0_1_2_3_fused(gd)
                     for gd in ch:
                         for _rnd in range(4, 10):
-                            emit_gather_round_addr_tracking(gd)
+                            emit_gather_round_addr_tracking(gd, _rnd)
                     for gd in ch:
                         emit_round_10_optimized(gd)
                     for gd in ch:
@@ -1056,7 +1067,7 @@ class KernelBuilder:
                     emit_rounds_0_1_2_3_fused(group_desks)
                 for group_desks in all_groups:
                     for _rnd in range(4, 10):
-                        emit_gather_round_addr_tracking(group_desks)
+                        emit_gather_round_addr_tracking(group_desks, _rnd)
                 for group_desks in all_groups:
                     emit_round_10_optimized(group_desks)
                 for group_desks in all_groups:
