@@ -1,6 +1,6 @@
-# VLIW SIMD Optimization: 1,139 cycles
+# VLIW SIMD Optimization: 1,138 cycles
 
-**129.7x** faster than the 147,734-cycle baseline. 9/9 submission tests pass.
+**129.8x** faster than the 147,734-cycle baseline. 9/9 submission tests pass.
 
 This repository contains my optimized solution to [Anthropic's VLIW SIMD performance
 take-home](https://github.com/anthropics/original_performance_takehome). The kernel walks a binary
@@ -11,11 +11,11 @@ of the hash.
 
 | Metric | Value |
 |--------|-------|
-| Cycles | **1,139** |
+| Cycles | **1,138** |
 | Baseline | 147,734 |
-| Speedup | **129.7x** |
+| Speedup | **129.8x** |
 | Submission tests | 9/9 passing |
-| Binding engine | load — 2,120 ops at 2/cycle = 1,060-cycle floor (93.1% occupied) |
+| Binding engine | load — 2,106 ops at 2/cycle = 1,053-cycle floor |
 
 Against the published reference points, all of which are for the 2-hour variant starting at 18,532
 cycles:
@@ -26,7 +26,7 @@ cycles:
 | Claude Opus 4.5, casual session ≈ best human in 2h | 1,790 |
 | Claude Opus 4.5, 11.5h in the harness | 1,487 |
 | Claude Opus 4.5, improved harness | 1,363 |
-| **This kernel** | **1,139** |
+| **This kernel** | **1,138** |
 
 ## Correctness
 
@@ -91,10 +91,12 @@ and each cluster had a different cause.
   Groups now march in lockstep only within a chunk, and chunks run one after another, so one
   chunk's fused rounds overlap another chunk's gathers (`PTH_EMIT_CHUNK`, default 2). The
   tile-0/tile-1 seam disappears entirely. **−54 cycles.**
-- **The tree preload was serialised by register reuse.** All 14 nodes went through one shared
-  `tmp_addr`/`tmp_scalar` pair, so node *i+1*'s address add had to wait on node *i*'s broadcast — a
-  14-deep false dependency landing squarely in the pipeline fill, where nothing else can run.
-  Independent registers cost 28 of the 141 free scratch words. **−6 cycles.**
+- **The tree preload didn't need scalar loads at all.** `tree[0..15]` is 16 contiguous words, so two
+  `vload`s fetch every node the fused rounds use — and words inside a loaded vector are ordinary
+  scratch cells, so `vbroadcast` takes each one directly as its scalar source. This replaced 15
+  scalar loads plus 15 address adds (which had also been serialised through one shared
+  `tmp_addr`/`tmp_scalar` pair, a 14-deep false dependency landing in the pipeline fill). Load-engine
+  ops −13, and ~40 scratch words freed. **−7 cycles** across both steps.
 - **`const` issues on the load engine**, and per-desk element offsets were 16 `const` ops per tile —
   32 load slots spent on an arithmetic progression. One const now seeds each tile and the ALU, which
   has slack, walks the rest. `const` ops 51 → 22. **−5 cycles.**
@@ -112,28 +114,30 @@ exist. Its budget is sized as insurance, which keeps the build at a few minutes.
 
 | Idea | Result |
 |------|--------|
-| Cycle-driven list scheduler, critical-path priority | 2,076 cycles; even program-order priority gave 1,379 against 1,218. Aggressive reordering fights the anti-dependency web created by per-desk register reuse. |
-| Constant-operand vselects → `multiply_add` against precomputed tree differences | 1,213–1,246 across all 8 level splits, against 1,211. Flow fell 705 → 257 exactly as predicted and it still lost: flow was saturated but never *binding*, and the replacement FMAs sit on the critical path the vselects were off. |
-| Fusing round 4 (only 16 distinct nodes) to cut 256 gather loads | Blocked on scratch. A 16-way select does fit in 3 temps — the last level-A FMA can write into the b3 bit register itself, since this ISA performs all reads before all writes — but the deferred address chain still needs b3 afterwards, and every reordering comes out one register short. |
-| 8 desks per tile instead of 16, to free scratch for the above | Frees 520 words (875/1536) and costs 112 cycles (1,262 vs 1,150) against at most ~80 recoverable. Net loss. |
-| Non-uniform chunk widths (`1,3`, `1,1,2`, `2,1,1`, `1,2,1`, `3,1`, `1,1,1,1`) | Best ties uniform `2,2`; most are worse. The residual slack at chunk transitions is not reachable by rearranging chunk widths. |
+| Spilling hash ops to the ALU (as the branch-bit / node-XOR / address adds were) | Monotonically worse: 1,141 / 1,148 / 1,156 / 1,182 / 1,220 as the offloaded fraction rises. The earlier spills sit at round boundaries with slack; the hash shifts sit **on the critical path**, and one VALU op becomes 8 ALU ops that must all retire before the dependent XOR. The ALU is a throughput reservoir, not a latency substitute. |
+| Fusing round 4 (only 16 distinct nodes) to cut 256 gather loads | Dead on economics, not just registers. It trades −254 loads (floor 1,053 → 926) for +280 VALU (floor 1,014 → **1,061**) and +224 flow (→930), so the binding floor *regresses*. Absorbing the VALU cost needs exactly the ALU spill the row above rules out. |
+| The "C5 deferred fold" — restructure hash stage 5 so the next round's node XOR folds into the constant | Worth nothing here. The XOR it would eliminate is already on the ALU, which is not binding on any window. |
+| Deferring each chunk's round-15 gather to fill the tail | Identical 1,138 — the scheduler was already placing those gathers optimally. |
+| Ramped chunk plans (`1,3`, `1,1,2`, `1,2,1`, `1,1,1,1`, `2,1,1`, `1,2`, `1,2,2`, …) | Best ties uniform width 2; most are worse. A narrower leading chunk does reach its first gather sooner, but its shorter gather phase then fails to hide the next chunk's fill. |
+| Cycle-driven list scheduler, critical-path priority | 2,076 cycles; even program-order priority gave 1,379 against 1,218. Aggressive reordering fights the anti-dependency web from per-desk register reuse. |
+| Constant-operand vselects → `multiply_add` on precomputed tree differences | 1,213–1,246 across all 8 level splits, against 1,211. Flow fell 705 → 257 exactly as predicted and it still lost: flow was saturated but never *binding*. |
+| 8 desks per tile instead of 16, to free scratch | Frees 520 words but costs 112 cycles against at most ~80 recoverable. Net loss. |
 
 ## Where the remaining time goes
 
-1,139 cycles against a 1,060-cycle load floor, with the load engine 93.1% occupied. The 79-cycle
-gap is now mostly structural rather than schedulable:
+1,138 cycles against a 1,053-cycle load floor. The 85-cycle gap decomposes almost entirely into two
+structural costs plus a small residue:
 
-- **~34 cycles of pipeline fill.** The first gather issues at cycle 72, because no gather address
-  exists until rounds 0–3 have hashed, and four sequential hash chains is ~44 cycles of pure
-  latency. Through that window VALU runs at 4.25 of 6 slots — it is waiting on dependencies, not on
-  capacity, so no scheduler can compress it.
-- **13 cycles of drain**, the mirror image: hash, final index, store after the last gather.
-- **~30 cycles of slack at chunk transitions**, the only genuinely recoverable part, and it resisted
-  every chunk arrangement tried.
+- **52 cycles of cold start**, running **VALU at 97.4%** while the load engine sits at 5.8%. No
+  gather address exists until rounds 0–3 have hashed, and that work is now
+  throughput-bound — 8 desks × 4 rounds × 11 VALU ops ÷ 6 slots. It cannot overlap with load work
+  because at program start no load work exists that isn't dependency-blocked. The ALU has ~25 vector
+  ops of headroom in that window, worth ~4 cycles before the critical-path penalty above eats them.
+- **13 cycles of drain** — hash, final index, store after the last gather.
+- **~20 cycles** scattered across chunk transitions.
 
-Moving the floor itself means cutting gather loads. 2,048 of the 2,120 loads are gathers — 8 rounds
-× 256 elements — and the only reducible ones are rounds 4 and 15, which land on just 16 distinct
-nodes. Both routes to that are priced out above.
+Moving the floor itself means cutting gather loads: 2,048 of the 2,106 are gathers, 8 rounds × 256
+elements. Every route to reducing them is priced out above.
 
 ## Reproduction
 

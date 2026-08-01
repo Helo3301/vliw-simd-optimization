@@ -612,28 +612,14 @@ class KernelBuilder:
         v_s23_shl_c = self.scratch_vconst((_C2 << _SH3) % 2**32, "v_s23_shl_c")
 
         NUM_PRELOADED = 15  # Theory 214: levels 0-3 = 1+2+4+8 = 15 nodes
-        v_tree = []
-        # Pre-allocate const addresses for tree indices
-        # Indices 0,1,2 use existing cached consts. Indices 3-14 computed via ALU post-pause.
-        tree_idx_consts = []
-        tree_idx_deferred = []  # (target_addr, will be computed post-pause)
-        for i in range(NUM_PRELOADED):
-            v_node = self.alloc_vec(f"v_tree_{i}")
-            v_tree.append(v_node)
-            if i <= 2:
-                # These are already cached as const_map entries
-                tree_idx_consts.append(self.scratch_const(i))
-            else:
-                # Allocate scratch but don't load const yet
-                addr = self.alloc_scratch(f"tree_idx_{i}")
-                tree_idx_consts.append(addr)
-                tree_idx_deferred.append((addr, i))
+        v_tree = [self.alloc_vec(f"v_tree_{i}") for i in range(NUM_PRELOADED)]
 
-        # All diff vectors removed: R1/R12 use vselect, R2/R13 use 3 vselect
-        # (saves 3 VALU SUB ops and 24 scratch slots)
-
-        tree_pre_addr = [None] + [self.alloc_scratch(f"tpa_{i}") for i in range(1, NUM_PRELOADED)]
-        tree_pre_val = [None] + [self.alloc_scratch(f"tpv_{i}") for i in range(1, NUM_PRELOADED)]
+        # tree[0..15] is 16 contiguous words, so two vloads fetch every node the
+        # fused rounds need, using 2 load slots instead of 15 and with no address
+        # arithmetic at all. Words inside a loaded vector are ordinary scratch
+        # cells, so vbroadcast can take each one directly as its scalar source.
+        tree_blk = [self.alloc_vec("tree_blk0"), self.alloc_vec("tree_blk1")]
+        tree_blk1_addr = self.alloc_scratch("tree_blk1_addr")
 
         NUM_DESKS = NUM_DESKS_CFG
         desks = []
@@ -657,33 +643,10 @@ class KernelBuilder:
 
         self.emit("flow", ("pause",))
 
-        # Exp14e+ALU: Compute tree indices 3-14 via ALU (frees 12 load slots pre-pause)
-        # Using existing const(1) and const(2) scratch addresses
-        c1 = self.const_map[1]  # scratch addr holding 1
-        c2 = self.const_map[2]  # scratch addr holding 2
-        # Compute const(3) = 1+2, const(4) = 2+2
-        self.emit("alu", ("+", tree_idx_consts[3], c1, c2))        # 3 = 1+2
-        self.emit("alu", ("+", tree_idx_consts[4], c2, c2))        # 4 = 2+2
-        # Compute const(5..7) from const(4)
-        self.emit("alu", ("+", tree_idx_consts[5], tree_idx_consts[4], c1))  # 5 = 4+1
-        self.emit("alu", ("+", tree_idx_consts[6], tree_idx_consts[4], c2))  # 6 = 4+2
-        self.emit("alu", ("+", tree_idx_consts[7], tree_idx_consts[4], tree_idx_consts[3]))  # 7 = 4+3
-        # Compute const(8) = 4+4
-        self.emit("alu", ("+", tree_idx_consts[8], tree_idx_consts[4], tree_idx_consts[4]))  # 8 = 4+4
-        # Compute const(9..11) from const(8)
-        self.emit("alu", ("+", tree_idx_consts[9], tree_idx_consts[8], c1))   # 9 = 8+1
-        self.emit("alu", ("+", tree_idx_consts[10], tree_idx_consts[8], c2))  # 10 = 8+2
-        self.emit("alu", ("+", tree_idx_consts[11], tree_idx_consts[8], tree_idx_consts[3]))  # 11 = 8+3
-        # Compute const(12) = 8+4
-        self.emit("alu", ("+", tree_idx_consts[12], tree_idx_consts[8], tree_idx_consts[4]))  # 12 = 8+4
-        # Compute const(13,14) from const(12)
-        self.emit("alu", ("+", tree_idx_consts[13], tree_idx_consts[12], c1))  # 13 = 12+1
-        self.emit("alu", ("+", tree_idx_consts[14], tree_idx_consts[12], c2))  # 14 = 12+2
-
-        # Exp14b: Load tree[0] first, rest later
-        self.emit("alu", ("+", tmp_addr, self.scratch["forest_values_p"], tree_idx_consts[0]))
-        self.emit("load", ("load", tmp_scalar, tmp_addr))
-        self.emit("valu", ("vbroadcast", v_tree[0], tmp_scalar))
+        self.emit("load", ("vload", tree_blk[0], self.scratch["forest_values_p"]))
+        self.emit("alu", ("+", tree_blk1_addr, self.scratch["forest_values_p"], self.scratch_const(VLEN)))
+        self.emit("load", ("vload", tree_blk[1], tree_blk1_addr))
+        self.emit("valu", ("vbroadcast", v_tree[0], tree_blk[0]))
 
         # Exp67: Precompute C5 ^ tree[0] for folding R11 XOR into R10 hash
         v_c5_xor_t0 = self.alloc_vec("v_c5_xor_t0")
@@ -966,17 +929,8 @@ class KernelBuilder:
                     self.emit("load", ("vload", desks[d]['val'], addr_tmp[d*2+1]))
                 # Now G0 can start R0 (tree[0] already loaded)
                 # Load tree[1..14] and remaining desks
-                # Each preload gets its own address and value register. Sharing
-                # tmp_addr/tmp_scalar across all 14 made node i+1's address add
-                # wait on node i's broadcast (write-after-read on the shared
-                # register), serialising the whole preload into a ~14-deep
-                # chain at the point where nothing else can run: no gather
-                # address exists until rounds 0-3 have hashed, so this latency
-                # lands squarely in the pipeline fill.
                 for i in range(1, NUM_PRELOADED):
-                    self.emit("alu", ("+", tree_pre_addr[i], self.scratch["forest_values_p"], tree_idx_consts[i]))
-                    self.emit("load", ("load", tree_pre_val[i], tree_pre_addr[i]))
-                    self.emit("valu", ("vbroadcast", v_tree[i], tree_pre_val[i]))
+                    self.emit("valu", ("vbroadcast", v_tree[i], tree_blk[i // VLEN] + (i % VLEN)))
                 for d in range(4, NUM_DESKS):
                     self.emit("load", ("vload", desks[d]['idx'], addr_tmp[d*2]))
                     self.emit("load", ("vload", desks[d]['val'], addr_tmp[d*2+1]))
