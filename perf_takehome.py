@@ -46,7 +46,12 @@ def _flag(name: str, default: bool) -> bool:
 # balance point can be swept; the defaults are the tuned settings.
 ALU_BIT = _flag("PTH_ALU_BIT", True)   # `& 1` branch-bit extraction
 ALU_XOR = _flag("PTH_ALU_XOR", True)   # XOR of val with the gathered/selected node
-ALU_ADD = _flag("PTH_ALU_ADD", True)   # branch and deferred-address adds
+# Branch and deferred-address adds. OFF: unlike the bit-extraction and node-XOR
+# spills, these sit close enough to the gather address chain that turning eight
+# ALU ops into one VALU op shortens the path to the load. Swept ON in an early
+# kernel and never re-checked after group pipelining and the vload preload
+# changed the shape around it; a 1000-configuration search found the flip.
+ALU_ADD = _flag("PTH_ALU_ADD", False)
 
 # Annealing budget. With the load engine binding rather than the VALU, block
 # reversals no longer find anything the priority orderings missed (measured:
@@ -58,6 +63,27 @@ _SA_ITERS = int(os.environ.get("PTH_SA_ITERS", "1500"))
 # batch. Fewer desks shrinks the register file (8 vectors each) and so frees
 # scratch, at the cost of tiles and in-flight parallelism.
 NUM_DESKS_CFG = int(os.environ.get("PTH_DESKS", "16"))
+
+# Search knobs. All default to current behaviour; sweep.py samples them.
+PERM4 = [list(q) for q in __import__("itertools").permutations(range(4))]
+HASH_ORDER = int(os.environ.get("PTH_HASH_ORDER", "0"))    # desk order inside a hash
+R10_ORDER = int(os.environ.get("PTH_R10_ORDER", "-1"))     # -1 keeps the tuned [0,3,2,1]
+GROUP_ORDER = int(os.environ.get("PTH_GROUP_ORDER", "0"))  # group order inside a chunk
+LANE_ORDER = int(os.environ.get("PTH_LANE_ORDER", "0"))    # lane order inside a gather
+# Parameterised scheduler priority: rank non-load ops that feed long load chains
+# first, then everything by a weighted blend of downstream load and VALU counts.
+PRIO_TL = int(os.environ.get("PTH_PRIO_TL", "-1"))         # -1 disables the extra fn
+PRIO_A = int(os.environ.get("PTH_PRIO_A", "1"))
+PRIO_B = int(os.environ.get("PTH_PRIO_B", "0"))
+
+
+def _lane_seq():
+    if LANE_ORDER == 1:
+        return list(range(VLEN - 1, -1, -1))
+    if LANE_ORDER == 2:
+        return list(range(0, VLEN, 2)) + list(range(1, VLEN, 2))
+    return list(range(VLEN))
+
 
 # Emission order: 0 = round-block major (all groups march in lockstep),
 # N>0 = run groups through all 16 rounds N at a time.
@@ -367,6 +393,11 @@ def _schedule_slots(slots: list[tuple[str, tuple]]) -> list[dict[str, list[tuple
         # Pure downstream-load ordering, no engine class split
         lambda i: (-downstream_load[i], -downstream_valu[i], i),
     ]
+    if PRIO_TL >= 0:
+        priority_fns.append(
+            lambda i: ((0, -(PRIO_A * downstream_load[i] + PRIO_B * downstream_valu[i]))
+                       if slots[i][0] != "load" and downstream_load[i] > PRIO_TL
+                       else (1 if slots[i][0] == "load" else 2,), i))
 
     # Shot 81: Collect ALL priority orderings (not just best) for SA starting points
     all_orderings = []
@@ -522,7 +553,7 @@ class KernelBuilder:
         which is a win right up until the ALU itself saturates.
         """
         if on_alu:
-            for lane in range(VLEN):
+            for lane in _lane_seq():
                 self.emit("alu", (op, dest + lane, a1 + lane, a2 + lane))
         else:
             self.emit("valu", (op, dest, a1, a2))
@@ -659,7 +690,7 @@ class KernelBuilder:
 
         def emit_hash_interleaved(group_desks):
             # Interleave desk order (even first, then odd) + per-desk hash (all stages per desk)
-            gd = [group_desks[0], group_desks[1], group_desks[2], group_desks[3]]
+            gd = [group_desks[i] for i in PERM4[HASH_ORDER % 24]]
             for d in gd:
                 desk = desks[d]
                 self.emit("valu", ("multiply_add", desk['val'], desk['val'], v_fma_mult[0], v_hash_consts[0]))
@@ -831,7 +862,7 @@ class KernelBuilder:
                 self.emit_velem("+", desk['addr'], v_forest_p, desk['idx'], ALU_ADD)
             for d in group_desks:
                 desk = desks[d]
-                for lane in range(VLEN):
+                for lane in _lane_seq():
                     self.emit("load", ("load", desk['node_val'] + lane, desk['addr'] + lane))
             for d in group_desks:
                 desk = desks[d]
@@ -846,7 +877,7 @@ class KernelBuilder:
             # Gather
             for d in group_desks:
                 desk = desks[d]
-                for lane in range(VLEN):
+                for lane in _lane_seq():
                     self.emit("load", ("load", desk['node_val'] + lane, desk['addr'] + lane))
             # XOR
             for d in group_desks:
@@ -861,7 +892,8 @@ class KernelBuilder:
         # *** R10 with branch skip + addr-tracking + R11 XOR fold ***
         def emit_hash_r10_folded(group_desks):
             """R10 hash: fold R11's XOR(tree[0]) into stage 5 by using C5^tree[0]"""
-            gd = [group_desks[0], group_desks[3], group_desks[2], group_desks[1]]
+            gd = ([group_desks[0], group_desks[3], group_desks[2], group_desks[1]]
+                  if R10_ORDER < 0 else [group_desks[i] for i in PERM4[R10_ORDER % 24]])
             for d in gd:
                 desk = desks[d]
                 self.emit("valu", ("multiply_add", desk['val'], desk['val'], v_fma_mult[0], v_hash_consts[0]))
@@ -880,7 +912,7 @@ class KernelBuilder:
             """Round 10: addr ready from R9. Skip branch. Fold R11 XOR into hash stage 5."""
             for d in group_desks:
                 desk = desks[d]
-                for lane in range(VLEN):
+                for lane in _lane_seq():
                     self.emit("load", ("load", desk['node_val'] + lane, desk['addr'] + lane))
             for d in group_desks:
                 desk = desks[d]
@@ -892,7 +924,7 @@ class KernelBuilder:
             # No addr computation needed - addr is ready from R14's addr-tracking branch!
             for d in group_desks:
                 desk = desks[d]
-                for lane in range(VLEN):
+                for lane in _lane_seq():
                     self.emit("load", ("load", desk['node_val'] + lane, desk['addr'] + lane))
             for d in group_desks:
                 desk = desks[d]
@@ -976,16 +1008,17 @@ class KernelBuilder:
                     if len(chunk) == 1:
                         emit_all_rounds(chunk[0])
                         continue
-                    for gd in chunk:
+                    ch = [chunk[i] for i in PERM4[GROUP_ORDER % 24] if i < len(chunk)]
+                    for gd in ch:
                         emit_rounds_0_1_2_3_fused(gd)
-                    for gd in chunk:
+                    for gd in ch:
                         for _rnd in range(4, 10):
                             emit_gather_round_addr_tracking(gd)
-                    for gd in chunk:
+                    for gd in ch:
                         emit_round_10_optimized(gd)
-                    for gd in chunk:
+                    for gd in ch:
                         emit_rounds_11_12_13_14_fused(gd)
-                    for gd in chunk:
+                    for gd in ch:
                         emit_round_15_final_interleaved(gd)
             else:
                 for group_desks in all_groups:
