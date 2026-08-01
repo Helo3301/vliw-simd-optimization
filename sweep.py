@@ -7,10 +7,21 @@ batches explore new territory instead of re-running the same points. Screening
 is build-only (~0.74s); a configuration is simulated and correctness-checked
 only if it beats the incumbent, because the check is the expensive part.
 
-The space is deliberately weighted toward the scheduler. The kernel sits 38
-cycles above a bound derived from its own dependency graph, and that residual
-is queue-dry windows -- so the priority function's shape is the parameter most
-likely to matter, and it is sampled continuously rather than as a fixed menu.
+Strategy note, measured rather than assumed. Run head-to-head on the same
+widened space, concurrently, on the same machine:
+
+    random sampling                     1000 builds  741s  ->  1130
+    exhaustive-on-small-class + descent  614 builds  245s  ->  1129
+
+Targeted won on both axes. How random lost is the part worth keeping: its best
+configuration matched the exhaustive answer on five of the seven spill flags and
+missed only PTH_ALU_ADD_15, whose marginal effect is exactly 1 cycle. Random
+sampling cannot resolve a delta-1 effect against the noise of sixteen other
+simultaneous draws, so it failed precisely where it had to.
+
+Hence MODE below. Random is kept for exploring genuinely new dimensions, where
+no structure is known yet; targeted is for extracting the last cycles from
+dimensions already known to matter.
 """
 
 import contextlib
@@ -168,5 +179,49 @@ def main(n):
         print("no verified improvement this batch")
 
 
+def targeted(_n):
+    """Exhaustive over the binary flag class, then coordinate descent over the
+    rest. Preferred once a space has known structure."""
+    import itertools
+    flags = [k for k, v in SPACE.items() if set(v) == {"0", "1"}]
+    rest = {k: v for k, v in SPACE.items() if k not in flags}
+    cache = {}
+
+    def cyc(cfg):
+        kk = key(cfg)
+        if kk not in cache:
+            cache[kk] = build_cycles(cfg)
+        return cache[kk]
+
+    print(f"targeted: 2^{len(flags)} exhaustive over {flags}")
+    best, cur = None, None
+    for bits in itertools.product("01", repeat=len(flags)):
+        cfg = dict(BASELINE); cfg.update(dict(zip(flags, bits)))
+        c = cyc(cfg)
+        if c and (best is None or c < best):
+            best, cur = c, cfg
+    print(f"  exhaustive best {best}")
+    for p in range(3):
+        moved = False
+        for d, vals in rest.items():
+            for v in vals:
+                if v == cur[d]:
+                    continue
+                t = dict(cur); t[d] = v
+                c = cyc(t)
+                if c and c < best:
+                    best, cur, moved = c, t, True
+                    print(f"  descent pass{p}: {d}={v} -> {best}")
+        if not moved:
+            break
+    ok = verify(cur) if best else False
+    print(f"\ntargeted optimum {best}  correct={ok}  {len(cache)} builds")
+    print("deviations:", {k: v for k, v in cur.items() if v != BASELINE[k]})
+
+
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 1000)
+    n = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
+    if os.environ.get("PTH_SWEEP_MODE", "targeted") == "random":
+        main(n)
+    else:
+        targeted(n)
