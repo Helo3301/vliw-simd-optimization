@@ -49,7 +49,9 @@ def claim_algebraic_identities():
     try:
         import z3
     except ImportError:
-        record("SKIPPED", "z3 not installed; identities unchecked")
+        record("FAILED", "z3 unavailable -- identities UNCHECKED",
+               "a proof script that passes when its prover is missing is worse "
+               "than no proof script; this fails closed")
         return
 
     a = z3.BitVec("a", 32)
@@ -99,7 +101,7 @@ def claim_stage_minimality():
     try:
         import z3
     except ImportError:
-        record("SKIPPED", "z3 not installed")
+        record("FAILED", "z3 unavailable -- minimality UNCHECKED")
         return
 
     C1, SH1 = HASH_STAGES[1][1], HASH_STAGES[1][4]
@@ -120,17 +122,16 @@ def claim_stage_minimality():
         }
 
     a = z3.BitVec("a", 32)
-    k1, k2 = z3.BitVec("k1", 32), z3.BitVec("k2", 32)
+    k1, k2, k3 = z3.BitVec("k1", 32), z3.BitVec("k2", 32), z3.BitVec("k3", 32)
     found = None
-    unknown = 0   # a timeout is NOT evidence of non-existence
+    pending = []   # a timeout is NOT evidence of non-existence; retry these
 
-    def query(expr):
-        nonlocal unknown
-        s = z3.Solver(); s.set("timeout", 4000)
+    def query(expr, ms=4000, retry=True):
+        s = z3.Solver(); s.set("timeout", ms)
         s.add(z3.ForAll([a], expr == target(a)))
         r = s.check()
-        if r == z3.unknown:
-            unknown += 1
+        if r == z3.unknown and retry:
+            pending.append(expr)
         return r == z3.sat
 
     # 1-op programs: op(a,k) and op(k,a), plus multiply_add(a,k1,k2)
@@ -153,10 +154,11 @@ def claim_stage_minimality():
         for nm, f in binops().items():
             firsts.append((f"{nm}(a,k1)", f(a, k1)))
             firsts.append((f"{nm}(k1,a)", f(k1, a)))
-        firsts.append(("fma(a,k1,0)", a * k1))
+        firsts.append(("fma(a,k1,k3)", a * k1 + k3))   # arbitrary addend, not just a*k
         for n1, t in firsts:
             pool = [("a", a), ("t", t), ("k2", k2)]
-            for nm, f in binops().items():
+            ops2 = dict(binops())
+            for nm, f in ops2.items():
                 for xn, x in pool:
                     for yn, y in pool:
                         tested += 1
@@ -165,7 +167,33 @@ def claim_stage_minimality():
                             break
                     if found: break
                 if found: break
+            if not found:
+                # multiply_add as the SECOND op, over every operand triple
+                for xn, x in pool:
+                    for yn, y in pool:
+                        for zn, z_ in pool:
+                            tested += 1
+                            if query(x * y + z_):
+                                found = ("2 ops", f"{n1}; fma({xn},{yn},{zn})")
+                                break
+                        if found: break
+                    if found: break
+                if found: break
             if found: break
+
+    # second pass: give every timed-out shape a much larger budget before
+    # conceding it is unresolved
+    unknown = 0
+    if found is None and pending:
+        for expr in pending:
+            s2 = z3.Solver(); s2.set("timeout", 120000)
+            s2.add(z3.ForAll([a], expr == target(a)))
+            r = s2.check()
+            if r == z3.sat:
+                found = ("2 ops", "found on retry")
+                break
+            if r == z3.unknown:
+                unknown += 1
 
     if found:
         record("FAILED", f"stage 1 needs >=3 VALU ops -- found a {found[0]} program",
@@ -189,11 +217,24 @@ def claim_stage_minimality():
 # ---------------------------------------------------------------- claim 3
 def claim_select_lower_bound():
     print("\n3. Cost of any 16-way node selection")
-    record("PROVED", "selecting 1 of 16 values needs >=15 binary combines",
+    record("ARGUED", "selecting 1 of 16 values needs >=15 binary combines",
            "a binary tree with 16 leaves has 15 internal nodes; every op on "
            "this ISA combines at most 2 candidate values (multiply_add takes 3 "
            "inputs but is affine, so with a 0/1 multiplier it still picks "
            "between 2). Bounds EVERY selection scheme, including unthought-of ones.")
+
+
+# ---------------------------------------------------------------- claim 3b
+def claim_hash_bound():
+    print("\n3b. Hash work as a lower bound (corrected)")
+    ops = 512 * 10
+    valu_only = -(-ops // 6)
+    best = min(max(x / 6, (ops - x) * 8 / 12) for x in range(0, ops + 1))
+    record("ARGUED", f"hash work alone forces >= {round(best)} cycles, not {valu_only}",
+           f"{ops} vector-ops. An earlier writeup quoted {valu_only} = {ops}/6, which "
+           f"silently assumed VALU placement. The same work runs on the ALU at 8 "
+           f"slots/op, so the real bound minimises max(x/6, ({ops}-x)*8/12) = "
+           f"{round(best)}. Depends on the 10-op figure, which is only ASSUMED below.")
 
 
 # ---------------------------------------------------------------- claim 4
@@ -211,36 +252,49 @@ def claim_schedule_bound(kb):
                            if not (e == "flow" and s == ("pause",))])
     n = len(slots)
     rw = [P._slot_rw(e, s) for e, s in slots]
-    wmap, rmap, est = {}, defaultdict(list), [0] * n
-    for i, (reads, writes) in enumerate(rw):
-        t, ws = 0, set(writes)
-        for x in reads:
-            if x in wmap:
-                t = max(t, est[wmap[x]] + 1)          # RAW
-        for x in writes:
-            if x in wmap:
-                t = max(t, est[wmap[x]] + 1)          # WAW
-            for r in rmap.get(x, ()):
-                t = max(t, est[r])                    # WAR may share a cycle
-        est[i] = t
-        for x in reads:
-            rmap[x].append(i)
-        for x in writes:
-            wmap[x] = i; rmap[x] = []
 
-    L = sorted(est[i] for i in range(n) if slots[i][0] == "load")
-    N = len(L)
-    k = max(range(N), key=lambda j: L[j] + -(-(N - j) // 2))
-    core = L[k] + -(-(N - k) // 2)
-    gath = [i for i, (e, s) in enumerate(slots) if e == "load" and s[0] == "load"]
-    tail = max(est) + 1 - max(est[i] for i in gath)
-    bound = core + tail
+    def compute(raw_only):
+        wmap, rmap, est = {}, defaultdict(list), [0] * n
+        for i, (reads, writes) in enumerate(rw):
+            t = 0
+            for x in reads:
+                if x in wmap:
+                    t = max(t, est[wmap[x]] + 1)          # RAW: a true dependence
+            if not raw_only:
+                # WAR/WAW exist only because values were given physical scratch
+                # addresses before scheduling. Register renaming removes them.
+                for x in writes:
+                    if x in wmap:
+                        t = max(t, est[wmap[x]] + 1)      # WAW
+                    for r in rmap.get(x, ()):
+                        t = max(t, est[r])                # WAR may share a cycle
+            est[i] = t
+            for x in reads:
+                rmap[x].append(i)
+            for x in writes:
+                wmap[x] = i; rmap[x] = []
+        L = sorted(est[i] for i in range(n) if slots[i][0] == "load")
+        N = len(L)
+        k = max(range(N), key=lambda j: L[j] + -(-(N - j) // 2))
+        core = L[k] + -(-(N - k) // 2)
+        g = [i for i, (e, s) in enumerate(slots) if e == "load" and s[0] == "load"]
+        tail = max(est) + 1 - max(est[i] for i in g)
+        return core + tail, core, tail, k, L[k], N
+
+    phys, core, tail, k, ek, N = compute(False)
+    renamed = compute(True)[0]
     achieved = len(kb.instrs)
-    record("PROVED", f"no schedule of these {n} ops can finish before {bound} cycles",
-           f"max_k(est_k + ceil((N-k)/2)) = {core} at k={k} (est={L[k]}, N={N} loads), "
-           f"+ {tail}-cycle tail after the last gather")
-    record("VERIFIED", f"achieved {achieved} cycles -- {achieved - bound} above that bound",
-           f"{100 * bound / achieved:.1f}% of the provable optimum for this op set")
+    record("PROVED", f"no schedule of these {n} ops, AS ALLOCATED, beats {phys} cycles",
+           f"max_k(est_k + ceil((N-k)/2)) = {core} at k={k} (est={ek}, N={N} loads) "
+           f"+ {tail}-cycle tail. Scope: this op set AND this assignment of values "
+           f"to scratch addresses -- not a bound on the problem.")
+    record("PROVED", f"with perfect register renaming the same op set bounds at {renamed}",
+           f"recomputed with every WAR/WAW edge deleted, which renaming can always "
+           f"achieve. The anti-dependency artifact in the bound above is worth "
+           f"{phys - renamed} cycles, so scheduling-vs-allocation is NOT where the "
+           f"gap to faster published designs lives -- the op set is.")
+    record("VERIFIED", f"achieved {achieved} cycles -- {achieved - phys} above the as-allocated bound",
+           f"{100 * phys / achieved:.1f}% of the optimum for this op set and allocation")
     return achieved
 
 
@@ -284,15 +338,35 @@ def claim_correct(kb, seeds=20):
 
 
 # ---------------------------------------------------------------- claim 7
+# SHA-256 of Anthropic's files at upstream commit 5452f74bd977807ac2e74f3d29432b9df6f25197.
+# Pinned as a static manifest on purpose: comparing against a git remote makes the
+# check depend on how the clone happens to be named, and in a fork whose main has
+# absorbed this work it degenerates into self-comparison.
+UPSTREAM_COMMIT = "5452f74bd977807ac2e74f3d29432b9df6f25197"
+UPSTREAM_SHA256 = {
+    "problem.py":                "fadb0f0858e2259f5759077a5544b9906dad3ceee80d37b4f0aa77da730c93c9",
+    "tests/submission_tests.py": "11c57cc999da93acb41201191073cd657ddffa87635359b3157c6e177c18ea0a",
+    "tests/frozen_problem.py":   "fadb0f0858e2259f5759077a5544b9906dad3ceee80d37b4f0aa77da730c93c9",
+}
+
+
 def claim_integrity():
-    print("\n7. Submission integrity")
-    def diff(path):
-        r = subprocess.run(["git", "diff", "origin/main", "--", path],
-                           capture_output=True, text=True)
-        return r.stdout.strip()
-    t, pr = diff("tests/"), diff("problem.py")
-    record("PROVED" if not t else "FAILED", "tests/ byte-identical to origin/main")
-    record("PROVED" if not pr else "FAILED", "problem.py byte-identical to origin/main")
+    import hashlib
+    print("\n7. Submission integrity (static manifest, not a remote name)")
+    here = os.path.dirname(os.path.abspath(__file__))
+    bad = []
+    for rel, want in sorted(UPSTREAM_SHA256.items()):
+        path = os.path.join(here, rel)
+        try:
+            got = hashlib.sha256(open(path, "rb").read()).hexdigest()
+        except OSError:
+            bad.append(f"{rel}: missing"); continue
+        if got != want:
+            bad.append(f"{rel}: {got[:12]} != {want[:12]}")
+    record("PROVED" if not bad else "FAILED",
+           f"tests/ and problem.py match upstream {UPSTREAM_COMMIT[:12]} by SHA-256",
+           "; ".join(bad) if bad else
+           f"{len(UPSTREAM_SHA256)} files pinned by content hash")
 
 
 # ---------------------------------------------------------------- assumptions
@@ -316,6 +390,7 @@ if __name__ == "__main__":
     claim_algebraic_identities()
     claim_stage_minimality()
     claim_select_lower_bound()
+    claim_hash_bound()
     kb = build()
     claim_schedule_bound(kb)
     claim_schedule_legal(kb)
